@@ -1,34 +1,69 @@
-# Scopa
-
-[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-
-An iOS take on the Italian card game Scopa: play against the phone, pass it around a
-table, connect nearby phones, or play friends and strangers online with a ranked ladder.
-Swift 6, SwiftUI, iOS 17, with the game logic in dependency-free Swift packages and a
-small Cloudflare Worker for the online parts.
-
 <p align="center">
-  <img src="Docs/screenshots/1-table.png" width="180" alt="The table mid-game">
-  <img src="Docs/screenshots/2-coach.png" width="180" alt="The coach explaining a move">
-  <img src="Docs/screenshots/4-ranked.png" width="180" alt="Ranked play and the league">
-  <img src="Docs/screenshots/6-shop.png" width="180" alt="The cosmetics shop">
+  <img src="Docs/icon.png" width="128" alt="Scopa app icon">
 </p>
 
-## What it does
+<h1 align="center">Scopa</h1>
 
-- Classic rules for two, three or four players, with teams at four.
-- Three bot levels. Every level sees only what a player in that chair would see; the hard
-  one samples the unseen cards and plays the round out.
-- A coach that explains moves as they happen, and a post-game review that grades every move.
-- Local play: hot-seat on one phone, or nearby phones over Multipeer Connectivity.
-- Online play over Game Center, plus four-letter room codes for tables that wait for a
+<p align="center">
+  <b>The Italian card game, made for iPhone and iPad.</b><br>
+  Play the bots, pass the phone around the table, link up with nearby phones,<br>
+  or climb a monthly ranked ladder online.
+</p>
+
+<p align="center">
+  <a href="https://github.com/quentinved/scopa/actions/workflows/ci.yml"><img src="https://github.com/quentinved/scopa/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/iOS-17%2B-000000?logo=apple&logoColor=white" alt="iOS 17+">
+  <img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6">
+  <img src="https://img.shields.io/badge/SwiftUI-0A84FF?logo=swift&logoColor=white" alt="SwiftUI">
+  <img src="https://img.shields.io/badge/Cloudflare-Workers%20%2B%20D1-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Workers and D1">
+  <img src="https://img.shields.io/badge/languages-EN%20%C2%B7%20FR%20%C2%B7%20IT-2E7D32" alt="English, French, Italian">
+</p>
+
+<p align="center">
+  <img src="Docs/screenshots/1-table.png" width="200" alt="The table mid-game">
+  <img src="Docs/screenshots/2-coach.png" width="200" alt="The coach explaining a move">
+  <img src="Docs/screenshots/3-teams.png" width="200" alt="Four players in two teams">
+  <img src="Docs/screenshots/5-lobby.png" width="200" alt="The lobby with the daily deal">
+</p>
+<p align="center">
+  <img src="Docs/screenshots/4-ranked.png" width="200" alt="Ranked play and the league">
+  <img src="Docs/screenshots/6-shop.png" width="200" alt="The cosmetics shop">
+  <img src="Docs/screenshots/7-rules.png" width="200" alt="The illustrated rules">
+</p>
+
+## About
+
+Scopa ("broom") is the classic Italian fishing card game: capture cards from the table
+whose values add up to the card you play, and sweep the table clean for a *scopa*. This
+is a native iOS version built with Swift 6 and SwiftUI. The game logic lives in
+dependency-free Swift packages, and a small Cloudflare Worker handles the online parts.
+
+## Features
+
+- **Classic rules** for two, three or four players, with teams at four.
+- **Three bot levels.** Every level sees only what a player in that chair would see; the
+  hard one samples the unseen cards and plays the round out.
+- **A coach** that explains moves as they happen, and a post-game review that grades every move.
+- **Local play:** hot-seat on one phone, or nearby phones over Multipeer Connectivity.
+- **Online play** over Game Center, plus four-letter room codes for tables that wait for a
   friend to arrive.
-- A daily deal everyone plays on the same cards, weekly challenges, and a monthly ranked
-  season with leagues and divisions.
-- Denari, an in-game currency earned by playing, spent on card styles, cloths and
+- **Daily deal, weekly challenges and ranked seasons.** Everyone plays the same cards each
+  day, and a monthly season has leagues and divisions.
+- **Denari**, an in-game currency earned by playing and spent on card styles, cloths and
   reactions. No real-money purchases.
-- Twelve Game Center achievements, three languages (English, French, Italian), and all
+- **Twelve Game Center achievements**, three languages (English, French, Italian), and all
   music and sound effects synthesised from code.
+
+## Tech stack
+
+| Area | Built with |
+|---|---|
+| App | Swift 6, SwiftUI, iOS 17+ |
+| Game logic | Swift packages with no UIKit or SwiftUI, hexagonal architecture |
+| Multiplayer | Game Center (GKMatch), Multipeer Connectivity, WebSocket rooms |
+| Backend | Cloudflare Workers, D1 (SQLite), Durable Objects |
+| Audio | Music and SFX synthesised in Python (`Tools/SoundForge`) |
+| CI | GitHub Actions: package tests, Worker tests, app build |
 
 ## Layout
 
@@ -85,13 +120,13 @@ handful of hands is enough to show a real edge rather than a lucky shuffle. The 
 tests run a host and several guests over an in-process loopback transport. Both suites run
 on every push, along with a build of the app, through the workflow in `.github/workflows`.
 
-## Licence
-
-The source is published to be read, not reused: see [LICENSE](LICENSE).
-
 ## Server
 
 One Worker, one D1 database, one Durable Object class for rooms. See
 [Server/README.md](Server/README.md) for deploy steps. Apple API keys for the store
 tooling are read from `ASC_KEY`, `ASC_KEY_ID` and `ASC_ISSUER_ID` and never stored in
 the repo.
+
+## Licence
+
+The source is published to be read, not reused: see [LICENSE](LICENSE).
