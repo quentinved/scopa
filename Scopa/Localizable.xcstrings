@@ -11468,34 +11468,34 @@
         }
       }
     },
-    "The laurel is on your seat until the end of next week." : {
+    "The laurel is on your seat until the week ends." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le laurier reste à votre place jusqu'à la fin de la semaine prochaine."
+            "value" : "Le laurier reste à votre place jusqu'à la fin de la semaine."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'alloro è al tuo posto fino alla fine della settimana prossima."
+            "value" : "L'alloro è al tuo posto fino alla fine della settimana."
           }
         }
       }
     },
-    "The laurel stays on your seat until the end of next week, wherever you play." : {
+    "The laurel stays on your seat until the week ends, wherever you play." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le laurier reste à votre place jusqu'à la fin de la semaine prochaine, où que vous jouiez."
+            "value" : "Le laurier reste à votre place jusqu'à la fin de la semaine, où que vous jouiez."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "L'alloro resta al tuo posto fino alla fine della settimana prossima, ovunque tu giochi."
+            "value" : "L'alloro resta al tuo posto fino alla fine della settimana, ovunque tu giochi."
           }
         }
       }
@@ -13819,18 +13819,18 @@
         }
       }
     },
-    "Won. The laurel is on your seat until the end of next week." : {
+    "Won. The laurel is on your seat until the week ends." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gagné. Le laurier orne votre place jusqu'à la fin de la semaine prochaine."
+            "value" : "Gagné. Le laurier orne votre place jusqu'à la fin de la semaine."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vinto. L'alloro è al tuo posto fino alla fine della settimana prossima."
+            "value" : "Vinto. L'alloro è al tuo posto fino alla fine della settimana."
           }
         }
       }

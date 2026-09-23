@@ -15,14 +15,6 @@ enum WeeklyChallenge {
         return String(format: "%04d-W%02d", parts.yearForWeekOfYear ?? 0, parts.weekOfYear ?? 0)
     }
 
-    /// The week before a given one. Used by the badge, which is worn through the week after the
-    /// one it was won in.
-    static func week(before week: String, calendar: Calendar = .current) -> String? {
-        guard let date = date(of: week, calendar: calendar),
-              let earlier = calendar.date(byAdding: .weekOfYear, value: -1, to: date) else { return nil }
-        return Self.week(for: earlier, calendar: calendar)
-    }
-
     /// When a named week starts, for the countdown and for stepping between weeks.
     static func date(of week: String, calendar: Calendar = .current) -> Date? {
         let parts = week.split(separator: "-W")

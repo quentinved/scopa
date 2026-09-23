@@ -30,7 +30,7 @@ struct WeekWonCard: View {
             reward
                 .padding(.bottom, 22)
             takeButton
-            Text("The laurel stays on your seat until the end of next week, wherever you play.")
+            Text("The laurel stays on your seat until the week ends, wherever you play.")
                 .font(.system(size: 12.5))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Palette.onTableSoft)

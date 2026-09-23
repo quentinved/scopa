@@ -100,22 +100,19 @@ final class ChallengeBook {
 
     // MARK: The badge
 
-    /// Whether there is a badge to wear right now. A badge is worn from the moment it is won
-    /// until the end of the week after, so an early finish still gets a full week of wearing.
-    var wearsHonour: Bool {
-        guard let finishedWeek else { return false }
-        return finishedWeek == week || WeeklyChallenge.week(before: week) == finishedWeek
-    }
+    /// Whether there is a badge to wear right now. A badge is worn only through the week it was
+    /// won in, so each new week it has to be earned again.
+    var wearsHonour: Bool { finishedWeek == week }
 
     /// What goes on the wire so other phones at the table draw the badge too. Nil when there is
     /// nothing to show, which is also what an older build sends.
     var honourOnWire: String? { wearsHonour ? finishedWeek : nil }
 
-    /// Whether a badge sent by another phone is one this week still honours. A phone whose clock
-    /// disagrees is forgiven only this far: the week it names must be this one or the one before.
+    /// Whether a badge sent by another phone is one this week honours: it must name this week,
+    /// so a laurel from last week, sent by an older build, is not drawn.
     static func honours(_ wire: String?, on week: String) -> Bool {
         guard let wire, !wire.isEmpty else { return false }
-        return wire == week || WeeklyChallenge.week(before: week) == wire
+        return wire == week
     }
 
     // MARK: Counting

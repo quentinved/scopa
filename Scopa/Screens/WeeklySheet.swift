@@ -70,7 +70,7 @@ struct WeeklySheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Group {
                     if book.isFinished {
-                        Text("The laurel is on your seat until the end of next week.")
+                        Text("The laurel is on your seat until the week ends.")
                     } else {
                         Text("Each one pays when it is done. The laurel is for finishing all of them.")
                     }

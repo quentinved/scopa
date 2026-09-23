@@ -207,7 +207,7 @@ struct WeeklyCard: View {
                 Text("All \(goals.count) tasks done")
                     .font(.system(size: 15 * lift, weight: .bold))
                     .foregroundStyle(Palette.onTable)
-                Text("Won. The laurel is on your seat until the end of next week.")
+                Text("Won. The laurel is on your seat until the week ends.")
                     .font(.system(size: 12 * lift))
                     .foregroundStyle(Palette.onTableSoft)
                     .fixedSize(horizontal: false, vertical: true)
