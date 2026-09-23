@@ -25,3 +25,5 @@ CLAUDE.md
 *.mobileprovision
 .env*
 .dev.vars
+.whisperrc
+!.env.whisper

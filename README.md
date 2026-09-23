@@ -132,6 +132,23 @@ The release workflows read their credentials from the `production` environment's
 `ASC_KEY_P8` (the contents of the .p8), `ASC_KEY_ID` and `ASC_ISSUER_ID` for TestFlight,
 `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for the Worker.
 
+### Local credentials
+
+On a machine, the store tools (`push-metadata.sh`, `push-screenshots.sh`,
+`seed-achievements.sh`) read the same App Store Connect key from a `.env` at the repo root,
+kept in sync with [whisper-secrets](https://whisper.quentinvedrenne.com/docs/secrets):
+
+```sh
+npm install -g whisper-secrets
+whisper-secrets join <invite link>   # asks for the passphrase once, then pulls .env
+whisper-secrets pull                 # later, after a secret changed
+```
+
+`.env.whisper` is committed and maps each name to an encrypted entry on the server, with no
+secret in it. `.env` and `.whisperrc` (the passphrase) stay out of git. `ASC_KEY` is the
+path to the .p8, which lives outside the repo. `Tools/asc-env.sh` loads the three `ASC_*`
+values; anything already exported wins.
+
 ## Server
 
 One Worker, one D1 database, one Durable Object class for rooms. See

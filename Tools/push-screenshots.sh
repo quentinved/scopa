@@ -5,6 +5,7 @@
 # store tools. Re-running replaces what is there rather than adding to it.
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
+. "$root/Tools/asc-env.sh"
 bundle=${SCOPA_BUNDLE_ID:-com.quentinvedrenne.scopa}
 shots=${1:-"$root/Artwork/Screenshots"}
 build=$(mktemp -d)
