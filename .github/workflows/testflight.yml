@@ -14,7 +14,7 @@ concurrency:
 jobs:
   upload:
     name: Archive and upload
-    runs-on: macos-15
+    runs-on: macos-26
     environment: production
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

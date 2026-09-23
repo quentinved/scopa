@@ -34,7 +34,7 @@ jobs:
 
   app:
     name: iOS app
-    runs-on: macos-15
+    runs-on: macos-26  # the app uses iOS 26 APIs, so it needs Xcode 26
     steps:
       - uses: actions/checkout@v5
       # A generic destination needs no named simulator, so this does not break when the
