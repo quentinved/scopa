@@ -33,6 +33,17 @@ done
 
 mkdir -p "$DIST"
 
+# On a CI runner there is no Xcode account signed in: with an App Store Connect API key in
+# the environment, Xcode signs through the cloud instead. BUILD_NUMBER overrides the
+# project's, since every upload to App Store Connect needs a higher one.
+AUTH=()
+if [[ -n "${ASC_KEY:-}" ]]; then
+  AUTH=(-authenticationKeyPath "$ASC_KEY" -authenticationKeyID "$ASC_KEY_ID"
+        -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+fi
+VERSION=()
+[[ -n "${BUILD_NUMBER:-}" ]] && VERSION=(CURRENT_PROJECT_VERSION="$BUILD_NUMBER")
+
 if [[ "$METHOD" == "simulator" ]]; then
   echo "==> Building for iOS Simulator (unsigned)"
   xcodebuild build \
@@ -60,8 +71,8 @@ xcodebuild archive \
   -destination 'generic/platform=iOS' \
   -archivePath "$ARCHIVE" \
   -derivedDataPath "$DERIVED" \
-  -allowProvisioningUpdates \
-  DEVELOPMENT_TEAM="$TEAM" | tail -5
+  -allowProvisioningUpdates ${AUTH[@]+"${AUTH[@]}"} \
+  DEVELOPMENT_TEAM="$TEAM" ${VERSION[@]+"${VERSION[@]}"} | tail -5
 
 # Xcode 15+ renamed the export methods. The familiar names are kept as aliases.
 case "$METHOD" in
@@ -148,7 +159,7 @@ xcodebuild -exportArchive \
   -archivePath "$ARCHIVE" \
   -exportPath "$DIST" \
   -exportOptionsPlist "$OPTS" \
-  -allowProvisioningUpdates | tail -5
+  -allowProvisioningUpdates ${AUTH[@]+"${AUTH[@]}"} | tail -5
 
 echo
 ls -lh "$DIST"/*.ipa

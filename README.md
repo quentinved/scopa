@@ -120,6 +120,18 @@ handful of hands is enough to show a real edge rather than a lucky shuffle. The 
 tests run a host and several guests over an in-process loopback transport. Both suites run
 on every push, along with a build of the app, through the workflow in `.github/workflows`.
 
+## Continuous integration and releases
+
+| Workflow | Runs on | Does |
+|---|---|---|
+| [CI](.github/workflows/ci.yml) | every push and pull request | Package tests, Worker tests, app build |
+| [TestFlight](.github/workflows/testflight.yml) | a `v*` tag, or by hand | Archives, signs in the cloud, uploads to App Store Connect |
+| [Deploy Worker](.github/workflows/deploy-worker.yml) | by hand only | Tests, optionally applies one D1 migration, deploys |
+
+The release workflows read their credentials from the `production` environment's secrets:
+`ASC_KEY_P8` (the contents of the .p8), `ASC_KEY_ID` and `ASC_ISSUER_ID` for TestFlight,
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for the Worker.
+
 ## Server
 
 One Worker, one D1 database, one Durable Object class for rooms. See

@@ -1,0 +1,44 @@
+name: Deploy Worker
+
+# Run by hand from the Actions tab. Not on every push: the live Worker is deliberately
+# allowed to lag Server/src, and a schema change has to reach D1 before the code that
+# reads it.
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: "Migration to apply to D1 first, e.g. 006-presence.sql (leave empty for none)"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Test and deploy
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: Server
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Test
+        run: npm test
+      - name: Apply migration
+        if: inputs.migration != ''
+        env:
+          MIGRATION: ${{ inputs.migration }}
+        run: |
+          test -f "migrations/$MIGRATION" || { echo "no such file: migrations/$MIGRATION"; exit 1; }
+          npx --yes wrangler@4 d1 execute scopa --remote --file "migrations/$MIGRATION"
+      - name: Deploy
+        run: npx --yes wrangler@4 deploy

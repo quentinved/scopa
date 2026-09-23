@@ -1,0 +1,46 @@
+name: TestFlight
+
+# Push a tag such as v1.0.1, or run it by hand from the Actions tab. The build is signed in
+# the cloud with the App Store Connect API key, so no certificate or profile is stored here.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    name: Archive and upload
+    runs-on: macos-15
+    environment: production
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          # altool only looks for the key in a private_keys folder, under this exact name.
+          mkdir -p ~/.appstoreconnect/private_keys
+          KEY=~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8
+          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          echo "ASC_KEY=$KEY" >> "$GITHUB_ENV"
+      - name: Archive and export
+        run: |
+          # YYMMDD.HHMM only ever grows, whichever machine the last upload came from.
+          BUILD_NUMBER=$(date -u +%y%m%d.%H%M) ./Tools/package-app.sh --method app-store-connect
+      - name: Upload to App Store Connect
+        run: xcrun altool --upload-app -f dist/*.ipa -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Scopa-ipa
+          path: dist/*.ipa
+          retention-days: 14
+      - name: Remove the API key
+        if: always()
+        run: rm -rf ~/.appstoreconnect
