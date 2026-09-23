@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    // Workers are not browsers: without this TypeScript loads the DOM's Request, Response
+    // and WebSocket alongside Cloudflare's and every one of them conflicts.
+    "lib": ["ES2022"],
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src"]
+}

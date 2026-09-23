@@ -1,0 +1,27 @@
+xcuserdata/
+.build/
+.swiftpm/
+DerivedData/
+.DS_Store
+dist/
+build/
+__pycache__/
+node_modules/
+.wrangler/
+
+# Store screenshots are hundreds of MB; the README keeps small copies in Docs/.
+Artwork/Screenshots/
+Artwork/Screenshots-old-*/
+
+# Local editor and assistant configuration.
+.vscode/
+.claude/
+CLAUDE.md
+
+# Credentials never belong in the repo.
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+.env*
+.dev.vars

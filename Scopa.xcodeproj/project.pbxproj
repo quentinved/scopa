@@ -1,0 +1,443 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AAB1ABC2304B9708007381E8 /* ScopaCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1ABC1304B9708007381E8 /* ScopaCore */; };
+		AAB1ABC4304B9708007381E8 /* ScopaMultipeer in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1ABC3304B9708007381E8 /* ScopaMultipeer */; };
+		AAB1ABC6304B9708007381E8 /* ScopaRewards in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1ABC5304B9708007381E8 /* ScopaRewards */; };
+		AAB1ABC8304B9708007381E8 /* ScopaGameCenter in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1ABC7304B9708007381E8 /* ScopaGameCenter */; };
+		AAB1ABD0304B9708007381E8 /* ScopaRelay in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1ABD1304B9708007381E8 /* ScopaRelay */; };
+		AAB1ABD2304B9708007381E8 /* ScopaProfile in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1ABD3304B9708007381E8 /* ScopaProfile */; };
+		AAB1AD02304B9708007381E8 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = AAB1AD01304B9708007381E8 /* GoogleMobileAds */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AAB1ABAA304B9708007381E8 /* Scopa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Scopa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		AAB1ABAC304B9708007381E8 /* Scopa */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Scopa;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AAB1ABA7304B9708007381E8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAB1ABC2304B9708007381E8 /* ScopaCore in Frameworks */,
+				AAB1ABC4304B9708007381E8 /* ScopaMultipeer in Frameworks */,
+				AAB1ABC6304B9708007381E8 /* ScopaRewards in Frameworks */,
+				AAB1ABC8304B9708007381E8 /* ScopaGameCenter in Frameworks */,
+				AAB1ABD0304B9708007381E8 /* ScopaRelay in Frameworks */,
+				AAB1ABD2304B9708007381E8 /* ScopaProfile in Frameworks */,
+				AAB1AD02304B9708007381E8 /* GoogleMobileAds in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AAB1ABA1304B9708007381E8 = {
+			isa = PBXGroup;
+			children = (
+				AAB1ABAC304B9708007381E8 /* Scopa */,
+				AAB1ABAB304B9708007381E8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AAB1ABAB304B9708007381E8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AAB1ABAA304B9708007381E8 /* Scopa.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AAB1ABA9304B9708007381E8 /* Scopa */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAB1ABB5304B970A007381E8 /* Build configuration list for PBXNativeTarget "Scopa" */;
+			buildPhases = (
+				AAB1ABA6304B9708007381E8 /* Sources */,
+				AAB1ABA7304B9708007381E8 /* Frameworks */,
+				AAB1ABA8304B9708007381E8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AAB1ABAC304B9708007381E8 /* Scopa */,
+			);
+			name = Scopa;
+			packageProductDependencies = (
+				AAB1ABC1304B9708007381E8 /* ScopaCore */,
+				AAB1ABC3304B9708007381E8 /* ScopaMultipeer */,
+				AAB1ABC5304B9708007381E8 /* ScopaRewards */,
+				AAB1ABC7304B9708007381E8 /* ScopaGameCenter */,
+				AAB1ABD1304B9708007381E8 /* ScopaRelay */,
+				AAB1ABD3304B9708007381E8 /* ScopaProfile */,
+				AAB1AD01304B9708007381E8 /* GoogleMobileAds */,
+			);
+			productName = Scopa;
+			productReference = AAB1ABAA304B9708007381E8 /* Scopa.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAB1ABA2304B9708007381E8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					AAB1ABA9304B9708007381E8 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = AAB1ABA5304B9708007381E8 /* Build configuration list for PBXProject "Scopa" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				fr,
+				it,
+			);
+			mainGroup = AAB1ABA1304B9708007381E8;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */,
+				AAB1AD00304B9708007381E8 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AAB1ABAB304B9708007381E8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AAB1ABA9304B9708007381E8 /* Scopa */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AAB1ABA8304B9708007381E8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AAB1ABA6304B9708007381E8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AAB1ABB3304B970A007381E8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7WBNUC3KR9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AAB1ABB4304B970A007381E8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7WBNUC3KR9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AAB1ABB6304B970A007381E8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Scopa/Scopa.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7WBNUC3KR9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Scopa-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Scopa;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.card-games";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Scopa uses the local network to find and join nearby tables.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.quentinvedrenne.scopa;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AAB1ABB7304B970A007381E8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Scopa/Scopa.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7WBNUC3KR9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Scopa-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Scopa;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.card-games";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Scopa uses the local network to find and join nearby tables.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.quentinvedrenne.scopa;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AAB1ABA5304B9708007381E8 /* Build configuration list for PBXProject "Scopa" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAB1ABB3304B970A007381E8 /* Debug */,
+				AAB1ABB4304B970A007381E8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAB1ABB5304B970A007381E8 /* Build configuration list for PBXNativeTarget "Scopa" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAB1ABB6304B970A007381E8 /* Debug */,
+				AAB1ABB7304B970A007381E8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Scopa;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AAB1AD00304B9708007381E8 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AAB1ABC1304B9708007381E8 /* ScopaCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */;
+			productName = ScopaCore;
+		};
+		AAB1ABC3304B9708007381E8 /* ScopaMultipeer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */;
+			productName = ScopaMultipeer;
+		};
+		AAB1ABC5304B9708007381E8 /* ScopaRewards */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */;
+			productName = ScopaRewards;
+		};
+		AAB1ABC7304B9708007381E8 /* ScopaGameCenter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */;
+			productName = ScopaGameCenter;
+		};
+		AAB1ABD1304B9708007381E8 /* ScopaRelay */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */;
+			productName = ScopaRelay;
+		};
+		AAB1ABD3304B9708007381E8 /* ScopaProfile */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1ABC0304B9708007381E8 /* XCLocalSwiftPackageReference "Packages/Scopa" */;
+			productName = ScopaProfile;
+		};
+		AAB1AD01304B9708007381E8 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAB1AD00304B9708007381E8 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AAB1ABA2304B9708007381E8 /* Project object */;
+}

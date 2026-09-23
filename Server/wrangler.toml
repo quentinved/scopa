@@ -1,0 +1,33 @@
+# The Scopa ladder: one Worker, one D1 database, no servers to keep up.
+#
+# First deploy:
+#   wrangler d1 create scopa            # paste the database_id it prints below
+#   wrangler d1 execute scopa --remote --file schema.sql
+#   wrangler deploy
+#
+# Then put the Worker's URL in the app (Ladder.baseURL) and it starts posting daily deals.
+name = "scopa-ladder"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+[vars]
+# Only signatures made for this app are accepted.
+BUNDLE_ID = "com.quentinvedrenne.scopa"
+# Signatures older than this are refused, so a captured one cannot be replayed for long.
+MAX_SIGNATURE_AGE_SECONDS = "3600"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "scopa"
+database_id = "e66ea23e-89e2-4849-87a1-c1533f65e70f"
+
+# One object per open table: the code, the host and the sockets. Hibernating, so a room
+# waiting for a friend costs nothing.
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# SQLite-backed, which is the kind the free plan gives.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packages:
+    name: Swift packages
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        working-directory: Packages/Scopa
+        run: swift test
+
+  server:
+    name: Worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test
+        working-directory: Server
+        run: npm test
+
+  app:
+    name: iOS app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      # A generic destination needs no named simulator, so this does not break when the
+      # runner image changes its device list. Signing is off: a fork has no certificates.
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project Scopa.xcodeproj \
+            -scheme Scopa \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
