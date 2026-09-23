@@ -42,8 +42,13 @@ struct ToastBar: View {
             if let toast = toaster.current { card(toast) }
         }
         .animation(.spring(duration: 0.4, bounce: 0.25), value: toaster.current)
-        .sensoryFeedback(trigger: toaster.current) { _, new in new == nil ? nil : .success }
-        .sound(trigger: toaster.current) { _, new in new == nil ? nil : .notice }
+        // Typed out: Xcode 26 gives up inferring these optionals inside the modifier chain.
+        .sensoryFeedback(trigger: toaster.current) { (_, new: Toast?) -> SensoryFeedback? in
+            new == nil ? nil : .success
+        }
+        .sound(trigger: toaster.current) { (_, new: Toast?) -> Sound? in
+            new == nil ? nil : .notice
+        }
     }
 
     private func card(_ toast: Toast) -> some View {
