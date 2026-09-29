@@ -44,6 +44,7 @@ struct SettingsSheet: View {
                     lookGroup
                     gameCenterGroup
                     helpGroup
+                    if Ladder.isOn { FriendCodePanel(book: store.albumBook, purse: purse) }
                     CoupDeBalai(ads: ads, store: store)
                 }
                 .padding(.horizontal, 20)

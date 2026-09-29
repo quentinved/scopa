@@ -130,6 +130,28 @@ wrangler dev        # runs the Worker on localhost with a local D1
   denari live on the phone; this is the tick that stops a second phone paying them again.
 - `GET /v1/health`
 
+### Friend codes
+
+A code each friend of the house hands out, worth a gift to whoever types it into Settings: a
+pack left waiting in the album, denari, or both, set per code. A player uses one code in their
+life, whoever's it was, so the count behind a code is how many people that friend brought.
+Signed, because that one-per-player rule is the whole point of the count.
+
+- `POST /v1/codes/redeem` — `{code, identity}`. Case, spaces and accents are forgiven.
+  Returns `{owner, pack, denari, fresh}`; `fresh` is false when the player had already used
+  this same code, and the app pays only when it is true. `404` for no such code, `409 {owner}`
+  when the player already used somebody else's.
+
+The codes live in D1 rather than here, so the friends' names stay out of the repository:
+
+```sh
+wrangler d1 execute scopa --remote --file migrations/008-friend-codes.sql   # once
+../Tools/friend-codes.sh add ROMANE Romane          # worth a reliquia pack
+../Tools/friend-codes.sh add HUGO Hugo 1000         # worth 1000 denari
+../Tools/friend-codes.sh                            # how many used each code
+../Tools/friend-codes.sh who ROMANE                 # who, and when
+```
+
 ### Tables
 
 A table two friends meet at, kept here rather than by Game Center. One Durable Object per
