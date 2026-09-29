@@ -7,6 +7,230 @@
     " " : {
       "shouldTranslate" : false
     },
+    "%lld denari are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld denari sono nel tuo borsellino."
+          }
+        }
+      }
+    },
+    "A %@ pack is waiting in the album" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet %@ vous attend dans l'album"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto %@ ti aspetta nell'album"
+          }
+        }
+      }
+    },
+    "A %@ pack is waiting in the album, and %lld denari are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet %1$@ vous attend dans l'album, et %2$lld deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto %1$@ ti aspetta nell'album, e %2$lld denari sono nel tuo borsellino."
+          }
+        }
+      }
+    },
+    "A friend's code" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code d'un ami"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il codice di un amico"
+          }
+        }
+      }
+    },
+    "Code" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice"
+          }
+        }
+      }
+    },
+    "Did a friend bring you to the table? Enter their code and the house sends you a gift. One code per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un ami vous a fait venir à la table ? Entrez son code et la maison vous offre un cadeau. Un code par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un amico ti ha portato al tavolo? Inserisci il suo codice e la casa ti fa un regalo. Un codice per giocatore."
+          }
+        }
+      }
+    },
+    "Grazie!" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie!"
+          }
+        }
+      }
+    },
+    "Grazie, %@!" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie, %@ !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie, %@!"
+          }
+        }
+      }
+    },
+    "No code by that name." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun code à ce nom."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun codice con questo nome."
+          }
+        }
+      }
+    },
+    "Sign in to Game Center first, so your code counts once." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez-vous d'abord à Game Center, pour que votre code ne compte qu'une fois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi prima a Game Center, così il tuo codice conta una volta sola."
+          }
+        }
+      }
+    },
+    "The code could not be checked. Try again in a moment." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code n'a pas pu être vérifié. Réessayez dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile verificare il codice. Riprova tra un momento."
+          }
+        }
+      }
+    },
+    "Use" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa"
+          }
+        }
+      }
+    },
+    "Your friend's code is used. There is one per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code de votre ami est utilisé. Il n'y en a qu'un par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il codice del tuo amico è stato usato. Ce n'è uno per giocatore."
+          }
+        }
+      }
+    },
+    "Your friend's gift could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le cadeau de votre ami n'a pas pu être enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile salvare il regalo del tuo amico."
+          }
+        }
+      }
+    },
     "·" : {
       "shouldTranslate" : false
     },

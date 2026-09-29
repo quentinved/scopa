@@ -290,6 +290,18 @@ final class PurseStore {
         }
     }
 
+    /// A friend's code paid in denari. One key for every code, since a player uses one in
+    /// their life; the Worker holds them to that, and this stops a retry paying twice.
+    func awardFriendCode(_ amount: Denari) async {
+        guard amount.isCredit else { return }
+        do {
+            _ = try await wallet.grant(amount, note: "friend", key: "friend")
+            purse = try await wallet.purse()
+        } catch {
+            problem = "Your friend's gift could not be saved."
+        }
+    }
+
     /// Denari for an opt-in ad. The caller's key is what makes it safe to retry: the shop
     /// keys on which watch it was, the end of a game on the game.
     func earnFromAd(_ amount: Denari, key: String) async {

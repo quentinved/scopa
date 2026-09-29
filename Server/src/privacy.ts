@@ -4,9 +4,9 @@
 /// The same three languages the app and the listing speak. Every claim here is a claim
 /// about the code: keep it true.
 
-const UPDATED = "23 September 2026";
-const MISE_A_JOUR = "23 septembre 2026";
-const AGGIORNATO = "23 settembre 2026";
+const UPDATED = "30 September 2026";
+const MISE_A_JOUR = "30 septembre 2026";
+const AGGIORNATO = "30 settembre 2026";
 const CONTACT = "contact@quentinvedrenne.com";
 
 export function privacyPage(): Response {
@@ -100,6 +100,12 @@ seulement si vous figurez dans la leur.</p>
 <p>Désactivez <em>Voir quand des amis jouent</em> dans les réglages de l'app : les signaux
 s'arrêtent et le serveur efface aussitôt votre présence et votre liste. Sinon, vous
 disparaissez de la liste de vos amis moins de trois minutes après avoir quitté l'app.</p>
+
+<h2>Codes d'amis</h2>
+<p>Si vous entrez le code d'un ami dans les réglages de l'app, il est envoyé à notre serveur
+avec votre identifiant Game Center. Le serveur conserve le code utilisé, votre alias Game
+Center et la date, pour qu'un code ne serve qu'une fois par joueur et pour compter combien de
+joueurs chaque code a fait venir. Ces données ne sont partagées avec personne.</p>
 
 <h2>Le classement</h2>
 <p>Si vous êtes connecté à Game Center et que vous jouez la donne du jour, le défi de la
@@ -216,6 +222,12 @@ giocano loro. Sei mostrato solo agli amici presenti nel tuo elenco, e solo se tu
 <p>Disattiva <em>Avvisami quando gli amici giocano</em> nelle impostazioni dell'app: i segnali si
 fermano e il server cancella subito la tua riga e il tuo elenco. Altrimenti sparisci dall'elenco
 dei tuoi amici meno di tre minuti dopo aver chiuso l'app.</p>
+
+<h2>Codici amico</h2>
+<p>Se inserisci il codice di un amico nelle impostazioni dell'app, viene inviato al nostro
+server insieme al tuo identificativo Game Center. Il server conserva il codice usato, il tuo
+alias Game Center e la data, perché ogni codice valga una volta per giocatore e per contare
+quanti giocatori ha portato ogni codice. Questi dati non sono condivisi con nessuno.</p>
 
 <h2>La classifica</h2>
 <p>Se hai fatto l'accesso a Game Center e giochi la smazzata del giorno, la sfida della
@@ -334,6 +346,12 @@ shown only to friends on your own list, and only if you are on theirs.</p>
 <p>Turn off <em>Say when friends are playing</em> in the app's settings: the check-ins stop and the
 server deletes your row and your list at once. Otherwise you drop off your friends' lists less
 than three minutes after leaving the app.</p>
+
+<h2>Friend codes</h2>
+<p>If you enter a friend's code in the app's settings, it is sent to our server with your Game
+Center identifier. The server keeps which code you used, your Game Center alias and when, so
+that a code works once per player and so we can count how many players each code brought.
+It is not shared with anyone.</p>
 
 <h2>The ladder</h2>
 <p>If you are signed in to Game Center and play today's deal, the weekly challenge or a

@@ -11,6 +11,7 @@ import { invitePage, siteAssociation } from "./invite.ts";
 import { cursor, invalidLedger, invalidProfile, LedgerPost, MAX_LEDGER_PAGE } from "./profile.ts";
 import { isCode, makeCode, normaliseCode, Room } from "./room.ts";
 import { BEAT_SECONDS, fingerprint, friendSet, invalidFriends, WINDOW_SECONDS } from "./presence.ts";
+import { FriendCodeRow, giftOf, normaliseFriendCode } from "./friendcodes.ts";
 
 export { Room };
 
@@ -61,6 +62,7 @@ const routes: Route[] = [
   { method: "GET", path: /^\/v1\/online$/, handle: ({ env }) => getOnline(env) },
   { method: "POST", path: /^\/v1\/presence$/, handle: ({ request, env }) => postPresence(request, env) },
   { method: "POST", path: /^\/v1\/presence\/leave$/, handle: ({ request, env }) => leavePresence(request, env) },
+  { method: "POST", path: /^\/v1\/codes\/redeem$/, handle: ({ request, env }) => redeemFriendCode(request, env) },
   { method: "GET", path: /^\/v1\/health$/, handle: () => json({ ok: true }) },
   // Tables are not signed: they work for players who never signed in to Game Center.
   { method: "POST", path: /^\/v1\/rooms$/, handle: ({ request, url, env }) => openRoom(request, url, env) },
@@ -207,6 +209,32 @@ async function leavePresence(request: Request, env: Env): Promise<Response> {
     env.DB.prepare(`DELETE FROM presence WHERE player_id = ?1`).bind(playerID),
   ]);
   return json({ ok: true });
+}
+
+// MARK: - Friend codes
+
+/// A player's one friend code. `fresh` is true only the first time, which is the only time
+/// the app pays; the same code again answers `fresh: false`, and somebody else's is a 409
+/// naming whose they used. A lost reply is therefore a gift lost rather than paid twice.
+async function redeemFriendCode(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as { code?: unknown; identity: Identity };
+  const code = normaliseFriendCode(body.code);
+  if (!code) return json({ error: "bad code" }, 400);
+  await verifyIdentity(body.identity, verifyOptions(env));
+  const playerID = body.identity.gamePlayerID;
+  const row = await env.DB.prepare(`SELECT code, owner, pack, denari FROM friend_codes WHERE code = ?1`)
+    .bind(code).first<FriendCodeRow>();
+  if (!row) return json({ error: "unknown code" }, 404);
+  const used = await env.DB.prepare(
+    `INSERT INTO friend_code_uses (player_id, code, player_name, used_at) VALUES (?1, ?2, ?3, ?4)
+     ON CONFLICT(player_id) DO NOTHING`,
+  ).bind(playerID, code, displayName(body.identity), new Date().toISOString()).run();
+  if (used.meta.changes > 0) return json({ ...giftOf(row), fresh: true });
+  const earlier = await env.DB.prepare(
+    `SELECT c.code, c.owner FROM friend_code_uses u JOIN friend_codes c ON c.code = u.code WHERE u.player_id = ?1`,
+  ).bind(playerID).first<{ code: string; owner: string }>();
+  if (earlier?.code === code) return json({ ...giftOf(row), fresh: false });
+  return json({ error: "already used", owner: earlier?.owner ?? "" }, 409);
 }
 
 // MARK: - Tables
