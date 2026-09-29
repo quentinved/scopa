@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS ratings (
   updated_at TEXT NOT NULL
 );
 
+-- The season's board: this season's players, highest first. See getRankedBoard.
+CREATE INDEX IF NOT EXISTS ratings_by_season ON ratings (season, rating DESC, wins DESC, updated_at ASC);
+
 -- What a player finished a season with, so the app can pay for it. `claimed` is set once
 -- they have been paid, so a second phone cannot pay for it again.
 CREATE TABLE IF NOT EXISTS season_finishes (

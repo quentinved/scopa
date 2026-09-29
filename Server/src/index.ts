@@ -56,6 +56,8 @@ const routes: Route[] = [
   { method: "POST", path: /^\/v1\/ranked\/claim$/, handle: ({ request, env }) => claimSeason(request, env) },
   { method: "POST", path: /^\/v1\/ranked\/house$/, handle: ({ request, env }) => postHouseGame(request, env) },
   { method: "POST", path: /^\/v1\/ranked$/, handle: ({ request, env }) => postRanked(request, env) },
+  { method: "GET", path: /^\/v1\/ranked\/board$/, handle: ({ url, env }) => getRankedBoard(url.searchParams.get("player"), env) },
+  { method: "POST", path: /^\/v1\/ranked\/board\/friends$/, handle: ({ request, env }) => postFriendsBoard(request, env) },
   { method: "GET", path: /^\/v1\/players\/([^/]+)\/rank$/, handle: async ({ env, params: [id] }) => json(await rankOf(decodeURIComponent(id), env)) },
   { method: "POST", path: /^\/v1\/profile\/read$/, handle: ({ request, env }) => readProfile(request, env) },
   { method: "POST", path: /^\/v1\/profile\/write$/, handle: ({ request, env }) => writeProfile(request, env) },
@@ -710,6 +712,65 @@ async function claimSeason(request: Request, env: Env): Promise<Response> {
   await env.DB.prepare(`UPDATE season_finishes SET claimed = 1 WHERE player_id = ?1 AND season = ?2`)
     .bind(body.identity.gamePlayerID, body.season).run();
   return json(await rankOf(body.identity.gamePlayerID, env));
+}
+
+// MARK: The season's board
+
+/// Everyone who has played ranked this season, highest rating first. A row still carrying
+/// last season is left off rather than rolled over here: its owner has not played since the
+/// reset, and the reset leaves them on no games anyway.
+async function getRankedBoard(playerID: string | null, env: Env): Promise<Response> {
+  const season = seasonOf(new Date());
+  const top = await env.DB.prepare(
+    `SELECT r.player_id AS id, p.name, r.rating, r.games, r.wins
+     FROM ratings r JOIN players p ON p.id = r.player_id
+     WHERE r.season = ?1 AND r.games > 0
+     ORDER BY r.rating DESC, r.wins DESC, r.updated_at ASC
+     LIMIT ${LEADERBOARD_SIZE}`,
+  ).bind(season).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
+  const rows = top.results.map((row) => ({ ...row, standing: leagueStanding(row.rating) }));
+  const you = playerID ? await seasonStanding(season, playerID, env) : null;
+  return json({ season, seasonEndsAt: seasonEnd(season), top: rows, you });
+}
+
+/** One player's place this season, by the same ordering the board uses. */
+async function seasonStanding(season: string, playerID: string, env: Env) {
+  const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM ratings WHERE season = ?1 AND games > 0`)
+    .bind(season).first<{ n: number }>();
+  const played = total?.n ?? 0;
+  const mine = await env.DB.prepare(`SELECT rating, wins, games, season, updated_at FROM ratings WHERE player_id = ?1`)
+    .bind(playerID).first<{ rating: number; wins: number; games: number; season: string; updated_at: string }>();
+  if (!mine || mine.season !== season || mine.games === 0) return { season, played, rank: null };
+  const ahead = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM ratings
+     WHERE season = ?1 AND games > 0 AND (rating > ?2 OR (rating = ?2 AND wins > ?3)
+        OR (rating = ?2 AND wins = ?3 AND updated_at < ?4))`,
+  ).bind(season, mine.rating, mine.wins, mine.updated_at).first<{ n: number }>();
+  const rank = (ahead?.n ?? 0) + 1;
+  return { season, played, rank, percentile: Math.round(((played - rank) / Math.max(played - 1, 1)) * 100) };
+}
+
+/// The season's board among one player's friends, with the player on it too. The phone sends
+/// the ids Game Center gave it: the Worker keeps nobody's friend list to read them from, and
+/// any one id's rating can be read from /v1/players already. Unsigned, like the other boards.
+async function postFriendsBoard(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as { player?: unknown; friends?: unknown };
+  const problem = invalidFriends(body.friends) ?? (body.player != null && invalidFriends([body.player]) ? "bad player" : null);
+  if (problem) return json({ error: problem }, 400);
+  const player = (body.player as string | undefined) ?? null;
+  const ids = [...new Set([...(body.friends as string[]), ...(player ? [player] : [])])];
+  const season = seasonOf(new Date());
+  // One bound array rather than one parameter per id: D1 takes a hundred at most.
+  const top = await env.DB.prepare(
+    `SELECT r.player_id AS id, p.name, r.rating, r.games, r.wins
+     FROM ratings r JOIN players p ON p.id = r.player_id
+     WHERE r.season = ?1 AND r.games > 0 AND r.player_id IN (SELECT value FROM json_each(?2))
+     ORDER BY r.rating DESC, r.wins DESC, r.updated_at ASC`,
+  ).bind(season, JSON.stringify(ids)).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
+  const rows = top.results.map((row) => ({ ...row, standing: leagueStanding(row.rating) }));
+  const at = rows.findIndex((row) => row.id === player);
+  const you = player ? { season, played: rows.length, rank: at >= 0 ? at + 1 : null } : null;
+  return json({ season, seasonEndsAt: seasonEnd(season), top: rows, you });
 }
 
 // MARK: - The account
