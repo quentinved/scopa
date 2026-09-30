@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import ScopaCore
 import ScopaRewards
 
@@ -10,6 +11,7 @@ struct TableScreen: View {
 
     @State private var selection = HandSelection()
     @Environment(\.locale) private var locale
+    @Environment(\.requestReview) private var requestReview
     @State private var showsScopa = false
     /// The seven of coins, taken. Never shown at the same time as a sweep: a scopa that
     /// happens to take it keeps the floor.
@@ -32,6 +34,9 @@ struct TableScreen: View {
     @State private var liftedByDrag = false
     /// When the card in hand was last picked up, so only a quick second tap plays it. See `tapHand`.
     @State private var pickedAt: Date?
+    /// When one tap last played a card, so the second half of a double tap made from habit
+    /// is not taken for a tap of its own. See `playsOnFirstTap`.
+    @State private var playedAt: Date?
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var tableFrames = FrameBox()
     /// Where each card in your own hand sits, for the same reason: a card you lay down
@@ -92,6 +97,11 @@ struct TableScreen: View {
     /// The seat the phone is being handed to, on a table shared between people. While it
     /// is set, a curtain hides the cards until that player says the phone is theirs.
     @State private var curtainSeat: Int?
+    /// Where your animal has been sent on the cloth, in the table's space. `nil` is its
+    /// square in the status row. See `RoamingCompanion`.
+    @State private var companionSpot: CGPoint?
+    /// That square, in the same space.
+    @State private var companionHome: CGPoint?
     @Namespace private var reactionGlass
 
     @Environment(\.verticalSizeClass) private var heightClass
@@ -171,6 +181,9 @@ struct TableScreen: View {
         // Your turn, said by the whole screen: a terracotta glow around the edge. The pill
         // says it in words, this says it from across the room.
         .overlay { TurnEdge(isOn: (view?.isMyTurn ?? false) && !gameIsOver) }
+        .overlay { roamingCompanion }
+        // Turned sideways the cloth is somewhere else entirely, so the animal goes home.
+        .onChange(of: stage) { companionSpot = nil }
         // The cards in the air must go inside the named space rather than after it: an
         // overlay hung on the coordinate-space view is that space's sibling, not its child,
         // and every frame it was given would be read against the screen.
@@ -827,12 +840,19 @@ struct TableScreen: View {
             }
             .animation(.spring(duration: 0.4, bounce: 0.25), value: view.scope[side])
         } else {
+            // Three seats across a phone leave each about a hundred points, and a pile in
+            // double figures with a broom beside it cut the names to two letters. At four
+            // the tally gets its own line, from the deal on, so the cloth never drops mid-game.
+            let crowded = view.opponents.count > 2
             VStack(spacing: 6) {
                 overTheirSeat(opponent, in: view, width: 26 * lift)
                 HStack(spacing: 6) {
                     seatBadge(opponent, in: view)
                     seatName(opponent, in: view)
-                    seatTally(ofSide: side, in: view)
+                    if !crowded { seatTally(ofSide: side, in: view) }
+                }
+                if crowded {
+                    HStack(spacing: 6) { seatTally(ofSide: side, in: view) }
                 }
             }
             .animation(.spring(duration: 0.4, bounce: 0.25), value: view.scope[side])
@@ -953,6 +973,20 @@ struct TableScreen: View {
         // shrank to the width of "Table is clear", and the tag over it with it.
         .frame(maxWidth: .infinity)
         .frame(maxHeight: steady ? nil : .infinity)
+        .background { pasture }
+    }
+
+    /// The empty cloth, which sends your animal wherever it is tapped. Behind the cards, so
+    /// a tap on one is still a tap on the card.
+    @ViewBuilder private var pasture: some View {
+        if store.companion != .nessuno {
+            Color.clear
+                .contentShape(.rect)
+                .onTapGesture(coordinateSpace: .named(Self.tableSpace)) { point in
+                    // Its feet where the finger was, not its middle.
+                    companionSpot = CGPoint(x: point.x, y: point.y - Self.companionSize / 2)
+                }
+        }
     }
 
     /// The cards on the table, in one row that never wraps.
@@ -1195,10 +1229,8 @@ struct TableScreen: View {
         HStack(spacing: 8) {
             TurnPill(view: view, name: turnName(view))
             Spacer(minLength: 0)
-            // Whoever you brought with you, in the slack above your own hand. Nothing at
-            // all when nobody was bought.
-            CompanionView(companion: store.companion, size: 34,
-                          mood: companionMood(ofSeat: view.seat, in: view))
+            // Whoever you brought with you lives in the slack above your own hand.
+            companionSquare
             Spacer(minLength: 0)
             sweepTally(view)
             pileButton(view)
@@ -1238,6 +1270,34 @@ struct TableScreen: View {
         .seatAnchor(view.seat, in: Self.tableSpace, into: anchors)
     }
 
+    private static let companionSize: CGFloat = 34
+
+    /// Where your animal sits when it is not out on the cloth. Empty: the animal is drawn
+    /// over it by `roamingCompanion`, and while it is away a tap here calls it back.
+    private var companionSquare: some View {
+        Color.clear
+            .frame(width: Self.companionSize, height: Self.companionSize)
+            .contentShape(.rect)
+            .onTapGesture { companionSpot = nil }
+            .allowsHitTesting(companionSpot != nil)
+            .onGeometryChange(for: CGPoint.self) { proxy in
+                let frame = proxy.frame(in: .named(Self.tableSpace))
+                return CGPoint(x: frame.midX, y: frame.midY)
+            } action: { point in
+                companionHome = point
+            }
+    }
+
+    @ViewBuilder private var roamingCompanion: some View {
+        if let view, let home = companionHome, store.companion != .nessuno {
+            RoamingCompanion(companion: store.companion, size: Self.companionSize,
+                             mood: companionMood(ofSeat: view.seat, in: view),
+                             home: home, spot: companionSpot)
+                // A fresh one on a turn, so nothing hops home from where the cloth used to be.
+                .id(stage)
+        }
+    }
+
     /// What the animal at one seat is doing: watching while that player decides, pleased
     /// when they sweep, asleep otherwise. `CompanionView` times the stirring in between.
     ///
@@ -1264,12 +1324,13 @@ struct TableScreen: View {
             hand: view.hand,
             picked: selection.card,
             marks: Dictionary(counsels.map { ($0.card, $0.standing) }, uniquingKeysWith: { first, _ in first }),
+            playsAtOnce: selection.playsOnTap(in: view, oneTap: store.oneTapPlays),
             isMyTurn: view.isMyTurn,
             stage: stage,
             lift: lift,
             space: Self.tableSpace,
             frames: handFrames,
-            tap: { card in tapHand(card, in: view) },
+            tap: { card, time in tapHand(card, at: time, in: view) },
             pick: { card in pickUpHand(card, in: view) },
             hover: { point in hoverTable(at: point, in: view) },
             drop: { card, point, travel in dropHand(card, at: point, travel: travel, in: view) }
@@ -1282,15 +1343,38 @@ struct TableScreen: View {
     /// First tap picks the card up. A quick second tap plays it when it allows one move
     /// only; a slow one puts it back down. Any second tap used to play it, so a player who
     /// had picked the wrong card had no way to change their mind but the other card.
-    /// VoiceOver's activations are never quick, so there every second tap counts.
-    private func tapHand(_ card: Card, in view: PlayerView) {
-        let quick = voiceOver || pickedAt.map { Date.now.timeIntervalSince($0) < Self.doubleTap } ?? false
-        if quick, selection.tapInHand(card, in: view) == .play {
+    ///
+    /// A quick second tap that cannot play — two ways to take, or the turn not come yet —
+    /// leaves the card up. It was meant as "play", and the card dropping back read as the
+    /// double tap failing. VoiceOver's activations are never quick, so there every second
+    /// tap counts, and one that cannot play puts the card down.
+    ///
+    /// With one tap set to play, the first tap already does what the second would have.
+    /// Whatever it cannot play falls through to all of the above unchanged.
+    private func tapHand(_ card: Card, at time: Date, in view: PlayerView) {
+        if store.oneTapPlays, playsOnFirstTap(card, at: time, in: view) { return }
+        let quick = pickedAt.map { time.timeIntervalSince($0) < Self.doubleTap } ?? false
+        if quick || voiceOver, selection.tapInHand(card, in: view) == .play {
             commit(in: view)
             return
         }
+        if quick, !voiceOver, selection.card == card { return }
         withAnimation(.snappy(duration: 0.22)) { selection.select(card, on: view.table) }
-        pickedAt = selection.card == nil ? nil : .now
+        pickedAt = selection.card == nil ? nil : time
+    }
+
+    /// Plays the card when it has one move only, and says whether the tap is spent. A tap
+    /// quick on the heels of one that played is the rest of a double tap made from habit:
+    /// it is dropped, rather than lifting whichever card slid under the finger or sending
+    /// the same card twice before the table has caught up.
+    private func playsOnFirstTap(_ card: Card, at time: Date, in view: PlayerView) -> Bool {
+        if let playedAt, time.timeIntervalSince(playedAt) < Self.doubleTap { return true }
+        var attempt = selection
+        guard attempt.tapToPlay(card, in: view) == .play else { return false }
+        selection = attempt
+        commit(in: view)
+        playedAt = time
+        return true
     }
 
     private func pickUpHand(_ card: Card, in view: PlayerView) {
@@ -1318,8 +1402,9 @@ struct TableScreen: View {
         guard let target else {
             if hypot(travel.width, travel.height) < Self.wander {
                 // The card this touch picked up is a first tap and stays picked up; one
-                // that was already up is the second tap, which plays it.
-                if !liftedByDrag { tapHand(card, in: view) }
+                // that was already up is the second tap, which plays it. With one tap set
+                // to play, a first tap is a tap like any other.
+                if !liftedByDrag || store.oneTapPlays { tapHand(card, at: .now, in: view) }
             } else if travel.height < -60 {
                 throwToTable(card, in: view)
             }
@@ -1470,7 +1555,7 @@ struct TableScreen: View {
 
     @ViewBuilder private func advice(_ view: PlayerView, counsels: [Coach.Counsel]) -> some View {
         if selection.assist.explains {
-            CoachStrip(say: say(in: view, counsels: counsels), stage: stage)
+            CoachStrip(say: say(in: view, counsels: counsels), stage: stage, oneTap: store.oneTapPlays)
                 .padding(.top, stage.pick(tall: 8, wide: 0))
                 .padding(.bottom, stage.pick(tall: 10, wide: 0))
         } else {
@@ -1563,7 +1648,7 @@ struct TableScreen: View {
         .task(id: store.finishedTally?.gameID) {
             guard let tally = store.finishedTally else { return }
             let paid = await settleDaily(tally)
-            withAnimation(.spring(duration: 0.45, bounce: 0.2)) { earnings = paid }
+            if !paid.isEmpty { withAnimation(.spring(duration: 0.45, bounce: 0.2)) { earnings = paid } }
         }
         .onChange(of: summaryToldIt && !pendingToasts.isEmpty) { _, ready in if ready { deliverToasts() } }
     }
@@ -1604,15 +1689,20 @@ struct TableScreen: View {
             }
         }
         // Paid the moment the summary appears, so the denari are banked by the time anyone
-        // taps away. Safe to run twice, because settling is.
+        // taps away. Safe to run twice, because settling is — but the second run pays
+        // nothing, so it must not wipe the lines the first one put up.
         .task(id: store.finishedTally?.gameID) {
             guard let tally = store.finishedTally else { return }
             if store.isRanked { store.reportRanked(winnerSeat: winner) }
             var paid = await settle(tally, won: winner == view.mySide, players: view.configuration.seatCount)
             paid += await settleChallenge(tally, won: winner == view.mySide)
-            withAnimation(.spring(duration: 0.45, bounce: 0.2)) { earnings = paid }
             Achievements.record(tally, won: winner == view.mySide, streak: store.dailyStreak)
-            recordProgress(tally)
+            paid += await recordProgress(tally)
+            if !paid.isEmpty { withAnimation(.spring(duration: 0.45, bounce: 0.2)) { earnings = paid } }
+            // A win is the moment a rating is kindest, once the payout has landed.
+            guard ReviewPrompt.shouldAsk(after: tally.gameID, won: winner == view.mySide),
+                  (try? await Task.sleep(for: .seconds(2))) != nil else { return }
+            requestReview()
         }
         .onChange(of: summaryToldIt && !pendingToasts.isEmpty) { _, ready in if ready { deliverToasts() } }
     }
@@ -1652,8 +1742,7 @@ struct TableScreen: View {
     private func throwToTable(_ card: Card, in view: PlayerView) {
         guard view.isMyTurn else { return }
         var attempt = selection
-        if attempt.card != card { attempt.select(card, on: view.table) }
-        if attempt.move(in: view) != nil {
+        if attempt.flick(card, in: view) == .play {
             selection = attempt
             commit(in: view)
         } else {
@@ -1794,7 +1883,8 @@ struct TableScreen: View {
     /// The one ad anybody asks for, on the last summary: watch it and the game pays out
     /// again. Only a game that paid something, only once, and never a wager.
     private var doubling: Doubling? {
-        let total = earnings.reduce(Denari.zero) { $0 + $1.value }
+        // A level's reward is not the game's, so an ad does not pay it a second time.
+        let total = earnings.filter { !$0.id.hasPrefix("level.") }.reduce(Denari.zero) { $0 + $1.value }
         guard !doubled, store.stake == nil, total.isCredit, ads.offersReward,
               let gameID = store.finishedTally?.gameID else { return nil }
         return Doubling(amount: total, isWatching: isDoubling) { double(total, gameID: gameID) }
@@ -1809,21 +1899,44 @@ struct TableScreen: View {
         }
         paid += await settleChallenge(tally, won: tally.outcome == .won)
         Achievements.record(tally, won: tally.outcome == .won, streak: store.dailyStreak)
-        recordProgress(tally)
+        paid += await recordProgress(tally)
         return paid
     }
 
     /// The slow progress a finished game makes: experience on the bar, and a game towards
     /// the next pack. Both are shown on the summary; a level or a pack is also news.
-    private func recordProgress(_ tally: RewardTally) {
+    ///
+    /// Returns what the levels reached paid, for the payout on the summary. Every level
+    /// crossed is paid, not only the last, and a milestone among them leaves its pack in the
+    /// album — but only when its denari were fresh, since the ledger is what knows whether
+    /// this level was already reached and paid on the player's other device.
+    private func recordProgress(_ tally: RewardTally) async -> [PayoutLine] {
+        var paid: [PayoutLine] = []
         if let gain = Experience.record(tally) {
             withAnimation(.spring(duration: 0.45, bounce: 0.2)) { gainedExperience = gain }
+            var gifted: PackTier?
+            for number in stride(from: gain.before.number + 1, through: gain.after.number, by: 1) {
+                guard let credited = await purse.awardLevel(number) else { continue }
+                paid.append(PayoutLine(id: "level.\(number)",
+                                       title: String(localized: "Level \(number) reached", locale: locale),
+                                       value: credited))
+                if Level.isMilestone(number) {
+                    store.albumBook.give(Level.milestonePack)
+                    gifted = Level.milestonePack
+                }
+            }
             if gain.levelledUp {
+                let detail = if let gifted {
+                    String(localized: "A \(gifted.title) pack is waiting in the album", locale: locale)
+                } else {
+                    String(localized: "\(gain.after.toGo) XP to level \(gain.after.number + 1)", locale: locale)
+                }
                 pendingToasts.append(Toast(
                     symbol: "star.fill", tint: Palette.gold,
                     title: String(localized: "Level \(gain.after.number) reached", locale: locale),
-                    detail: String(localized: "\(gain.after.toGo) XP to level \(gain.after.number + 1)", locale: locale)))
+                    detail: detail))
             }
+            if gifted != nil { earnedPack = true }
         }
         if store.albumBook.countFinishedGame() {
             earnedPack = true
@@ -1833,6 +1946,7 @@ struct TableScreen: View {
                 detail: String(localized: "Open it in the album", locale: locale)))
         }
         if summaryToldIt { deliverToasts() }
+        return paid
     }
 
     /// Hands the held news to the toaster, a beat after the totals so the headline is read
@@ -1970,7 +2084,7 @@ struct TableScreen: View {
         // The turn pill already names who is playing, so there is nothing to add.
         guard view.isMyTurn else { return " " }
         switch selection.action(in: view) {
-        case .none: return "Tap a card, or swipe it up to play"
+        case .none: return store.oneTapPlays ? "Tap a card to play it" : "Tap a card, or swipe it up to play"
         case .lay:
             return selection.assist.highlightsCaptures ? "Nothing on the table matches it" : "Tap the cards to take, or play it down"
         case .chooseWhatToTake:

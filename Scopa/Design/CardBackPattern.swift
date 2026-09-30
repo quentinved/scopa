@@ -6,6 +6,8 @@ import SwiftUI
 /// come from the deck, so only the ruling changes.
 enum CardBackPattern: String, CaseIterable, Identifiable {
     case lattice, chevron, rosette, weave, stars
+    /// The bay's waves. Never sold: finishing the Napoli album is the only way to it.
+    case golfo
 
     var id: String { rawValue }
 
@@ -22,6 +24,7 @@ enum CardBackPattern: String, CaseIterable, Identifiable {
         case .rosette: String(localized: "Rosette")
         case .weave: String(localized: "Weave")
         case .stars: String(localized: "Stars")
+        case .golfo: String(localized: "Golfo")
         }
     }
 
@@ -32,6 +35,7 @@ enum CardBackPattern: String, CaseIterable, Identifiable {
         case .rosette: "The coin's own flower, repeated"
         case .weave: "Squared off, like linen"
         case .stars: "Small points, scattered even"
+        case .golfo: "The bay's waves, row on row"
         }
     }
 }
@@ -50,6 +54,7 @@ struct BackPattern: Shape {
         case .rosette: rosette(in: rect)
         case .weave: weave(in: rect)
         case .stars: stars(in: rect)
+        case .golfo: golfo(in: rect)
         }
     }
 
@@ -150,6 +155,36 @@ struct BackPattern: Shape {
                 x += step
             }
             y += step
+            row += 1
+        }
+        return path
+    }
+}
+
+extension BackPattern {
+    /// Rows of waves across the bay, each row half a wave along from the one above it, with
+    /// a smaller crest inside every wave so the row reads as water rather than as a hem.
+    fileprivate func golfo(in rect: CGRect) -> Path {
+        var path = Path()
+        let half = step * 0.5
+        var y = rect.minY + half
+        var row = 0
+        while y < rect.maxY + half {
+            var x = rect.minX - (row.isMultiple(of: 2) ? step : half)
+            path.move(to: CGPoint(x: x, y: y))
+            while x < rect.maxX + step {
+                path.addQuadCurve(to: CGPoint(x: x + step, y: y),
+                                  control: CGPoint(x: x + half, y: y - step * 0.8))
+                x += step
+            }
+            x = rect.minX - (row.isMultiple(of: 2) ? step : half)
+            while x < rect.maxX + step {
+                path.move(to: CGPoint(x: x + half * 0.45, y: y))
+                path.addQuadCurve(to: CGPoint(x: x + step - half * 0.45, y: y),
+                                  control: CGPoint(x: x + half, y: y - step * 0.42))
+                x += step
+            }
+            y += step * 0.62
             row += 1
         }
         return path

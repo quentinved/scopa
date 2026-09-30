@@ -46,6 +46,8 @@ struct RoundSummary: View {
     /// The portrait column's height, so the panel is only as tall as its content and
     /// scrolls when that outgrows a smaller phone.
     @State private var columnHeight: CGFloat?
+    /// The landscape details' height, which says when the payout has been laid out.
+    @State private var detailsHeight: CGFloat?
     /// Bumped by a tap, so the pacing restarts from the beat just made.
     @State private var pacing = 0
 
@@ -226,8 +228,10 @@ struct RoundSummary: View {
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
             .frame(maxHeight: columnHeight ?? .infinity)
-            .onChange(of: revealed >= detailStep) { _, done in
-                guard done else { return }
+            // Keyed on the column's height and let settle first: on the beat itself the
+            // payout and the review were still springing in, and there was nothing to scroll.
+            .task(id: revealed >= detailStep ? columnHeight : nil) {
+                guard revealed >= detailStep, await settled() else { return }
                 withAnimation(.easeOut(duration: 0.4)) { proxy.scrollTo("actions", anchor: .bottom) }
             }
         }
@@ -242,19 +246,38 @@ struct RoundSummary: View {
                 Spacer(minLength: 0)
             }
             VStack(spacing: 14) {
-                ScrollView {
-                    VStack(spacing: 14) {
-                        if !contests.isEmpty { rows }
-                        if hasPayout && revealed >= detailStep { payout }
-                        if let glance, revealed >= detailStep { ReviewGlance(summary: glance) }
-                        if revealed >= detailStep { ladder }
-                    }
-                    .animation(.spring(duration: 0.45, bounce: 0.2), value: glance == nil)
-                }
-                .scrollBounceBehavior(.basedOnSize)
+                wideDetails
                 actionArea
             }
         }
+    }
+
+    /// The contests, then what the game paid. Too short a column for both, so once the
+    /// payout is up it is scrolled to: the experience at the top, the coins under it.
+    private var wideDetails: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 14) {
+                    if !contests.isEmpty { rows }
+                    if hasPayout && revealed >= detailStep { payout.id("payout") }
+                    if let glance, revealed >= detailStep { ReviewGlance(summary: glance) }
+                    if revealed >= detailStep { ladder }
+                }
+                .animation(.spring(duration: 0.45, bounce: 0.2), value: glance == nil)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { detailsHeight = $0 }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            // Waits for the payout to be laid out, like the portrait column.
+            .task(id: hasPayout && revealed >= detailStep ? detailsHeight : nil) {
+                guard hasPayout, revealed >= detailStep, await settled() else { return }
+                withAnimation(.easeOut(duration: 0.4)) { proxy.scrollTo("payout", anchor: .top) }
+            }
+        }
+    }
+
+    /// Waits out the spring a new section arrives on. False when the layout moved again first.
+    private func settled() async -> Bool {
+        (try? await Task.sleep(for: .milliseconds(500))) != nil
     }
 
     // MARK: Sections
@@ -390,77 +413,8 @@ struct RoundSummary: View {
 
     private var hasPayout: Bool { !earnings.isEmpty || experience != nil }
 
-    /// What the game paid, itemised on the panel the player is already reading: the
-    /// denari, then the experience, which a wager that lost everything still earns.
     private var payout: some View {
-        VStack(spacing: 9) {
-            // Not `Rule`: that one is mixed for the table ground and vanishes on paper.
-            Rectangle()
-                .fill(Palette.ink.opacity(0.15))
-                .frame(height: 1)
-            if !earnings.isEmpty {
-                payoutTotal
-                ForEach(earnings) { line in payoutLine(line) }
-                if let doubling { doublingButton(doubling) }
-            }
-            if let experience { ExperienceGainRow(gain: experience).padding(.top, earnings.isEmpty ? 0 : 4) }
-        }
-        .animation(.easeInOut(duration: 0.25), value: doubling == nil)
-        .transition(.opacity.combined(with: .move(edge: .bottom)))
-    }
-
-    private var payoutTotal: some View {
-        let total = earnings.reduce(Denari.zero) { $0 + $1.value }
-        return HStack(spacing: 8) {
-            DenariMark(size: 15)
-            Text(total.isCredit ? "Denari earned" : "Denari lost")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Palette.inkSoft)
-            Spacer(minLength: 0)
-            Text(verbatim: total.signed)
-                .font(.system(size: 15, weight: .bold))
-                .monospacedDigit()
-                .foregroundStyle(total.isCredit ? Palette.ink : Palette.terracotta)
-        }
-    }
-
-    private func payoutLine(_ line: PayoutLine) -> some View {
-        HStack(spacing: 10) {
-            Text(line.title)
-                .font(.system(size: 14))
-                .foregroundStyle(Palette.inkSoft)
-            Spacer(minLength: 8)
-            Text(verbatim: line.value.signed)
-                .font(.system(size: 13, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(Palette.inkSoft)
-        }
-    }
-
-    private func doublingButton(_ doubling: Doubling) -> some View {
-        Button(action: doubling.watch) {
-            HStack(spacing: 10) {
-                Image(systemName: "play.rectangle")
-                    .font(.system(size: 15, weight: .semibold))
-                Text("Watch an ad, earn it again")
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer(minLength: 8)
-                if doubling.isWatching {
-                    ProgressView().tint(Palette.terracotta)
-                } else {
-                    DenariLabel(amount: doubling.amount, size: 14, tint: Palette.terracotta, signed: true)
-                }
-            }
-            .foregroundStyle(Palette.terracotta)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Palette.terracotta.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-            .contentShape(.rect(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-        .disabled(doubling.isWatching)
-        .padding(.top, 2)
-        .transition(.opacity)
+        SummaryPayout(earnings: earnings, doubling: doubling, experience: experience)
     }
 
     // MARK: Copy
@@ -485,344 +439,4 @@ struct RoundSummary: View {
             ? String(localized: "Us", locale: locale)
             : String(localized: "Them", locale: locale)
     }
-}
-
-/// The review at a glance on the last summary: accuracy, best moves, lessons, and the one
-/// lesson most worth going back to.
-private struct ReviewGlance: View {
-    let summary: GameReview.Summary
-
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Rectangle()
-                .fill(Palette.ink.opacity(0.15))
-                .frame(height: 1)
-            numbers
-            if let lesson = summary.lessons.first {
-                self.lesson(lesson)
-            } else {
-                Text("Every move was the one to make.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Palette.inkSoft)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .transition(.opacity.combined(with: .move(edge: .bottom)))
-    }
-
-    private var numbers: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(verbatim: "\(summary.accuracy)%")
-                .font(.display(26))
-                .monospacedDigit()
-                .foregroundStyle(Palette.goldSheen)
-            Text("Accuracy")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Palette.inkSoft)
-            Spacer(minLength: 8)
-            Text("\(summary.praiseCount) best")
-                .foregroundStyle(Palette.goldDeep)
-            Text(verbatim: "·").foregroundStyle(Palette.inkSoft)
-            Text("\(summary.lessonCount) lessons")
-                .foregroundStyle(summary.lessonCount > 0 ? Palette.terracotta : Palette.inkSoft)
-        }
-        .font(.system(size: 13, weight: .semibold))
-        .monospacedDigit()
-    }
-
-    private func lesson(_ lesson: MoveReview) -> some View {
-        HStack(spacing: 8) {
-            CardView(card: lesson.move.card, width: 24)
-            Text(lesson.verdict.label)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Palette.terracotta)
-            Text("Better:")
-                .font(.system(size: 13))
-                .foregroundStyle(Palette.inkSoft)
-            CardView(card: lesson.best.card, width: 24)
-            Text(lesson.best.captures.isEmpty
-                 ? String(localized: "laid on the table", locale: locale)
-                 : String(localized: "taking \(lesson.best.captures.rankList)", locale: locale))
-                .font(.system(size: 13))
-                .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Spacer(minLength: 0)
-        }
-    }
-}
-
-/// One category: its name, what each side had, and once decided, who got the point.
-private struct ContestRow: View {
-    let contest: RoundSummary.Contest
-    let tints: [Color]
-    let decided: Bool
-
-    var body: some View {
-        layout {
-            label
-            if !stacked { Spacer(minLength: 8) }
-            HStack(spacing: stacked ? 0 : 10) {
-                ForEach(contest.values.indices, id: \.self) { index in
-                    count(at: index)
-                        .frame(minWidth: 44, alignment: .trailing)
-                        .frame(maxWidth: stacked ? CGFloat.infinity : nil, alignment: stacked ? .center : .trailing)
-                }
-            }
-        }
-        .animation(.spring(duration: 0.4, bounce: 0.3), value: decided)
-    }
-
-    private var label: some View {
-        HStack(spacing: 6) {
-            if contest.sweeps { BroomMark(size: 15) }
-            Text(contest.label)
-                .font(.system(size: 15))
-                .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-            if decided && (contest.isTied || contest.isShared) {
-                Text("Tied")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Palette.inkSoft)
-            }
-        }
-    }
-
-    private func count(at index: Int) -> some View {
-        let won = decided && contest.points[index] > 0
-        let lost = decided && contest.points[index] == 0 && !contest.isTied
-        return HStack(spacing: 5) {
-            Circle()
-                .fill(tints[index])
-                .frame(width: 7, height: 7)
-                .opacity(lost ? 0.4 : 1)
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(verbatim: contest.values[index])
-                    .font(.system(size: 15, weight: won ? .bold : .medium))
-                    .monospacedDigit()
-                    .foregroundStyle(lost ? Palette.inkSoft : Palette.ink)
-                    .fixedSize()
-                if let detail = contest.details?[safe: index], !detail.isEmpty {
-                    Text(verbatim: detail)
-                        .font(.system(size: 10, weight: .medium))
-                        .monospacedDigit()
-                        .foregroundStyle(Palette.inkSoft)
-                        .fixedSize()
-                }
-            }
-            if won { pointChip(contest.points[index]) }
-        }
-    }
-
-    private func pointChip(_ points: Int) -> some View {
-        Text("+\(points)")
-            .font(.system(size: 12, weight: .bold))
-            // Its own size: squeezed beside a two-digit count, "+1" came out as a prime mark.
-            .fixedSize()
-            .foregroundStyle(Palette.cream)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .glassCapsule(tint: Palette.terracotta)
-            .transition(.scale(scale: 0.4).combined(with: .opacity))
-    }
-
-    /// Three or four sides do not fit beside the label, so it takes a line of its own.
-    private var stacked: Bool { contest.values.count > 2 }
-
-    private var layout: AnyLayout {
-        stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6)) : AnyLayout(HStackLayout(spacing: 10))
-    }
-}
-
-/// One side's running total, rolling up a point at a time as the contests are decided.
-private struct ScoreTile: View {
-    let name: String
-    let tint: Color
-    /// Where the side stood before the round.
-    let before: Int
-    /// Where it stands now, counting the points awarded so far.
-    let value: Int
-    /// What the game is played to. Nil on a one-round table.
-    let target: Int?
-    let emphasised: Bool
-    /// Four tiles across a phone: smaller type, tighter padding.
-    let compact: Bool
-
-    /// The number on the tile right now, trailing `value` one tick at a time.
-    @State private var shown: Int?
-
-    private var numberSize: CGFloat { compact ? 34 : 46 }
-    private var gained: Int { (shown ?? before) - before }
-
-    var body: some View {
-        VStack(spacing: compact ? 4 : 6) {
-            Text(name)
-                .font(.system(size: compact ? 12 : 14, weight: emphasised ? .bold : .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(Palette.ink)
-            Text(verbatim: "\(shown ?? before)")
-                .font(.display(numberSize))
-                .monospacedDigit()
-                .contentTransition(.numericText(value: Double(shown ?? before)))
-                .foregroundStyle(Palette.ink)
-            // Held to one chip of height with or without a chip, so the tiles never jump.
-            gainChip.frame(height: 22)
-            if let target { race(to: target) }
-        }
-        .padding(.horizontal, compact ? 8 : 12)
-        .padding(.vertical, compact ? 10 : 14)
-        .frame(maxWidth: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: GlassRadius.control)
-                .fill(tint.opacity(emphasised ? 0.16 : 0.10))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: GlassRadius.control)
-                .strokeBorder(tint.opacity(gained > 0 ? 0.8 : 0.45), lineWidth: 1.5)
-        }
-        .animation(.snappy(duration: 0.22), value: shown)
-        .task(id: value) { await roll() }
-        .sensoryFeedback(trigger: shown) { old, new in old != nil && new != nil ? Haptic.step : nil }
-        .sound(trigger: shown) { old, new in old != nil && new != nil ? .clock : nil }
-    }
-
-    @ViewBuilder private var gainChip: some View {
-        if gained > 0 {
-            Text("+\(gained)")
-                .font(.system(size: 12, weight: .bold))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .foregroundStyle(Palette.cream)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .glassCapsule(tint: Palette.terracotta)
-                .transition(.scale(scale: 0.4).combined(with: .opacity))
-        } else {
-            Color.clear
-        }
-    }
-
-    /// How far along the road to the target the side is.
-    private func race(to target: Int) -> some View {
-        let current = shown ?? before
-        let fraction = min(Double(current) / Double(max(target, 1)), 1)
-        return VStack(spacing: 6) {
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.ink.opacity(0.08))
-                    Capsule()
-                        .fill(tint)
-                        .frame(width: max(geometry.size.width * fraction, current > 0 ? 6 : 0))
-                }
-            }
-            .frame(height: 6)
-            Text(verbatim: "\(target)")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(Palette.inkSoft)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-    }
-
-    /// Counts up to the new total one tick at a time.
-    private func roll() async {
-        let from = shown ?? before
-        guard value > from else { shown = value; return }
-        for next in (from + 1)...value {
-            if next > from + 1 { try? await Task.sleep(for: .milliseconds(170)) }
-            guard !Task.isCancelled else { return }
-            shown = next
-        }
-    }
-}
-
-/// The experience a game earned, and the level bar it moved: filling from where it stood
-/// before, so the player sees how far this one game took them.
-private struct ExperienceGainRow: View {
-    let gain: Experience.Gain
-
-    /// Starts where the bar stood before the game and is let go once the row is up.
-    @State private var filled = false
-
-    /// A new level starts its bar empty, rather than running backwards from the old one.
-    private var startFraction: Double { gain.levelledUp ? 0 : gain.before.fraction }
-
-    var body: some View {
-        VStack(spacing: 7) {
-            HStack(spacing: 8) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Palette.gold)
-                    .frame(width: 15)
-                Text("Experience")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Palette.inkSoft)
-                Spacer(minLength: 0)
-                Text(verbatim: "+\(gain.gained) XP")
-                    .font(.system(size: 15, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(Palette.ink)
-            }
-            HStack(spacing: 10) {
-                Text("Level \(gain.after.number)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(gain.levelledUp ? Palette.goldDeep : Palette.inkSoft)
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Palette.ink.opacity(0.1))
-                        Capsule()
-                            .fill(Palette.goldSheen)
-                            .frame(width: geometry.size.width * (filled ? gain.after.fraction : startFraction))
-                    }
-                }
-                .frame(height: 6)
-                // A level just reached is the news; what the next one costs can wait.
-                Text(gain.levelledUp ? "Level up!" : "\(gain.after.toGo) XP to level \(gain.after.number + 1)")
-                    .font(.system(size: 12, weight: gain.levelledUp ? .bold : .medium))
-                    .monospacedDigit()
-                    .foregroundStyle(gain.levelledUp ? Palette.goldDeep : Palette.inkSoft)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: "+\(gain.gained) XP"))
-        .accessibilityValue(Text("\(gain.after.toGo) XP to level \(gain.after.number + 1)"))
-        .task {
-            try? await Task.sleep(for: .milliseconds(350))
-            withAnimation(.easeOut(duration: 0.9)) { filled = true }
-        }
-    }
-}
-
-/// One line of the end-of-game payout: what it was for, and what it came to.
-struct PayoutLine: Identifiable, Equatable {
-    let id: String
-    let title: String
-    let value: Denari
-
-    init(id: String, title: String, value: Denari) {
-        self.id = id
-        self.title = title
-        self.value = value
-    }
-
-    /// The ledger names an award in English. The panel speaks the interface's language.
-    init(_ award: Award, locale: Locale) {
-        self.init(id: award.earning.rawValue, title: award.line(locale: locale), value: award.value)
-    }
-}
-
-/// The offer on the last summary of a game: an ad, watched to the end, for the game's
-/// earnings a second time.
-struct Doubling {
-    let amount: Denari
-    /// The ad is up or on its way, so the row takes no second tap.
-    let isWatching: Bool
-    let watch: () -> Void
-}
-
-extension Denari {
-    /// "+25", "−200": always with its sign, the way a ledger line reads.
-    var signed: String { isCredit ? "+\(coins)" : coins == 0 ? "0" : "−\(-coins)" }
 }

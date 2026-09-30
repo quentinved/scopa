@@ -36,9 +36,12 @@ struct TableHero: View {
             RoundedRectangle(cornerRadius: GlassRadius.panel, style: .continuous)
                 .strokeBorder(Palette.gold.opacity(0.45), lineWidth: 1)
         }
+        // Struck to fit the corner, as the lobby's pill does: a crown's rays at full reach
+        // ran into the panel's edge and the first card of the fan.
         .overlay(alignment: .topLeading) {
-            SeatBadge(name: name, tint: Palette.seat(0), size: 38, mark: mark, cornice: cornice,
-                      livery: livery)
+            SeatBadge(name: name, tint: Palette.seat(0),
+                      size: SeatBadge.fitted(38, mark: mark, cornice: cornice),
+                      mark: mark, cornice: cornice, livery: livery)
                 .padding(14)
         }
         // Opposite the seat mark, and away from the caption at the bottom.

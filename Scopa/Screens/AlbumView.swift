@@ -20,9 +20,21 @@ struct AlbumView: View {
     /// Buying a pack, opening it, and paying out what it turned up. Shared with the shop,
     /// which sells the other shelf of them.
     @State private var till = PackTill()
+    /// The volume on the page. Nil follows the one being collected, so the pack that
+    /// finishes a volume turns the page to the next.
+    @State private var shown: Volume?
+    /// The card lifted off the page to be looked at, if any.
+    @State private var zoomed: Card?
+    /// Where the slots and the lifted card find each other.
+    @Namespace private var page
 
     private var book: AlbumBook { store.albumBook }
-    private var album: Album { book.album }
+    private var volume: Volume { shown ?? book.openVolume }
+    private var album: Album { book.album(volume) }
+    /// Every volume before this one is full.
+    private var isOpen: Bool { volume.isOpen(given: book.album(_:)) }
+    /// This is the volume packs go into, so it is the page that opens and sells them.
+    private var isCollecting: Bool { volume == book.openVolume }
 
     /// Five to a row: ten across is a thumbnail nobody can read, and five leaves a card
     /// wide enough for a court figure to still be a figure.
@@ -34,24 +46,42 @@ struct AlbumView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                waiting
-                found
-                AlbumPrizes(album: album, name: store.playerName, livery: store.livery)
-                shelf
-                ForEach(Suit.allCases, id: \.self) { suit in
-                    suitSection(suit)
+                VolumeShelf(book: book, shown: volume) { turned in
+                    shown = turned == book.openVolume ? nil : turned
+                }
+                // The pack is wrapped in the backs of the deck it holds.
+                if isCollecting { waiting.environment(\.cardTheme, volume.theme) }
+                if isOpen { found }
+                prizes
+                if isCollecting { shelf }
+                if isOpen {
+                    ForEach(Suit.allCases, id: \.self) { suit in
+                        suitSection(suit)
+                    }
+                    // Printed in the volume's own deck, whatever the table is dressed in.
+                    .environment(\.cardTheme, volume.theme)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
         }
+        .defaultScrollAnchor(DebugLaunch.showsAlbumEnd ? .bottom : .top)
         .softScrollEdge(.top)
         .background(TableGround())
-        .navigationTitle("The album")
+        .overlay { zoom }
+        // The bar clears while a card is up, so the dimmed page is all there is behind it.
+        .navigationTitle(zoomed == nil ? Text("The album") : Text(verbatim: ""))
         .navigationBarTitleDisplayMode(.inline)
-        // Arriving here is being told: the red dot on the lobby has done its job.
+        .navigationBarBackButtonHidden(zoomed != nil)
+        .interactiveDismissDisabled(zoomed != nil)
+        .sensoryFeedback(Haptic.pick, trigger: zoomed)
+        // Arriving here is being told: the red dot on the lobby has done its job. And any
+        // volume full without its prize on the shelf — finished on the other phone, or on a
+        // pack the app never got to pay out — is settled now.
         .task {
             book.markSeen()
+            if let card = DebugLaunch.albumZoom { zoomed = card }
+            for finished in book.finishedVolumes { await purse.award(finished) }
             if DebugLaunch.opensPack {
                 if let tier = DebugLaunch.packTier {
                     till.show(book.openBought(tier, owned: purse.purse.owned), purse: purse)
@@ -153,6 +183,16 @@ struct AlbumView: View {
         .frame(maxWidth: .infinity)
     }
 
+    // MARK: What it pays
+
+    @ViewBuilder private var prizes: some View {
+        if volume == .riviera {
+            AlbumPrizes(album: album, name: store.playerName, livery: store.livery)
+        } else {
+            VolumePrize(volume: volume, album: album, isOpen: isOpen)
+        }
+    }
+
     // MARK: The shelf
 
     /// The packs made of cards, bought rather than played for, dearest last. The shop
@@ -206,15 +246,28 @@ struct AlbumView: View {
         }
     }
 
-    /// One place on the page: the card if it has been found, and the shape of it if not.
+    /// One place on the page. Tapping it lifts the card off the page to be looked at, a gap
+    /// as much as a card: what a gap is waiting for is worth a closer look too.
+    private func slot(for card: Card) -> some View {
+        Button { zoomed = card } label: { cell(for: card) }
+            .buttonStyle(.plain)
+            // Lifted, the slot is empty: the card up in the middle is this one.
+            .opacity(zoomed == card ? 0 : 1)
+            .accessibilityLabel(Text("\(card.rank.italianName) of \(Text(card.suit.name))"))
+            .accessibilityValue(album.has(card)
+                                ? Text("Found", comment: "A card that is in the album")
+                                : Text("Missing", comment: "A card that is not in the album yet"))
+    }
+
+    /// The card if it has been found, and the shape of it if not.
     ///
     /// Anything above a numeral wears a hairline of its rarity, found or missing, so the
     /// thirteen cards worth chasing are visible as a shape on the page before anything has
     /// been read.
-    @ViewBuilder private func slot(for card: Card) -> some View {
+    private func cell(for card: Card) -> some View {
         let spares = album.spares(of: card)
         let rarity = card.rarity
-        ZStack(alignment: .bottomTrailing) {
+        return ZStack(alignment: .bottomTrailing) {
             Group {
                 if album.has(card) {
                     CardView(card: card, width: 58)
@@ -229,6 +282,7 @@ struct AlbumView: View {
                                       lineWidth: rarity == .settebello ? 2 : 1.4)
                 }
             }
+            .matchedGeometryEffect(id: AlbumSpot.slot(card), in: page)
             if spares > 0 {
                 Text(verbatim: "×\(spares + 1)")
                     .font(.system(size: 10, weight: .bold))
@@ -240,19 +294,28 @@ struct AlbumView: View {
                     .offset(x: 4, y: 4)
             }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: card.description))
-        .accessibilityValue(album.has(card)
-                            ? Text("Found", comment: "A card that is in the album")
-                            : Text("Missing", comment: "A card that is not in the album yet"))
+    }
+
+    // MARK: A card up close
+
+    @ViewBuilder private var zoom: some View {
+        if let zoomed {
+            AlbumCardZoom(card: zoomed, volume: volume, album: album, page: page) {
+                self.zoomed = nil
+            }
+            .environment(\.cardTheme, volume.theme)
+        }
     }
 }
 
 /// The gap a card goes in: its own outline, and the faintest ghost of the card itself, so
 /// a page of gaps still reads as a deck rather than as a grid of empty boxes.
-private struct MissingCard: View {
+struct MissingCard: View {
     let card: Card
     let width: CGFloat
+    /// How much of the card shows through. Faint on the page; a shade more up close, where
+    /// the ghost is the whole picture.
+    var ghost: Double = 0.13
 
     /// The cloth under it, so the glass is tinted with the table's own shadow.
     @Environment(\.tableFelt) private var felt
@@ -262,7 +325,7 @@ private struct MissingCard: View {
             .fill(felt.shade(0.35))
             .overlay {
                 CardView(card: card, width: width)
-                    .opacity(0.13)
+                    .opacity(ghost)
                     .grayscale(1)
                     .clipShape(RoundedRectangle(cornerRadius: width * 0.12))
             }

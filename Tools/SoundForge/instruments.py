@@ -113,6 +113,26 @@ def bell(freq: float, duration: float, level: float = 1.0, strike: float = 0.5) 
     return level * tone
 
 
+def handbell(freq: float, duration: float, level: float = 1.0) -> np.ndarray:
+    """A handbell: nearly harmonic, with the twelfth sitting over the fundamental and two
+    strikes of the same note a hair apart, so it shimmers rather than tolls.
+
+    `bell` is a bar, and its partials disagree with each other the way a church bell's
+    do; this is the sweet one. The celebrations are built on it.
+    """
+    n = dsp.seconds(duration)
+    t = np.arange(n) / SR
+    tone = np.zeros(n)
+    for ratio, weight, decay in ((1.0, 1.0, 1.0), (1.0015, 0.6, 0.9), (2.0, 0.1, 0.45),
+                                 (3.0, 0.42, 0.5), (4.18, 0.08, 0.22), (5.9, 0.07, 0.14)):
+        if freq * ratio > SR * 0.45:
+            continue
+        tone += weight * np.sin(2.0 * np.pi * freq * ratio * t) * dsp.pluck(n, 0.0015, duration * decay)
+    tone += 0.12 * dsp.highpass(np.random.default_rng(int(freq) + 1).uniform(-1, 1, n), 6000.0) \
+        * dsp.pluck(n, 0.0004, 0.008)
+    return level * tone / 1.6
+
+
 # MARK: Air
 
 
@@ -176,6 +196,30 @@ def rim(rng: np.random.Generator, level: float = 1.0) -> np.ndarray:
     return level * (click + wood)
 
 
+def clap(rng: np.random.Generator, level: float = 1.0) -> np.ndarray:
+    """One pair of hands. A clap is the palms meeting in more than one place, so it is
+    three quick bursts and then the one that rings, not a single click.
+    """
+    n = dsp.seconds(0.2)
+    burst = np.zeros(n)
+    at = 0.0
+    for i in range(4):
+        last = i == 3
+        grain = rng.uniform(-1, 1, n) * dsp.pluck(n, 0.0004, 0.05 if last else 0.008)
+        dsp.place(burst, grain * (1.0 if last else 0.7), at)
+        at += rng.uniform(0.006, 0.010)
+    body = dsp.bandpass(burst, rng.uniform(1050.0, 1450.0), 1.3)
+    return level * (body + 0.3 * dsp.highpass(burst, 3000.0))
+
+
+def palmas(rng: np.random.Generator, hands: int = 4, level: float = 1.0) -> np.ndarray:
+    """A few people clapping together, never quite at once: the room joining in."""
+    out = dsp.silence(0.26)
+    for _ in range(hands):
+        dsp.place(out, clap(rng, level=rng.uniform(0.6, 1.0)), rng.uniform(0.0, 0.028))
+    return level * out / np.sqrt(hands)
+
+
 def tom(low: float, high: float, duration: float = 0.4, level: float = 1.0) -> np.ndarray:
     """A drum falling in pitch as it decays."""
     n = dsp.seconds(duration)
@@ -229,3 +273,49 @@ def sweepnoise(rng: np.random.Generator, duration: float, start: float, end: flo
     grain = rng.uniform(-1, 1, n) * dsp.swell(n, duration * 0.3, duration * 0.15, duration * 0.55)
     blend = np.linspace(0.0, 1.0, n) ** 1.4
     return level * ((1.0 - blend) * dsp.bandpass(grain, start, 0.7) + blend * dsp.bandpass(grain, end, 0.7))
+
+
+# MARK: Fireworks
+#
+# Kept bright and short on purpose. A firework on a phone speaker is all whistle and
+# glitter: the bang is the only part that can frighten anybody, so it is a pop.
+
+
+def whistle(rng: np.random.Generator, duration: float, start: float, end: float,
+            level: float = 1.0) -> np.ndarray:
+    """A rocket going up: a tone that climbs, with its own breath around it."""
+    n = dsp.seconds(duration)
+    t = np.arange(n) / SR
+    glide = start * (end / start) ** (t / duration)
+    glide *= 1.0 + 0.012 * np.sin(2.0 * np.pi * 11.0 * t)
+    env = dsp.swell(n, duration * 0.25, duration * 0.55, duration * 0.2)
+    tone = np.sin(2.0 * np.pi * np.cumsum(glide) / SR)
+    air = dsp.bandpass(rng.uniform(-1, 1, n), (start + end) / 2.0, 0.9)
+    return level * env * (0.55 * tone + 0.5 * air)
+
+
+def pop(rng: np.random.Generator, level: float = 1.0) -> np.ndarray:
+    """A shell opening: a snap with hardly any body under it."""
+    n = dsp.seconds(0.25)
+    t = np.arange(n) / SR
+    snap = dsp.highpass(rng.uniform(-1, 1, n), 700.0) * dsp.pluck(n, 0.0003, 0.05)
+    body = 0.35 * np.sin(2.0 * np.pi * 190.0 * t) * dsp.pluck(n, 0.001, 0.06)
+    return level * (snap + body)
+
+
+def crackle(rng: np.random.Generator, duration: float, sparks: int = 70,
+            level: float = 1.0) -> np.ndarray:
+    """The glitter after a shell opens: tiny bright ticks, thick at first and thinning,
+    each a little lower as the sparks fall. Returned stereo, since it is all over the sky.
+    """
+    out = np.zeros((2, dsp.seconds(duration)))
+    for i in range(sparks):
+        at = duration * 0.85 * rng.uniform(0.0, 1.0) ** 1.8
+        m = dsp.seconds(0.03)
+        grain = rng.uniform(-1, 1, m) * dsp.pluck(m, 0.0002, rng.uniform(0.004, 0.012))
+        tick = dsp.bandpass(grain, rng.uniform(3500.0, 7500.0) * (1.0 - 0.3 * at / duration), 2.0)
+        fade = 1.0 - 0.7 * at / duration
+        stereo = dsp.pan(tick * fade * rng.uniform(0.4, 1.0), rng.uniform(-0.9, 0.9))
+        for channel in range(2):
+            dsp.place(out[channel], stereo[channel], at)
+    return level * out

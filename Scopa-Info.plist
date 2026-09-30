@@ -3,13 +3,12 @@
 <plist version="1.0">
 <dict>
 	<key>GADApplicationIdentifier</key>
-	<!-- The app's own id from the AdMob console. Debug builds still request Google's test
-	     units (see Ads/AdUnits.swift); this id is what lets the SDK start at all. -->
 	<string>ca-app-pub-6919645046065024~4625994886</string>
-	<key>NSGKFriendListUsageDescription</key>
-	<string>To pick a partner for a ranked duo from your Game Center friends.</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>Scopa only asks so the ads that keep it free can be relevant rather than random. Say no and the game plays exactly the same.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_scopa._tcp</string>
+		<string>_scopa._udp</string>
+	</array>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -212,15 +211,6 @@
 			<key>SKAdNetworkIdentifier</key>
 			<string>ydx93a7ass.skadnetwork</string>
 		</dict>
-	</array>
-	<!-- Only the system's TLS, for Game Center, AdMob and the ladder. Answered here so App
-	     Store Connect stops asking the export-compliance question on every upload. -->
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_scopa._tcp</string>
-		<string>_scopa._udp</string>
 	</array>
 </dict>
 </plist>

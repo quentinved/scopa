@@ -101,16 +101,13 @@ struct OnlineProgressLine: View {
         }
         .padding(14)
         .glassPanel(radius: GlassRadius.control)
-        .animation(.easeInOut(duration: 0.25), value: search?.isWidened)
     }
 
     private var label: LocalizedStringKey {
         switch status {
         case .signingIn: return "Signing in to Game Center"
         case .opening: return "Opening your table"
-        case .searching:
-            guard let search else { return waiting }
-            return search.isWidened ? "Looking anywhere" : "Looking in your league"
+        case .searching: return waiting
         case .seating: return "Taking your seats"
         }
     }
@@ -120,8 +117,7 @@ struct OnlineProgressLine: View {
 /// has, and one line saying who sits down when it does.
 ///
 /// Drawn from the clock rather than animated from a stored fraction, so a sheet redrawn
-/// mid-search — the stage widening does that — picks the line up where it actually is
-/// instead of starting it over.
+/// mid-search picks the line up where it actually is instead of starting it over.
 private struct SearchCountdown: View {
     let search: TableStore.RankedSearch
 

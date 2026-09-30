@@ -38,7 +38,7 @@ struct AlbumPrizes: View {
 
     // MARK: The whole deck
 
-    /// The top prize, drawn as a trophy in a case: the sovereign badge on a gold bloom, its
+    /// The top prize, drawn as a trophy in a case: the Settebello badge on a gold bloom, its
     /// name in the display face, and how far there is still to go.
     private var crown: some View {
         let done = album.isComplete

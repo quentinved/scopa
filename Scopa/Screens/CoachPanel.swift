@@ -45,6 +45,9 @@ extension CoachSay {
 struct CoachStrip: View {
     let say: CoachSay
     let stage: Stage
+    /// A tap plays the card rather than picking it up, so there is no asking the coach
+    /// about one first. See `TableStore.oneTapPlays`.
+    var oneTap = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -108,7 +111,8 @@ struct CoachStrip: View {
         case .theirMove(let reading, let name):
             return reading.line(by: name) ?? "Your move."
         case .lookFor(.sweep): return "Find the card that clears the table and the point is yours."
-        case .lookFor(.take): return "Tap a card and I will tell you what it would do."
+        case .lookFor(.take):
+            return oneTap ? "The star marks the card I would play." : "Tap a card and I will tell you what it would do."
         case .lookFor(.nothing): return "One of them has to go down. The question is which you can spare."
         case .waiting: return "Watch what the card does when it lands."
         case .quiet: return " "

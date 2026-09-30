@@ -23,6 +23,7 @@ struct AlbumDoor: View {
         Button(action: action) {
             HStack(spacing: 10 * lift) {
                 PackArt(tier: book.nextTier, width: 20 * lift, alive: waiting > 0)
+                    .environment(\.cardTheme, book.openVolume.theme)
                     .opacity(waiting > 0 ? 1 : 0.6)
                     .grayscale(waiting > 0 ? 0 : 0.75)
                     .overlay(alignment: .topTrailing) { badge }
@@ -33,7 +34,10 @@ struct AlbumDoor: View {
                     .font(.system(size: 15 * lift, weight: waiting > 0 ? .bold : .semibold))
                     .foregroundStyle(waiting > 0 ? Palette.ink : Palette.onTable)
                     .lineLimit(1)
-                Text(verbatim: "\(book.album.found)/\(Album.size)")
+                // The volume's number once there is more than one, so 12/40 is not read as
+                // twelve cards short of where the player was yesterday.
+                Text(verbatim: (book.openVolume == .riviera ? "" : "\(book.openVolume.numeral) · ")
+                     + "\(book.openAlbum.found)/\(Album.size)")
                     .font(.system(size: 13 * lift, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(waiting > 0 ? Palette.ink.opacity(0.7) : Palette.onTableSoft)
@@ -54,7 +58,7 @@ struct AlbumDoor: View {
         .accessibilityLabel(Text("The album"))
         .accessibilityValue(waiting > 0
                             ? Text("^[\(waiting) pack](inflect: true) to open")
-                            : Text("\(book.album.found) of \(Album.size) cards found"))
+                            : Text("\(book.openAlbum.found) of \(Album.size) cards found"))
     }
 
     /// The unread count. Red rather than gold: gold is the tile, and a badge the same
@@ -86,7 +90,7 @@ struct AlbumDoor: View {
                 .strokeBorder((waiting > 0 ? Palette.ink : Palette.onTableSoft).opacity(0.25),
                               lineWidth: 3 * lift)
             Circle()
-                .trim(from: 0, to: max(book.album.fraction, 0.02))
+                .trim(from: 0, to: max(book.openAlbum.fraction, 0.02))
                 .stroke(waiting > 0 ? Palette.ink.opacity(0.85) : Palette.goldLight,
                         style: StrokeStyle(lineWidth: 3 * lift, lineCap: .round))
                 .rotationEffect(.degrees(-90))

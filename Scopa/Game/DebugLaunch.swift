@@ -171,6 +171,46 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-season` opens the season's ranked board over the ranked sheet, filled with a sample
+    /// board rather than the Worker's, so it can be judged with nobody on the ladder.
+    static var showsSeasonBoard: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-season")
+        #else
+        false
+        #endif
+    }
+
+    /// `-season friends` opens that board on the friends' tab.
+    static var seasonOpensOnFriends: Bool {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-season").flatMap { arguments[safe: $0 + 1] } == "friends"
+        #else
+        false
+        #endif
+    }
+
+    /// `-road` opens the ranked ladder's road over the ranked sheet: the six leagues, where
+    /// `-rank` stands on them, and what each one gives.
+    static var showsRoad: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-road")
+        #else
+        false
+        #endif
+    }
+
+    /// `-rankUp` plays the new-league ceremony for the league `-rank` plants, whatever has
+    /// been celebrated already, and even under `-noGameCenter`.
+    static var forcesRankUp: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-rankUp")
+        #else
+        false
+        #endif
+    }
+
     /// `-stakes` opens the sheet with the three stakes, so it can be judged with `-denari`.
     static var showsStakes: Bool {
         #if DEBUG
@@ -201,9 +241,21 @@ enum DebugLaunch {
     /// `-shop` opens the shop straight away.
     static var showsShop: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-shop")
+        ProcessInfo.processInfo.arguments.contains("-shop") || promoCode != nil
         #else
         false
+        #endif
+    }
+
+    /// `-promoCode` opens the shop at its foot with the code panel up. `-promoCode row` leaves
+    /// the panel down, to see the row it opens from; `-promoCode paid` shows a sample reward.
+    static var promoCode: String? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-promoCode") else { return nil }
+        return arguments[safe: index + 1].flatMap { $0.hasPrefix("-") ? nil : $0 } ?? ""
+        #else
+        nil
         #endif
     }
 
@@ -367,6 +419,29 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-albumEnd` opens the album scrolled to the bottom, where the last suits are, so a
+    /// volume's own drawing can be looked at without a finger on the glass.
+    static var showsAlbumEnd: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-albumEnd")
+        #else
+        false
+        #endif
+    }
+
+    /// `-albumZoom 7d` lifts that card off the album's page as it opens, named the way
+    /// `Card.description` writes it. Pair it with `-album`.
+    static var albumZoom: Card? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-albumZoom")
+            .flatMap { arguments[safe: $0 + 1] }
+            .flatMap { name in Deck.standard.first { $0.description == name } }
+        #else
+        return nil
+        #endif
+    }
+
     /// `-openPack` opens one the moment the album appears, which is the only way to see
     /// the cards turn over without tapping. `-openPack reliquia` opens a bought tier
     /// instead, and for nothing: the dear packs are the ones worth looking at and nobody
@@ -456,11 +531,13 @@ enum DebugLaunch {
         if let index = arguments.firstIndex(of: "-level"), let total = Int(arguments[safe: index + 1] ?? "") {
             Experience.pretend(total: total)
         }
-        // `-collected 18 -packs 2` plants an album part way through, with packs waiting.
+        // `-collected 18 -packs 2` plants an album part way through, with packs waiting, and
+        // `-volume napoli` has every volume before that one full and the cards in that one.
         let collected = arguments.firstIndex(of: "-collected").flatMap { Int(arguments[safe: $0 + 1] ?? "") }
+        let volume = arguments.firstIndex(of: "-volume").flatMap { Volume(rawValue: arguments[safe: $0 + 1] ?? "") }
         let packs = arguments.firstIndex(of: "-packs").flatMap { Int(arguments[safe: $0 + 1] ?? "") }
-        if collected != nil || packs != nil {
-            store.albumBook.pretend(packs: packs ?? 0, found: collected ?? 0)
+        if collected != nil || packs != nil || volume != nil {
+            store.albumBook.pretend(packs: packs ?? 0, found: collected ?? 0, in: volume ?? .riviera)
         }
         // `-mark coins` wears a mark without earning it first.
         if let index = arguments.firstIndex(of: "-mark"),

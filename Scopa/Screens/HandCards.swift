@@ -8,7 +8,7 @@ final class FrameBox {
     var frames: [Card: CGRect] = [:]
 }
 
-/// The cards in your hand, and the drag that throws one onto the table.
+/// The cards in your hand, and the touch that picks one up or throws it onto the table.
 ///
 /// The drag's own state lives here so a card following the finger re-evaluates this row
 /// and nothing above it. The screen hears about it through the four closures.
@@ -18,6 +18,9 @@ struct HandCards: View {
     let picked: Card?
     /// What the coach thinks of each card, when it is on.
     var marks: [Card: Coach.Standing] = [:]
+    /// The cards a tap would play there and then, so VoiceOver says "play" and not "pick
+    /// up". See `HandSelection.playsOnTap`.
+    var playsAtOnce: Set<Card> = []
     let isMyTurn: Bool
     let stage: Stage
     /// The table's own factor, so the hand is dealt at the size the cloth is drawn at.
@@ -26,7 +29,10 @@ struct HandCards: View {
     let space: String
     /// Where each card is sitting, for the table to fly one out of when it is played.
     let frames: FrameBox
-    let tap: (Card) -> Void
+    /// A card touched and let go without being carried, and when the finger came up. The
+    /// time is the touch's own, so a redraw after the first tap does not make a quick
+    /// second one look slow.
+    let tap: (Card, Date) -> Void
     /// A card picked up by a drag.
     let pick: (Card) -> Void
     /// The finger, with a card under it, somewhere over the table.
@@ -38,6 +44,11 @@ struct HandCards: View {
 
     @State private var dragged: Card?
     @State private var dragOffset: CGSize = .zero
+
+    /// How far a picked card rises out of the hand.
+    private static let rise: CGFloat = 14
+    /// How far the finger moves before the touch is a drag rather than a tap.
+    private static let carry: CGFloat = 12
 
     var body: some View {
         HStack(alignment: .bottom, spacing: stage.pick(tall: 10, wide: 8) * lift) {
@@ -63,7 +74,7 @@ struct HandCards: View {
             }
             .offset(
                 x: dragged == card ? dragOffset.width : 0,
-                y: (dragged == card ? dragOffset.height : 0) + (picked == card ? -14 : 0)
+                y: (dragged == card ? dragOffset.height : 0) + (picked == card ? -Self.rise : 0)
             )
             .rotationEffect(.degrees(dragged == card ? Double(dragOffset.width) * 0.06 : 0))
             .zIndex(dragged == card ? 1 : 0)
@@ -75,15 +86,28 @@ struct HandCards: View {
                 frames.frames[card] = frame
             }
             .transition(dealTransition(index: index))
-            .onTapGesture { tap(card) }
-            .gesture(throwGesture(for: card))
+            // The touch area is the slot and the height a card rises to. A picked card
+            // used to take its touch area up with it, so a second tap on the bottom edge,
+            // where a thumb comes back down, landed below the card and did nothing.
+            .padding(.top, Self.rise)
+            .contentShape(.rect)
+            .padding(.top, -Self.rise)
+            .gesture(touchGesture(for: card))
             // The face is drawn as shapes, so the label is the only thing VoiceOver has to
             // read. It goes on the tappable view rather than on `CardView`, so the element
             // it names is the one that can be played.
             .accessibilityElement()
             .accessibilityAddTraits(.isButton)
+            .accessibilityAction { tap(card, .now) }
             .accessibilityLabel(card.spoken)
-            .accessibilityHint(picked == card ? "Double tap to play it" : "Double tap to pick it up")
+            .accessibilityHint(hint(for: card))
+    }
+
+    /// VoiceOver's double tap is the tap here, so it is what the hint names. A card that is
+    /// up and cannot go — a choice to make, or not your turn — comes back down.
+    private func hint(for card: Card) -> LocalizedStringKey {
+        if playsAtOnce.contains(card) { return "Double tap to play it" }
+        return picked == card ? "Double tap to put it down" : "Double tap to pick it up"
     }
 
     /// Dealt one after another. The delay has to ride on the transition itself: a child's
@@ -99,12 +123,15 @@ struct HandCards: View {
         )
     }
 
-    /// Flick a card towards the table to play it.
-    private func throwGesture(for card: Card) -> some Gesture {
-        DragGesture(minimumDistance: 12, coordinateSpace: .named(space))
+    /// A tap on a card, or a flick towards the table to play it. One gesture for both: a
+    /// tap beside a drag was a second recogniser to lose to it, and a touch that drifted
+    /// past the tap's allowance but short of the drag's start counted as neither.
+    private func touchGesture(for card: Card) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(space))
             .onChanged { value in
                 guard isMyTurn else { return }
                 if dragged != card {
+                    guard hypot(value.translation.width, value.translation.height) >= Self.carry else { return }
                     dragged = card
                     pick(card)
                 }
@@ -112,7 +139,12 @@ struct HandCards: View {
                 hover(value.location)
             }
             .onEnded { value in
-                guard dragged == card else { return }
+                guard dragged == card else {
+                    if hypot(value.translation.width, value.translation.height) < Self.carry {
+                        tap(card, value.time)
+                    }
+                    return
+                }
                 dragged = nil
                 withAnimation(.spring(duration: 0.3, bounce: 0.25)) { dragOffset = .zero }
                 drop(card, value.location, value.translation)

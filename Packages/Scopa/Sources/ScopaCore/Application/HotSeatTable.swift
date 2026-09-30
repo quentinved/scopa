@@ -44,7 +44,7 @@ public actor HotSeatTable {
         self.bots = bots
         self.bot = Bot(strength: strength)
         self.pace = pace
-        self.rng = rng
+        self.rng = Self.botStream(from: rng)
         self.shownSeat = (0..<configuration.seatCount).first { !bots.contains($0) } ?? 0
         (updates, continuation) = UpdateStream.make()
     }
@@ -62,9 +62,18 @@ public actor HotSeatTable {
         self.bots = bots
         self.bot = Bot(strength: strength)
         self.pace = pace
-        self.rng = rng
+        self.rng = Self.botStream(from: rng)
         self.shownSeat = (0..<snapshot.state.configuration.seatCount).first { !bots.contains($0) } ?? 0
         (updates, continuation) = UpdateStream.make()
+    }
+
+    /// The generator is a value, so the session holds a copy of it. The bots draw from a
+    /// stream seeded off it instead: the same copy would have them replay the shuffle's
+    /// numbers, and a searching bot would sample its guesses with the deck's own draws.
+    /// Still derived from the seed, so a daily deal plays the same on every phone.
+    private static func botStream(from rng: any RandomNumberGenerator & Sendable) -> SeededGenerator {
+        var rng = rng
+        return SeededGenerator(seed: rng.next())
     }
 
     public var state: GameState { get async { await session.state } }

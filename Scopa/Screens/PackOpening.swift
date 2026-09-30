@@ -441,14 +441,15 @@ struct PackOpening: View {
     @ViewBuilder private var lines: some View {
         VStack(spacing: 8) {
             ForEach(opening.suits, id: \.self) { suit in
+                // Only the first volume's suits come with a mark; a later one's pay denari.
                 line(suitName(suit) + " " + String(localized: "complete", locale: locale),
                      value: Album.suitBonus, tint: Palette.goldLight,
-                     note: String(localized: "A mark for your seat, in the shop", locale: locale))
+                     note: opening.volume == .riviera
+                        ? String(localized: "A mark for your seat, in the shop", locale: locale) : nil)
             }
             if opening.deck {
                 line(String(localized: "The whole deck", locale: locale),
-                     value: Album.deckBonus, tint: Palette.goldLight,
-                     note: String(localized: "The Settebello mark, for your seat", locale: locale))
+                     value: Album.deckBonus, tint: Palette.goldLight, note: prizeNote)
             }
             if opening.denari.isCredit {
                 line(String(localized: "Into the purse", locale: locale), value: opening.denari,
@@ -478,6 +479,16 @@ struct PackOpening: View {
                 .font(.system(size: 15, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(tint)
+        }
+    }
+
+    /// What finishing this volume handed over besides the denari.
+    private var prizeNote: String {
+        switch opening.volume {
+        case .riviera: String(localized: "The Settebello mark, for your seat", locale: locale)
+        case .napoli: String(localized: "The Golfo card back, and this deck to play with", locale: locale)
+        case .pergamena: String(localized: "The Sigillo flourish, and this deck to play with", locale: locale)
+        case .notturna: String(localized: "Civetta joins your table, and this deck to play with", locale: locale)
         }
     }
 

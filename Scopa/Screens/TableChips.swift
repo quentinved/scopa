@@ -65,6 +65,9 @@ struct SweepTally: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .foregroundStyle(Palette.goldLight)
+                // A count is never the part that gives way: squeezed, "11" broke over two
+                // lines and a lone digit was clipped to nothing.
+                .fixedSize()
         }
         .animation(.spring(duration: 0.35, bounce: 0.3), value: count)
         .transition(.scale.combined(with: .opacity))
@@ -92,6 +95,7 @@ struct PileCount: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .foregroundStyle(tint)
+                .fixedSize()
         }
         .animation(.spring(duration: 0.35, bounce: 0.3), value: count)
     }

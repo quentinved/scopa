@@ -99,7 +99,7 @@ struct LeaderboardView: View {
             }
             // The Worker sends fifty rows. A reader below that gets their own line.
             if let you = board.you, let rank = you.rank, rank > board.top.count {
-                YourPlace(standing: you)
+                YourPlace(rank: rank, percentile: you.percentile)
                     .padding(.top, 6)
             }
             footnote(board)
@@ -221,21 +221,24 @@ private struct LadderRow: View {
     }
 }
 
-/// The reader's own place, for a player on the ladder but below the top fifty.
-private struct YourPlace: View {
-    let standing: Ladder.Standing
+/// The reader's own place, for a player on a board but below the top fifty. The season's
+/// board says "Where you stand": its places are still moving.
+struct YourPlace: View {
+    var title: LocalizedStringKey = "Where you came"
+    let rank: Int
+    let percentile: Int?
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(verbatim: "\(standing.rank ?? 0)")
+            Text(verbatim: "\(rank)")
                 .font(.display(24))
                 .monospacedDigit()
                 .foregroundStyle(Palette.goldLight)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Where you came")
+                Text(title)
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Palette.onTable)
-                if let percentile = standing.percentile {
+                if let percentile {
                     Text("Ahead of \(percentile)% of the room")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(Palette.onTableSoft)
@@ -249,8 +252,8 @@ private struct YourPlace: View {
     }
 }
 
-private extension View {
-    /// The row panel, lit when the row is the reader's own.
+extension View {
+    /// A board's row panel, lit when the row is the reader's own.
     func ladderPanel(isYou: Bool) -> some View {
         padding(.horizontal, 12)
             .padding(.vertical, 10)

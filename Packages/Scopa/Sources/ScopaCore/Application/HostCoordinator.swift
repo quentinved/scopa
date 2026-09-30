@@ -179,7 +179,9 @@ public actor HostCoordinator {
                                                   ties: lobby.ties)
         else { throw HostError.cannotStart }
         advertising?.stopAdvertising()
-        let session = GameSession(configuration: config, rng: rng)
+        // A stream of its own per game: a copy of `rng` would deal a rematch the same cards,
+        // and hand the bots the very numbers that shuffled the deck.
+        let session = GameSession(configuration: config, rng: SeededGenerator(seed: rng.next()))
         self.session = session
         await broadcast(events: session.startRound())
         await coverAbsentSeats()

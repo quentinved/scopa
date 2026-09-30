@@ -183,7 +183,7 @@ struct LobbyView: View {
         }
         if DebugLaunch.showsFriends { showsFriends = true }
         if DebugLaunch.showsStakes { showsWager = true }
-        if DebugLaunch.showsOnlineSheet { showsOnline = true }
+        if DebugLaunch.showsOnlineSheet || DebugLaunch.showsSeasonBoard { showsOnline = true }
         if DebugLaunch.showsRankedSearch {
             showsOnline = true
             #if DEBUG
@@ -411,15 +411,16 @@ struct LobbyView: View {
     /// It was four doors of equal weight, two by two, each with its own sentence — on top of
     /// the goals, the album and the ladder, a lobby of a dozen things to tap and no telling
     /// which one was the game. The quick game is the door most people want most evenings,
-    /// so it takes the width; ranked, the denari tables and friends share one row as three
-    /// small doors, a mark and a name each. A saved game still takes the width above it all.
+    /// so it takes the width; ranked, the denari tables and friends share one row as small
+    /// doors, a mark and a name each (the denari tables only while `offersWagers` is on). A
+    /// saved game still takes the width above it all.
     private var doors: some View {
         VStack(spacing: 10 * lift) {
             if let saved = store.savedGame { resumeDoor(saved) }
             quickDoor
             HStack(spacing: 10 * lift) {
                 rankedDoor
-                denariDoor
+                if Self.offersWagers { denariDoor }
                 friendsDoor
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -456,7 +457,7 @@ struct LobbyView: View {
     /// The door with a league behind it wears the medal, the edge of its own grade, and what
     /// the next game up the ladder costs.
     private var rankedDoor: some View {
-        ModeDoor(title: "Ranked", league: rankedLeague, compact: true) {
+        ModeDoor(title: "Ranked", league: rankedLeague, compact: true, grade: rankedGrade) {
             if let league = rankedLeague {
                 LeagueMedal(league: league, size: 30 * lift)
             } else {
@@ -468,6 +469,12 @@ struct LobbyView: View {
             showsOnline = true
         }
     }
+
+    /// Off: staking denari on a game is simulated gambling in App Store terms, and Apple
+    /// reviews that only from an organisation account, which this app is not published
+    /// under (rejected under 2.3.6, September 2026). The tables stay in the code; turning
+    /// them back on also means answering `gamblingSimulated` in Tools/StoreMetadata again.
+    static let offersWagers = false
 
     private var denariDoor: some View {
         ModeDoor(title: "For denari", compact: true) {
@@ -545,6 +552,12 @@ struct LobbyView: View {
     private var rankedLeague: Int? {
         guard let rank = store.rank, rank.games > 0 else { return nil }
         return rank.standing.league
+    }
+
+    /// "Gold II" under the door's name, on the same terms as the medal.
+    private var rankedGrade: String? {
+        guard rankedLeague != nil else { return nil }
+        return store.rank?.standing.leagueTitle(locale: locale)
     }
 
 

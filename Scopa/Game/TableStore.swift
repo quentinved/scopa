@@ -110,6 +110,12 @@ final class TableStore {
         didSet { UserDefaults.standard.set(assist.rawValue, forKey: Self.assistKey) }
     }
 
+    /// A tap plays a card that has one move only, rather than picking it up for a second.
+    /// Off until asked for, so nobody's double tap starts playing cards it never used to.
+    var oneTapPlays: Bool {
+        didSet { UserDefaults.standard.set(oneTapPlays, forKey: Self.oneTapKey) }
+    }
+
     /// How hard the bots play at the tables this phone sets up. Today's deal and a wager
     /// ignore it and use `Self.contestLevel`, so everybody plays the same opponent.
     var botLevel: BotLevel {
@@ -282,6 +288,7 @@ final class TableStore {
     private(set) var rank: Ladder.RankAnswer? {
         didSet {
             if let rank, let data = try? JSONEncoder().encode(rank) { UserDefaults.standard.set(data, forKey: Self.rankKey) }
+            LadderPrizes.remember(rank)
         }
     }
     /// What the last ranked game did, for the summary. Nil until the ladder answers.
@@ -334,6 +341,7 @@ final class TableStore {
 
     private static let nameKey = "playerName"
     private static let assistKey = "assistLevel"
+    private static let oneTapKey = "oneTapPlays"
     private static let botLevelKey = "botLevel"
     private static let quickTableKey = "quickTable"
     private static let rankedSoloKey = "rankedSolo"
@@ -387,8 +395,6 @@ final class TableStore {
         let startedAt: Date
         /// How long the whole search runs before the house takes the chair.
         let length: TimeInterval
-        /// True once your own league has been given up on and anybody will do.
-        var isWidened = false
     }
 
     private(set) var rankedSearch: RankedSearch?
@@ -403,6 +409,7 @@ final class TableStore {
     init(playerName: String? = nil, assist: AssistLevel? = nil) {
         self.playerName = playerName ?? UserDefaults.standard.string(forKey: Self.nameKey) ?? Self.defaultName
         self.assist = assist ?? Self.stored(Self.assistKey, or: .default)
+        self.oneTapPlays = UserDefaults.standard.bool(forKey: Self.oneTapKey)
         self.botLevel = Self.stored(Self.botLevelKey, or: .default)
         self.quickTable = Self.stored(Self.quickTableKey, or: .default)
         self.rankedSolo = Self.stored(Self.rankedSoloKey, or: .default)
@@ -437,6 +444,7 @@ final class TableStore {
     func readStoredAgain() {
         playerName = UserDefaults.standard.string(forKey: Self.nameKey) ?? Self.defaultName
         assist = Self.stored(Self.assistKey, or: .default)
+        oneTapPlays = UserDefaults.standard.bool(forKey: Self.oneTapKey)
         botLevel = Self.stored(Self.botLevelKey, or: .default)
         quickTable = Self.stored(Self.quickTableKey, or: .default)
         rankedSolo = Self.stored(Self.rankedSoloKey, or: .default)
@@ -1222,15 +1230,14 @@ final class TableStore {
 
     // MARK: Ranked
 
-    /// How long a ranked search runs in total, your own league first and then anyone, before
-    /// the house sits down instead. Short on purpose: the wait is the worst part of ranked,
-    /// and the house in the chair is a game rather than an apology.
-    static let rankedSearchTime: TimeInterval = 8
+    /// How long a ranked search runs before the house sits down instead. It was eight
+    /// seconds, which is about what Game Center takes to pair two phones that are both
+    /// searching, so two friends who tapped a moment apart each got the house.
+    static let rankedSearchTime: TimeInterval = 30
 
-    /// A ranked table played alone: one real opponent, searched for in your own league first
-    /// and anywhere after that. `rankedSolo` says whether that is the whole table or whether
-    /// the house sits behind each of you. Nobody found at all seats the house rather than
-    /// turning the player away.
+    /// A ranked table played alone: one real opponent, whatever their league. `rankedSolo`
+    /// says whether that is the whole table or whether the house sits behind each of you.
+    /// Nobody found at all seats the house rather than turning the player away.
     func playRanked() {
         let format = rankedSolo
         reset()
@@ -1267,25 +1274,21 @@ final class TableStore {
         }
     }
 
-    /// Your own league for the first third of the search time, then anybody.
+    /// One queue per format, open to every league.
     ///
-    /// A budget per stage rather than one shared: sharing meant the first stage always spent
-    /// the lot, so two people searching in different leagues never met and both got the house.
+    /// The search used to try your own league's queue first and widen after a third of the
+    /// time. Each stage was a separate queue, so two phones only met if they were in the same
+    /// one at the same moment, and a phone whose league had not loaded yet searched as Bronze.
+    /// The ladder already prices a gap between leagues (see `Ranking.points`), so nothing is
+    /// lost by pairing across them.
     ///
     /// The format names the pool, so a phone looking for a heads-up game never lands at a
-    /// table of four it did not ask for. The four's pools keep the names they always had.
+    /// table of four it did not ask for. The pool keeps the name the widened stage had, so a
+    /// phone not yet updated still meets one that has.
     private func findRankedMatch(_ format: RankedSolo) async -> GKMatch? {
-        let league = rank?.standing.league ?? 0
-        let stages: [(pool: String, seconds: TimeInterval)] = [
-            ("\u{1}\(format.pool)/league-\(league)", Self.rankedSearchTime / 3),
-            ("\u{1}\(format.pool)/any", Self.rankedSearchTime * 2 / 3),
-        ]
-        var found: GKMatch?
-        for (index, stage) in stages.enumerated() where found == nil {
-            rankedSearch?.isWidened = index > 0
-            found = try? await GameCenter.findMatch(players: 2, pool: stage.pool, within: stage.seconds)
-            guard !Task.isCancelled else { found.map(GameCenter.leave); return nil }
-        }
+        let found = try? await GameCenter.findMatch(players: 2, pool: "\u{1}\(format.pool)/any",
+                                                    within: Self.rankedSearchTime)
+        guard !Task.isCancelled else { found.map(GameCenter.leave); return nil }
         return found
     }
 
@@ -1301,7 +1304,7 @@ final class TableStore {
         onlineStatus = .searching
         // Long enough to sit still for a screenshot, and started far enough back that the line
         // is drawn part-run rather than full.
-        rankedSearch = RankedSearch(startedAt: .now.addingTimeInterval(-24), length: 120, isWidened: true)
+        rankedSearch = RankedSearch(startedAt: .now.addingTimeInterval(-24), length: 120)
     }
 
     /// Sits down at a ranked table against the house, as ranked does once the search time is
@@ -1416,6 +1419,40 @@ final class TableStore {
     func ladderBoard(day: String) async -> Ladder.Board? {
         guard Ladder.isOn else { return nil }
         return try? await Ladder.board(day: day, gamePlayerID: gameCenterPlayerID)
+    }
+
+    /// The season's ranked board, for the sheet behind the league panel.
+    func seasonBoard() async -> Ladder.SeasonBoard? {
+        #if DEBUG
+        if DebugLaunch.showsSeasonBoard { return .sample }
+        #endif
+        guard Ladder.isOn else { return nil }
+        do {
+            return try await Ladder.seasonBoard(gamePlayerID: gameCenterPlayerID)
+        } catch {
+            Log.table.error("The season's board could not be read: \(String(describing: error), privacy: .public)")
+            return nil
+        }
+    }
+
+    /// The season's board among the reader's Game Center friends. Throws `GameCenterError`
+    /// when the friends cannot be had, which the sheet puts in its own words, and answers nil
+    /// when the ladder does not.
+    ///
+    /// `GameCenter.loadFriends` rather than `loadFriends`: a tab is no place to put Apple's
+    /// sign-in sheet up, so a player who is signed out is told so instead.
+    func friendsSeasonBoard() async throws -> Ladder.SeasonBoard? {
+        #if DEBUG
+        if DebugLaunch.showsSeasonBoard { return .friendsSample }
+        #endif
+        guard Ladder.isOn else { return nil }
+        let friends = try await GameCenter.loadFriends().map(\.gamePlayerID)
+        do {
+            return try await Ladder.friendsSeasonBoard(friends: friends, gamePlayerID: gameCenterPlayerID)
+        } catch {
+            Log.table.error("The friends' season board could not be read: \(String(describing: error), privacy: .public)")
+            return nil
+        }
     }
 
     /// The bare Game Center id, which is what the ladder keys on. Nil on a table without one.

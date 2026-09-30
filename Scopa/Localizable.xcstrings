@@ -7,230 +7,6 @@
     " " : {
       "shouldTranslate" : false
     },
-    "%lld denari are in your purse." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld deniers sont dans votre bourse."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld denari sono nel tuo borsellino."
-          }
-        }
-      }
-    },
-    "A %@ pack is waiting in the album" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un paquet %@ vous attend dans l'album"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un pacchetto %@ ti aspetta nell'album"
-          }
-        }
-      }
-    },
-    "A %@ pack is waiting in the album, and %lld denari are in your purse." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un paquet %1$@ vous attend dans l'album, et %2$lld deniers sont dans votre bourse."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un pacchetto %1$@ ti aspetta nell'album, e %2$lld denari sono nel tuo borsellino."
-          }
-        }
-      }
-    },
-    "A friend's code" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le code d'un ami"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il codice di un amico"
-          }
-        }
-      }
-    },
-    "Code" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Code"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Codice"
-          }
-        }
-      }
-    },
-    "Did a friend bring you to the table? Enter their code and the house sends you a gift. One code per player." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un ami vous a fait venir à la table ? Entrez son code et la maison vous offre un cadeau. Un code par joueur."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un amico ti ha portato al tavolo? Inserisci il suo codice e la casa ti fa un regalo. Un codice per giocatore."
-          }
-        }
-      }
-    },
-    "Grazie!" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grazie !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grazie!"
-          }
-        }
-      }
-    },
-    "Grazie, %@!" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grazie, %@ !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grazie, %@!"
-          }
-        }
-      }
-    },
-    "No code by that name." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun code à ce nom."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nessun codice con questo nome."
-          }
-        }
-      }
-    },
-    "Sign in to Game Center first, so your code counts once." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous d'abord à Game Center, pour que votre code ne compte qu'une fois."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accedi prima a Game Center, così il tuo codice conta una volta sola."
-          }
-        }
-      }
-    },
-    "The code could not be checked. Try again in a moment." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le code n'a pas pu être vérifié. Réessayez dans un instant."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non è stato possibile verificare il codice. Riprova tra un momento."
-          }
-        }
-      }
-    },
-    "Use" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliser"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa"
-          }
-        }
-      }
-    },
-    "Your friend's code is used. There is one per player." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le code de votre ami est utilisé. Il n'y en a qu'un par joueur."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il codice del tuo amico è stato usato. Ce n'è uno per giocatore."
-          }
-        }
-      }
-    },
-    "Your friend's gift could not be saved." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le cadeau de votre ami n'a pas pu être enregistré."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non è stato possibile salvare il regalo del tuo amico."
-          }
-        }
-      }
-    },
     "·" : {
       "shouldTranslate" : false
     },
@@ -311,6 +87,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · sincronizzato %2$@"
+          }
+        }
+      }
+    },
+    "%@ album" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album %@"
+          }
+        }
+      }
+    },
+    "%@ first · a level reward" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ d'abord · une récompense de niveau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima il %@ · un premio di livello"
           }
         }
       }
@@ -874,6 +682,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld denari"
+          }
+        }
+      }
+    },
+    "%lld denari are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld denari sono nel tuo borsellino."
           }
         }
       }
@@ -1469,6 +1293,22 @@
         }
       }
     },
+    "^[%lld player](inflect: true) this season" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld joueur](inflect: true) cette saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld giocatore](inflect: true) questa stagione"
+          }
+        }
+      }
+    },
     "^[%lld player](inflect: true) this week" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1550,6 +1390,22 @@
         }
       }
     },
+    "+%lld for every season you finish here" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld pour chaque saison finie ici"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld per ogni stagione finita qui"
+          }
+        }
+      }
+    },
     "1 point" : {
       "localizations" : {
         "fr" : {
@@ -1594,6 +1450,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30 secondi"
+          }
+        }
+      }
+    },
+    "A %@ pack is waiting in the album" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet %@ vous attend dans l'album"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto %@ ti aspetta nell'album"
+          }
+        }
+      }
+    },
+    "A %@ pack is waiting in the album, and %lld denari are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet %1$@ vous attend dans l'album, et %2$lld deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto %1$@ ti aspetta nell'album, e %2$lld denari sono nel tuo borsellino."
           }
         }
       }
@@ -1726,6 +1614,22 @@
         }
       }
     },
+    "A friend's code" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code d'un ami"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il codice di un amico"
+          }
+        }
+      }
+    },
     "A game of Scopa" : {
       "localizations" : {
         "fr" : {
@@ -1754,6 +1658,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un foglio litografato, a colori pieni"
+          }
+        }
+      }
+    },
+    "A loss against someone of your level. Half that in Bronze and Silver, and %@ against the house." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une défaite contre quelqu'un de votre niveau. Moitié moins en Bronze et en Argent, et %@ contre la maison."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una sconfitta contro qualcuno del tuo livello. La metà in Bronzo e Argento, e %@ contro il banco."
           }
         }
       }
@@ -1937,6 +1857,22 @@
         }
       }
     },
+    "A season lasts a month. When it ends you are paid by the league you finished in, and the divisions start again from the bottom of that league, never below it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une saison dure un mois. À la fin, vous êtes payé selon la ligue où vous l'avez finie, et les divisions repartent du bas de cette ligue, jamais en dessous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una stagione dura un mese. Alla fine vieni pagato secondo la lega in cui l'hai chiusa, e le divisioni ripartono dal fondo di quella lega, mai più in basso."
+          }
+        }
+      }
+    },
     "A task for the week" : {
       "localizations" : {
         "fr" : {
@@ -1949,6 +1885,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un compito della settimana"
+          }
+        }
+      }
+    },
+    "A wax seal, pressed on every scopa" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un sceau de cire, apposé à chaque scopa"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un sigillo di ceralacca, impresso a ogni scopa"
+          }
+        }
+      }
+    },
+    "A win against someone of your level. More against a higher league, less against a lower one." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une victoire contre quelqu'un de votre niveau. Plus contre une ligue au-dessus, moins contre une ligue en dessous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vittoria contro qualcuno del tuo livello. Di più contro una lega superiore, di meno contro una inferiore."
+          }
+        }
+      }
+    },
+    "A win against the house, for the first %lld games of the day." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une victoire contre la maison, pour les %lld premières parties du jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vittoria contro il banco, per le prime %lld partite del giorno."
           }
         }
       }
@@ -2419,6 +2403,22 @@
         }
       }
     },
+    "An owl who wakes when it is your turn" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une chouette qui s'éveille quand c'est votre tour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una civetta che si sveglia quando tocca a te"
+          }
+        }
+      }
+    },
     "an unranked player" : {
       "localizations" : {
         "fr" : {
@@ -2550,6 +2550,22 @@
         }
       }
     },
+    "App icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona"
+          }
+        }
+      }
+    },
     "Ask them by name; no code to send" : {
       "localizations" : {
         "fr" : {
@@ -2610,6 +2626,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Al tavolo"
+          }
+        }
+      }
+    },
+    "Back to the classic icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revenir à l'icône classique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna all'icona classica"
           }
         }
       }
@@ -3002,6 +3034,38 @@
         }
       }
     },
+    "Bronze medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille de bronze"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia di bronzo"
+          }
+        }
+      }
+    },
+    "Bronze, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bronze, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bronzo, in classificata"
+          }
+        }
+      }
+    },
     "Broom" : {
       "localizations" : {
         "fr" : {
@@ -3308,6 +3372,22 @@
         }
       }
     },
+    "Civetta joins your table, and this deck to play with" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Civetta rejoint votre table, et ce jeu pour jouer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Civetta si siede al tuo tavolo, e questo mazzo per giocarci"
+          }
+        }
+      }
+    },
     "Classic" : {
       "localizations" : {
         "fr" : {
@@ -3405,6 +3485,22 @@
         }
       }
     },
+    "Code" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codice"
+          }
+        }
+      }
+    },
     "Code word" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3486,6 +3582,22 @@
         }
       }
     },
+    "Companion" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compagnon"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compagno"
+          }
+        }
+      }
+    },
     "complete" : {
       "localizations" : {
         "fr" : {
@@ -3514,6 +3626,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Completo"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continua"
           }
         }
       }
@@ -4002,6 +4130,54 @@
         }
       }
     },
+    "Diamond icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône Diamant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona Diamante"
+          }
+        }
+      }
+    },
+    "Diamond medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille de diamant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia di diamante"
+          }
+        }
+      }
+    },
+    "Diamond, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diamant, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diamante, in classificata"
+          }
+        }
+      }
+    },
     "Dice" : {
       "localizations" : {
         "fr" : {
@@ -4014,6 +4190,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dado"
+          }
+        }
+      }
+    },
+    "Did a friend bring you to the table? Enter their code and the house sends you a gift. One code per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un ami vous a fait venir à la table ? Entrez son code et la maison vous offre un cadeau. Un code par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un amico ti ha portato al tavolo? Inserisci il suo codice e la casa ti fa un regalo. Un codice per giocatore."
           }
         }
       }
@@ -4162,6 +4354,22 @@
         }
       }
     },
+    "each season" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "par saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "a stagione"
+          }
+        }
+      }
+    },
     "Earned at the table, spent here" : {
       "localizations" : {
         "fr" : {
@@ -4190,22 +4398,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Facile"
-          }
-        }
-      }
-    },
-    "Embers, rising" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des braises qui s'envolent"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Braci che salgono"
           }
         }
       }
@@ -4307,6 +4499,22 @@
         }
       }
     },
+    "Every league below it gives its prizes too, and they are yours." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque ligue en dessous a aussi ses prix, et ils sont à vous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anche ogni lega più in basso ha i suoi premi, e sono tuoi."
+          }
+        }
+      }
+    },
     "Every move" : {
       "localizations" : {
         "fr" : {
@@ -4351,6 +4559,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tutti i compiti della settimana"
+          }
+        }
+      }
+    },
+    "Everyone" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout le monde"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti"
           }
         }
       }
@@ -4629,6 +4853,38 @@
         }
       }
     },
+    "Fireworks over the square" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un feu d'artifice sur la place"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuochi d'artificio sulla piazza"
+          }
+        }
+      }
+    },
+    "Fireworks, bursting" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un feu d'artifice qui éclate"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuochi d'artificio che esplodono"
+          }
+        }
+      }
+    },
     "First game today" : {
       "localizations" : {
         "fr" : {
@@ -4705,6 +4961,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Per denari"
+          }
+        }
+      }
+    },
+    "For each win in a row against real players before it, up to %@." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour chaque victoire d'affilée contre de vrais joueurs avant elle, jusqu'à %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per ogni vittoria di fila contro giocatori reali prima di questa, fino a %@."
           }
         }
       }
@@ -5015,18 +5287,18 @@
         }
       }
     },
-    "Four seats: one opponent near your league, with the house behind each of you." : {
+    "Four seats: one real opponent, with the house behind each of you." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quatre places : un adversaire de votre niveau, et un bot de la maison en équipe avec chacun de vous."
+            "value" : "Quatre places : un vrai adversaire, et un bot de la maison en équipe avec chacun de vous."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quattro posti: un avversario della tua lega, con il banco dietro a ciascuno di voi."
+            "value" : "Quattro posti: un avversario vero, con il banco dietro a ciascuno di voi."
           }
         }
       }
@@ -5080,6 +5352,22 @@
         }
       }
     },
+    "Friend lists are turned off on this device. Screen Time settings can turn them back on." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les listes d'amis sont désactivées sur cet appareil. Vous pouvez les réactiver dans les réglages Temps d'écran."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le liste amici sono disattivate su questo dispositivo. Le impostazioni di Tempo di utilizzo permettono di riattivarle."
+          }
+        }
+      }
+    },
     "Friend lists are turned off on this iPhone." : {
       "localizations" : {
         "fr" : {
@@ -5124,6 +5412,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Amici e bot si alternano su questo"
+          }
+        }
+      }
+    },
+    "From %lld points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dès %lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da %lld punti"
+          }
+        }
+      }
+    },
+    "From %lld points · %lld to go" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dès %1$lld points · encore %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da %1$lld punti · ne mancano %2$lld"
           }
         }
       }
@@ -5302,6 +5622,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Oro"
+          }
+        }
+      }
+    },
+    "Gold icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône Or"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona Oro"
+          }
+        }
+      }
+    },
+    "Gold medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille d'or"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia d'oro"
+          }
+        }
+      }
+    },
+    "Gold, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oro, in classificata"
+          }
+        }
+      }
+    },
+    "Golfo" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Golfe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Golfo"
+          }
+        }
+      }
+    },
+    "Grazie, %@!" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie, %@ !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie, %@!"
+          }
+        }
+      }
+    },
+    "Grazie!" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie!"
           }
         }
       }
@@ -5543,6 +5959,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quanto giocano bene i bot"
+          }
+        }
+      }
+    },
+    "How you climb" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment on monte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come si sale"
           }
         }
       }
@@ -6639,18 +7071,18 @@
         }
       }
     },
-    "Looking anywhere" : {
+    "Locked" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recherche élargie à tous"
+            "value" : "Verrouillé"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cerco ovunque"
+            "value" : "Bloccato"
           }
         }
       }
@@ -6668,6 +7100,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cerco un tavolo…"
+          }
+        }
+      }
+    },
+    "Looking for an opponent" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche d'un adversaire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerco un avversario"
           }
         }
       }
@@ -6721,22 +7169,6 @@
         }
       }
     },
-    "Looking for someone near your league" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recherche d'un joueur de votre niveau"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cerco qualcuno vicino alla tua lega"
-          }
-        }
-      }
-    },
     "Looking for tables nearby. Keep both devices on the same Wi-Fi, or leave Bluetooth on." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6770,22 +7202,6 @@
         }
       }
     },
-    "Looking in your league" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recherche dans votre ligue"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cerco nella tua lega"
-          }
-        }
-      }
-    },
     "Looking…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6815,6 +7231,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Maestro"
+          }
+        }
+      }
+    },
+    "Maestro icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona Maestro"
+          }
+        }
+      }
+    },
+    "Maestro medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia Maestro"
+          }
+        }
+      }
+    },
+    "Maestro, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maestro, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maestro, in classificata"
           }
         }
       }
@@ -7145,6 +7609,22 @@
         }
       }
     },
+    "NEW LEAGUE" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOUVELLE LIGUE"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NUOVA LEGA"
+          }
+        }
+      }
+    },
     "Next" : {
       "localizations" : {
         "fr" : {
@@ -7189,6 +7669,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Senza tempo"
+          }
+        }
+      }
+    },
+    "No code by that name." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun code à ce nom."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun codice con questo nome."
           }
         }
       }
@@ -7254,6 +7750,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se non si trova nessuno in tempo, al suo posto si siede il banco, negli stessi posti. In duo tu e un amico giocate contro due del banco, valutati insieme. Solo i giocatori reali sono valutati, e una lega raggiunta è tua per la stagione. Una partita contro il banco conta dieci volte al giorno; una partita contro qualcuno di reale conta sempre."
+          }
+        }
+      }
+    },
+    "Nobody has played ranked this season yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne n'a encore joué en classé cette saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno ha ancora giocato in classificata questa stagione"
           }
         }
       }
@@ -7367,6 +7879,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ancora nessuno da mostrare — qui compaiono solo gli amici che giocano già a Scopa. Invita lo stesso un amico: Game Center glielo chiederà sul suo telefono."
+          }
+        }
+      }
+    },
+    "None of your friends has played ranked this season" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun de vos amis n'a joué en classé cette saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno dei tuoi amici ha giocato in classificata questa stagione"
           }
         }
       }
@@ -7821,6 +8349,22 @@
         }
       }
     },
+    "ON THE LADDER" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AU CLASSEMENT"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IN CLASSIFICA"
+          }
+        }
+      }
+    },
     "On the table" : {
       "localizations" : {
         "fr" : {
@@ -7854,6 +8398,22 @@
         }
       }
     },
+    "On your home screen" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur votre écran d'accueil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nella schermata Home"
+          }
+        }
+      }
+    },
     "On your seat" : {
       "localizations" : {
         "fr" : {
@@ -7882,6 +8442,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sul tuo posto, e visibile a tutto il tavolo. Gli altri si vincono giocando."
+          }
+        }
+      }
+    },
+    "On your seat, at every table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur votre place, à chaque table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sul tuo posto, a ogni tavolo"
           }
         }
       }
@@ -7999,6 +8575,38 @@
         }
       }
     },
+    "One ranked game puts you on the road, at Bronze. Everything past it is climbed." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une partie classée vous met sur la route, en Bronze. Tout le reste se gravit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una partita classificata ti mette sulla strada, in Bronzo. Tutto il resto si scala."
+          }
+        }
+      }
+    },
+    "One ranked game, and the ladder has you." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une partie classée, et vous voilà au classement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una partita classificata, ed eccoti in classifica."
+          }
+        }
+      }
+    },
     "One ring of gold" : {
       "localizations" : {
         "fr" : {
@@ -8093,6 +8701,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Online · %lld giocatori su %lld"
+          }
+        }
+      }
+    },
+    "Only in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seulement en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo in classificata"
           }
         }
       }
@@ -8253,6 +8877,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apertura del tuo tavolo"
+          }
+        }
+      }
+    },
+    "Opens after %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre après %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si apre dopo %@"
           }
         }
       }
@@ -8543,6 +9183,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Platino"
+          }
+        }
+      }
+    },
+    "Platinum icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône Platine"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona Platino"
+          }
+        }
+      }
+    },
+    "Platinum medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille de platine"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia di platino"
+          }
+        }
+      }
+    },
+    "Platinum, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platine, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platino, in classificata"
           }
         }
       }
@@ -8840,6 +9528,22 @@
         }
       }
     },
+    "Plus %@ · %@ to play with" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et le jeu %@ · %@, pour jouer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E il mazzo %@ · %@, per giocarci"
+          }
+        }
+      }
+    },
     "Points" : {
       "localizations" : {
         "fr" : {
@@ -8852,6 +9556,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Punti"
+          }
+        }
+      }
+    },
+    "Points make a division, three divisions a league. A league once reached is never lost." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Points pour une division, trois divisions pour une ligue. Une ligue atteinte ne se perd jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punti per una divisione, tre divisioni per una lega. Una lega raggiunta non si perde mai."
+          }
+        }
+      }
+    },
+    "Poke her: the head goes all the way over" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez-la : la tête bascule complètement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toccala: la testa si gira tutta"
           }
         }
       }
@@ -9114,6 +9850,38 @@
         }
       }
     },
+    "Reach Silver" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atteignez Argent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raggiungi Argento"
+          }
+        }
+      }
+    },
+    "Reached" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atteinte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raggiunta"
+          }
+        }
+      }
+    },
     "Reactions" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9143,22 +9911,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rilettura della partita…"
-          }
-        }
-      }
-    },
-    "Real people near your league. Or a casual table, for nothing." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De vrais joueurs de votre niveau. Ou une table amicale, sans enjeu."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Persone vere vicine alla tua lega. Oppure un tavolo amichevole, per niente."
           }
         }
       }
@@ -9193,6 +9945,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo persone vere. Le vittorie valgono in base a chi batti, e una lega raggiunta resta tua per la stagione."
+          }
+        }
+      }
+    },
+    "Real people, for the league. Or a casual table, for nothing." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De vrais joueurs, pour la ligue. Ou une table amicale, sans enjeu."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persone vere, per la lega. Oppure un tavolo amichevole, per niente."
           }
         }
       }
@@ -9501,6 +10269,22 @@
         }
       }
     },
+    "Scopa flourish" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effet de scopa"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effetto scopa"
+          }
+        }
+      }
+    },
     "Scopa is not allowed to see your friends. Turn it on in the iPhone's Settings, under Game Center." : {
       "localizations" : {
         "fr" : {
@@ -9581,18 +10365,76 @@
         }
       }
     },
-    "Season ends in %lld days" : {
+    "Sealed in wax" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fin de la saison dans %lld jours"
+            "value" : "Un sceau de cire"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La stagione finisce tra %lld giorni"
+            "value" : "Un sigillo di ceralacca"
+          }
+        }
+      }
+    },
+    "Season ends in %lld days" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Season ends in %lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Season ends in %lld days"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fin de la saison dans %lld jour"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fin de la saison dans %lld jours"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "La stagione finisce tra %lld giorno"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "La stagione finisce tra %lld giorni"
+                }
+              }
+            }
           }
         }
       }
@@ -9629,6 +10471,22 @@
         }
       }
     },
+    "Seasons" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisons"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stagioni"
+          }
+        }
+      }
+    },
     "Seat" : {
       "localizations" : {
         "fr" : {
@@ -9657,6 +10515,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Posto %lld"
+          }
+        }
+      }
+    },
+    "Seat mark" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emblème de place"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segno del posto"
+          }
+        }
+      }
+    },
+    "Seat medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia"
+          }
+        }
+      }
+    },
+    "See the road to Maestro" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir la route jusqu'à Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi la strada fino a Maestro"
           }
         }
       }
@@ -9917,6 +10823,22 @@
         }
       }
     },
+    "Sign in to Game Center first, so your code counts once." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connectez-vous d'abord à Game Center, pour que votre code ne compte qu'une fois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi prima a Game Center, così il tuo codice conta una volta sola."
+          }
+        }
+      }
+    },
     "Sign in to Game Center to play a duo." : {
       "localizations" : {
         "fr" : {
@@ -9984,7 +10906,6 @@
       }
     },
     "Sign in to Game Center to see your friends" : {
-      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -10048,6 +10969,54 @@
         }
       }
     },
+    "Silver icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône Argent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona Argento"
+          }
+        }
+      }
+    },
+    "Silver medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille d'argent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia d'argento"
+          }
+        }
+      }
+    },
+    "Silver, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Argent, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Argento, in classificata"
+          }
+        }
+      }
+    },
     "Sit down" : {
       "localizations" : {
         "fr" : {
@@ -10092,6 +11061,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ci si siede…"
+          }
+        }
+      }
+    },
+    "Six leagues, and what each one gives. Only ranked climbs it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Six ligues, et ce que chacune donne. Seul le classé y fait monter."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei leghe, e cosa dà ognuna. Si sale solo in classificata."
           }
         }
       }
@@ -10177,7 +11162,6 @@
       }
     },
     "Someone missing? They need Scopa too. Add them on Game Center and they show up here when you come back." : {
-      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -11222,6 +12206,38 @@
         }
       }
     },
+    "The bay's waves, on the back of every card" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les vagues de la baie, au dos de chaque carte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le onde del golfo, sul dorso di ogni carta"
+          }
+        }
+      }
+    },
+    "The bay's waves, row on row" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les vagues de la baie, rang après rang"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le onde del golfo, fila dopo fila"
+          }
+        }
+      }
+    },
     "The board is not answering" : {
       "localizations" : {
         "fr" : {
@@ -11282,6 +12298,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il codice"
+          }
+        }
+      }
+    },
+    "The code could not be checked. Try again in a moment." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code n'a pas pu être vérifié. Réessayez dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile verificare il codice. Riprova tra un momento."
           }
         }
       }
@@ -11428,6 +12460,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il mazzo, le prese, la scopa e i punti, in cinque pagine"
+          }
+        }
+      }
+    },
+    "The Golfo card back, and this deck to play with" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le dos Golfe, et ce jeu pour jouer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il dorso Golfo, e questo mazzo per giocarci"
           }
         }
       }
@@ -11917,18 +12965,34 @@
         }
       }
     },
-    "The room goes dark" : {
+    "The road" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La salle s'assombrit"
+            "value" : "La route"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La stanza si fa buia"
+            "value" : "La strada"
+          }
+        }
+      }
+    },
+    "The road, and its prizes" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La route, et ses prix"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La strada, e i suoi premi"
           }
         }
       }
@@ -11996,6 +13060,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le stesse quaranta carte per tutti, una smazzata contro Hugo. Una volta al giorno."
+          }
+        }
+      }
+    },
+    "The season's ladder" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le classement de la saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La classifica della stagione"
           }
         }
       }
@@ -12124,6 +13204,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il sette di denari, alla fine di una mano."
+          }
+        }
+      }
+    },
+    "The Sigillo flourish, and this deck to play with" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'effet Sigillo, et ce jeu pour jouer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'effetto Sigillo, e questo mazzo per giocarci"
           }
         }
       }
@@ -12516,6 +13612,38 @@
         }
       }
     },
+    "This one ends in ^[%lld day](inflect: true)." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celle-ci se termine dans ^[%lld jour](inflect: true)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa finisce tra ^[%lld giorno](inflect: true)."
+          }
+        }
+      }
+    },
+    "This one ends today." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celle-ci se termine aujourd'hui."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa finisce oggi."
+          }
+        }
+      }
+    },
     "This one was asked for, so it pays.\nClose it and the denari are in the purse." : {
       "localizations" : {
         "fr" : {
@@ -12545,6 +13673,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Questo telefono, un codice o Game Center"
+          }
+        }
+      }
+    },
+    "This season" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa stagione"
           }
         }
       }
@@ -13144,6 +14288,38 @@
         }
       }
     },
+    "Use" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa"
+          }
+        }
+      }
+    },
+    "Use it" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'utiliser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usala"
+          }
+        }
+      }
+    },
     "Very clever." : {
       "localizations" : {
         "fr" : {
@@ -13177,7 +14353,6 @@
       }
     },
     "vs" : {
-      "shouldTranslate" : false,
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -13185,7 +14360,8 @@
             "value" : "contre"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "Waiting" : {
       "localizations" : {
@@ -13622,6 +14798,22 @@
         }
       }
     },
+    "What this volume pays" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce que ce volume rapporte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa ti dà questo volume"
+          }
+        }
+      }
+    },
     "What would you like to tell us?" : {
       "localizations" : {
         "fr" : {
@@ -13718,6 +14910,22 @@
         }
       }
     },
+    "Where everyone starts" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Là où tout le monde commence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dove tutti cominciano"
+          }
+        }
+      }
+    },
     "Where today's deal put everyone" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13767,6 +14975,22 @@
         }
       }
     },
+    "Where you stand" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre place"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua posizione"
+          }
+        }
+      }
+    },
     "Which day" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13780,6 +15004,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quale giorno"
+          }
+        }
+      }
+    },
+    "Who has played ranked, highest first." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ceux qui ont joué en classé, du plus haut au plus bas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi ha giocato in classificata, dal più alto in giù."
           }
         }
       }
@@ -14059,6 +15299,22 @@
         }
       }
     },
+    "Worn" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indossata"
+          }
+        }
+      }
+    },
     "Worn until the end of next week" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -14315,6 +15571,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ti mancano %lld denari."
+          }
+        }
+      }
+    },
+    "You are here" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous êtes ici"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei qui"
           }
         }
       }
@@ -14772,6 +16044,38 @@
         }
       }
     },
+    "Your friend's code is used. There is one per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le code de votre ami est utilisé. Il n'y en a qu'un par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il codice del tuo amico è stato usato. Ce n'è uno per giocatore."
+          }
+        }
+      }
+    },
+    "Your friend's gift could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le cadeau de votre ami n'a pas pu être enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile salvare il regalo del tuo amico."
+          }
+        }
+      }
+    },
     "Your friends" : {
       "localizations" : {
         "fr" : {
@@ -14896,6 +16200,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La tua lega resta tua. Le divisioni ricominciano, come per tutti gli altri."
+          }
+        }
+      }
+    },
+    "Your level reward could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre récompense de niveau n'a pas pu être enregistrée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo premio di livello non è stato salvato."
           }
         }
       }
@@ -15173,6 +16493,22 @@
         }
       }
     },
+    "Yours for good. Seasons end, leagues stay." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À vous pour de bon. Les saisons passent, les ligues restent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tua per sempre. Le stagioni finiscono, le leghe restano."
+          }
+        }
+      }
+    },
     "Yours from the start" : {
       "localizations" : {
         "fr" : {
@@ -15201,6 +16537,246 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "È tuo. Mettilo nella bottega."
+          }
+        }
+      }
+    },
+    "Play with one tap" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouer d'un simple toucher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gioca con un tocco"
+          }
+        }
+      }
+    },
+    "A card with only one move is played on the first tap, not the second" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une carte qui n'a qu'un seul coup possible est jouée au premier toucher, pas au second"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una carta con una sola mossa possibile si gioca al primo tocco, non al secondo"
+          }
+        }
+      }
+    },
+    "Tap a card to play it" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez une carte pour la jouer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca una carta per giocarla"
+          }
+        }
+      }
+    },
+    "The star marks the card I would play." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'étoile marque la carte que je jouerais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La stella indica la carta che giocherei."
+          }
+        }
+      }
+    },
+    "Double tap to put it down" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez deux fois pour la reposer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca due volte per rimetterla giù"
+          }
+        }
+      }
+    },
+    "Have a code?" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez un code ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai un codice?"
+          }
+        }
+      }
+    },
+    "From the house, or from the friend who brought you. Each code counts once per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De la maison, ou de l'ami qui vous a fait venir. Chaque code ne compte qu'une fois par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalla casa, o dall'amico che ti ha portato qui. Ogni codice vale una volta per giocatore."
+          }
+        }
+      }
+    },
+    "You have already used this code." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà utilisé ce code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai già usato questo codice."
+          }
+        }
+      }
+    },
+    "This code has expired." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code a expiré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo codice è scaduto."
+          }
+        }
+      }
+    },
+    "This code has run out." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code est épuisé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo codice è esaurito."
+          }
+        }
+      }
+    },
+    "You seem to be offline. Try again once you are connected." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous semblez hors ligne. Réessayez une fois connecté."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sembri offline. Riprova quando sei connesso."
+          }
+        }
+      }
+    },
+    "Your coupon could not be saved. Try the code again." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre coupon n'a pas pu être enregistré. Saisissez le code à nouveau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile salvare il tuo coupon. Inserisci di nuovo il codice."
+          }
+        }
+      }
+    },
+    "You have already used a friend's code. There is one per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà utilisé le code d'un ami. Il n'y en a qu'un par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai già usato il codice di un amico. Ce n'è uno per giocatore."
+          }
+        }
+      }
+    },
+    "Not found yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas encore trouvée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ancora trovata"
+          }
+        }
+      }
+    },
+    "Found %lld times" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvée %lld fois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trovata %lld volte"
           }
         }
       }

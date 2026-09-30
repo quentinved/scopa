@@ -98,7 +98,7 @@ struct SettingsSheet: View {
     private var albumDetail: LocalizedStringKey {
         waiting > 0
             ? "^[\(waiting) pack](inflect: true) waiting to be opened"
-            : "\(store.albumBook.album.found) of \(Album.size) cards found"
+            : "\(store.albumBook.openAlbum.found) of \(Album.size) cards found"
     }
 
     private var markGroup: some View {
@@ -141,6 +141,8 @@ struct SettingsSheet: View {
         SettingsGroup(caption: "At the table",
                       footnote: "Today's deal and the tables with denari on them are always played against the hard bot: everybody there faces the same one.") {
             AssistPicker(assist: $store.assist)
+            Rule()
+            OneTapToggle(isOn: $store.oneTapPlays)
             Rule()
             BotPicker(level: $store.botLevel)
             Rule()
@@ -217,9 +219,31 @@ struct SettingsSheet: View {
                 .fill(Palette.onTableSoft.opacity(0.2))
                 .frame(height: 1)
             levelRow
+            purseRow
         }
         .padding(16)
         .glassPanel(radius: GlassRadius.panel)
+    }
+
+    /// The purse under the level, in the level's hand: what all that playing has put by.
+    /// Held back until the ledger has been read, like the lobby's chip.
+    @ViewBuilder private var purseRow: some View {
+        if purse.isReady {
+            HStack(spacing: 6) {
+                Text("Denari")
+                    .textCase(.uppercase)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .tracking(1.1)
+                    .foregroundStyle(Palette.onTable)
+                Spacer(minLength: 0)
+                DenariMark(size: 14)
+                Text(purse.balance.coins, format: .number)
+                    .font(.system(size: 13, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.onTable)
+            }
+            .accessibilityElement(children: .combine)
+        }
     }
 
     private var name: some View {

@@ -376,6 +376,12 @@ struct SeatBadge: View {
                         .font(.display(size * 0.34))
                         .foregroundStyle(livery.style(seat: tint))
                 }
+        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro:
+            // The ladder's own medal in its own metal, the one mark not drawn in the seat's
+            // colour. Its light is kept inside the circle.
+            LeagueMedal(league: mark.league?.rawValue ?? 0, size: size * 0.74)
+                .frame(width: size, height: size)
+                .clipShape(Circle())
         default:
             Image(systemName: mark.symbol ?? "circle.fill")
                 .font(.system(size: size * 0.42, weight: .bold))

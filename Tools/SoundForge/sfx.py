@@ -83,34 +83,36 @@ def sweep() -> np.ndarray:
 
 
 def scopa() -> np.ndarray:
-    """The table swept clean: the loudest moment in the game.
+    """The table swept clean: the loudest moment in the game, and the happiest.
 
-    The difficulty is that the set already has a brightest sound, and it belongs
-    to the settebello. Going brighter still would only blur the two, so this one
-    is the biggest and the warmest instead — lower, wider, and with the room held
-    open longer behind it.
+    It is the only sound the band plays. The nylon guitar carrying the table music
+    picks up on G and lands on C — the major chord inside the key the music is already
+    in, so it brightens the room without arguing with it — while the table claps on the
+    chord and again after it, and three glockenspiel notes climb over the top.
 
-    It is also the only sound the band plays: the same nylon guitar that is
-    carrying the table music answers with an A minor chord, in the key the music
-    is already in, so a scopa lands as the room reacting rather than as a prize
-    being awarded. The cards leave first, the drum answers underneath, and the
-    chord arrives a beat later, which is the order it happens in.
+    It used to be the same guitar on A minor over a floor tom, in a long room. Played
+    on its own that read as an omen rather than a win, which is not what anybody who
+    has just swept the table wants to hear. Nothing in it now is under 90 Hz, the room
+    closes quickly, and every chord in it is major.
+
+    It stays the warmest of the loud sounds rather than the brightest: the settebello
+    owns brightest, and the glockenspiel here is kept under the guitar for that reason.
     """
-    # Off the house numbering on purpose: this is the seed of the take that was
-    # chosen out of several, and the grain of the noise is part of what was picked.
-    rng = _rng(921)
-    parts = [(0.0, inst.sweepnoise(rng, 0.30, 5200.0, 1300.0, level=0.34))]
-    # More cards than a sweep, and faster: this is the whole table going.
-    for i in range(6):
-        parts.append((i * 0.042, inst.flick(rng, level=0.44 - 0.045 * i, decay=0.05,
-                                            colour=3600.0 - 260.0 * i)))
-    parts.append((0.05, inst.tom(46.0, 128.0, 0.58, level=0.46)))
-    parts.append((0.26, inst.land(rng, level=0.6, weight=1.1)))
-    parts.append((0.10, inst.strum([57, 64, 69, 72, 76], 0.95, level=0.46,
-                                   spread=0.020, rng=rng)))
-    parts.append((0.16, inst.coin(rng, level=0.16, freq=2400.0)))
-    parts.append((0.30, inst.vibes(81, 1.2, level=0.16)))
-    return _finish(parts, 1.75, wet=0.26, decay=1.9, peak=0.88, stereo=True)
+    rng = _rng(924)
+    parts = _cards_leaving(rng, count=6, stride=0.04, colour=3600.0)
+    # The pickup: an upstroke on G, light, a beat before the chord.
+    parts.append((0.06, inst.strum([55, 59, 62, 67], 0.3, level=0.24, spread=0.010,
+                                   down=False, rng=rng), -0.15))
+    # The chord: C major, open, down across all six strings.
+    parts.append((0.20, inst.strum([48, 52, 55, 60, 64, 67], 1.05, level=0.5,
+                                   spread=0.014, rng=rng), -0.12))
+    parts.append((0.20, inst.tom(92.0, 170.0, 0.22, level=0.16), 0.0))
+    parts.append((0.20, inst.palmas(rng, hands=4, level=0.44), 0.2))
+    parts.append((0.47, inst.palmas(rng, hands=4, level=0.3), 0.25))
+    for i, note in enumerate((79, 84, 88)):
+        parts.append((0.27 + i * 0.055, inst.handbell(dsp.midi_hz(note), 1.0, level=0.15 - 0.02 * i),
+                      0.3 + 0.1 * i))
+    return _stage(parts, 1.55, wet=0.18, decay=1.3, peak=0.88)
 
 
 # MARK: Cheers
@@ -118,141 +120,162 @@ def scopa() -> np.ndarray:
 # Four alternatives to `scopa`, bought in the shop and played in its place when you are
 # the one who swept. Each keeps the sweep itself — the cards leaving the cloth — because
 # that part is the move and not a decoration; what changes is what the room does about it.
+#
+# All four are parties. They were once a tolling bell, a minor chord, a thunderstorm and
+# a purse falling on a drum, and a player who had paid for one of them heard it as
+# something going wrong. Everything here is in C major and nothing booms.
 
 
 def cheer_campana() -> np.ndarray:
-    """A church bell over the sweep: the village hears about it.
+    """The bells rung for a wedding: the village hears about it.
 
-    Two bells a fifth apart struck together and a third one late, so it tolls rather
-    than chimes. The bells run long past the cards, which is the whole effect: the
-    table has moved on and the sound is still going.
+    Eight handbells down the scale, the way a tower rings rounds, and then the four of
+    the chord struck together to finish. Short tails, so it peals rather than tolls.
     """
-    rng = _rng(311)
-    parts = [(0.0, inst.sweepnoise(rng, 0.28, 5000.0, 1250.0, level=0.30))]
-    for i in range(5):
-        parts.append((i * 0.042, inst.flick(rng, level=0.40 - 0.05 * i, decay=0.05,
-                                            colour=3400.0 - 250.0 * i)))
-    parts.append((0.04, inst.bell(523.25, 2.6, level=0.52, strike=0.62)))
-    parts.append((0.07, inst.bell(349.23, 2.9, level=0.34, strike=0.5)))
-    parts.append((0.52, inst.bell(659.25, 2.0, level=0.22, strike=0.44)))
-    parts.append((0.24, inst.land(rng, level=0.5, weight=1.0)))
-    return _finish(parts, 2.6, wet=0.32, decay=2.6, peak=0.88, stereo=True)
+    rng = _rng(313)
+    parts = _cards_leaving(rng, count=5, stride=0.042, colour=3400.0)
+    for i, note in enumerate((84, 83, 81, 79, 77, 76, 74, 72)):
+        parts.append((0.05 + i * 0.085, inst.handbell(dsp.midi_hz(note), 1.2, level=0.36 - 0.012 * i),
+                      0.55 if i % 2 else -0.55))
+    for i, note in enumerate((72, 76, 79, 84)):
+        parts.append((0.78 + i * 0.012, inst.handbell(dsp.midi_hz(note), 1.5, level=0.3), -0.3 + 0.2 * i))
+    parts.append((0.78, inst.shaker(rng, level=0.2, decay=0.12), 0.0))
+    return _stage(parts, 2.3, wet=0.22, decay=1.6, peak=0.86)
 
 
 def cheer_festa() -> np.ndarray:
-    """The village band: an accordion chord and a tambourine.
+    """The village band strikes up: an accordion, a bass, a tambourine and the table
+    clapping along.
 
-    The one cheer that is unambiguously other people. A minor chord, like everything
-    else in the set, but voiced high and wide so it lands as a party rather than as
-    a warning.
+    A run up into the chord, the chord on the beat with the bass under it, an answer on
+    the off-beat, and the chord again, held, with the tambourine rolling under it:
+    ta-da-da-daa.
     """
-    rng = _rng(477)
-    parts = [(0.0, inst.sweepnoise(rng, 0.26, 5400.0, 1400.0, level=0.32))]
-    for i in range(5):
-        parts.append((i * 0.038, inst.flick(rng, level=0.40 - 0.05 * i, decay=0.05,
-                                            colour=3600.0 - 260.0 * i)))
-    parts.append((0.06, inst.accordion([69, 76, 81, 84], 1.1, level=0.44)))
-    parts.append((0.05, inst.tom(52.0, 132.0, 0.5, level=0.38)))
-    # The tambourine: four shakes on the beat, thinning out.
-    for i in range(4):
-        parts.append((0.06 + i * 0.115, inst.shaker(rng, level=0.34 - 0.06 * i, decay=0.06)))
-    parts.append((0.20, inst.rim(rng, level=0.3)))
-    parts.append((0.30, inst.vibes(88, 1.0, level=0.14)))
-    return _finish(parts, 1.8, wet=0.24, decay=1.7, peak=0.88, stereo=True)
+    rng = _rng(479)
+    parts = _cards_leaving(rng, count=5, stride=0.038, colour=3600.0)
+    for i, note in enumerate((67, 69, 71)):
+        parts.append((0.04 + i * 0.055, _reed([note], 0.07, level=0.3), 0.1))
+    beats = ((0.22, [60, 64, 67, 72], 48, 0.2), (0.46, [64, 67, 72], 43, 0.16),
+             (0.70, [64, 67, 72, 76], 48, 0.95))
+    for at, chord, root, hold in beats:
+        parts.append((at, _reed(chord, hold, level=0.4), 0.1))
+        parts.append((at, inst.upright(root, max(hold, 0.3), level=0.34, rng=rng), 0.0))
+        parts.append((at, inst.palmas(rng, hands=3, level=0.3), 0.3))
+        parts.append((at, inst.shaker(rng, level=0.3, decay=0.06), -0.35))
+    # The roll under the held chord.
+    for i in range(10):
+        parts.append((0.76 + i * 0.034, inst.shaker(rng, level=0.2 - 0.014 * i, decay=0.04), -0.35))
+    parts.append((0.74, inst.handbell(dsp.midi_hz(88), 1.0, level=0.1), 0.4))
+    # Peaked lower than the others: a held reed is loud for its peak, and at 0.88 it
+    # came out several decibels over every other cheer.
+    return _stage(parts, 1.9, wet=0.18, decay=1.4, peak=0.74)
 
 
-def cheer_tuono() -> np.ndarray:
-    """Thunder: the lowest and darkest thing the game can say.
+def cheer_fuochi() -> np.ndarray:
+    """Fireworks over the square: three rockets up, and the sky full of glitter.
 
-    No metal in it at all, which makes it the only sound in the set that is purely
-    weather. The cards are nearly buried in it on purpose.
+    Each rocket whistles up, opens with a pop, and hangs glitter across the stereo field
+    as it comes down; a glockenspiel chord lights up with the first, which is what turns
+    three bangs into a celebration. The pops are kept small — a shell's boom is the one
+    part of a firework that frightens anybody, and on a phone speaker it would be the
+    only part left.
 
-    It is a roll rather than a crack. A crack on its own was what this used to be, and
-    it left the dearest cheer but one emptier after half a second than the cheapest one
-    is after a full one: a strike, and then a room with nothing in it. Thunder is the
-    part after the strike. So the first sweep is answered by three more, each lower and
-    quieter and further away, and the last of them is still going when the banner
-    leaves — which is the only thing distance ever sounds like.
+    This used to be thunder, and was sold as the room going dark. It is still the same
+    shelf and price, stored under its old name.
     """
-    rng = _rng(823)
-    parts = [(0.0, inst.sweepnoise(rng, 0.9, 900.0, 90.0, level=0.46))]
-    for i in range(4):
-        parts.append((i * 0.045, inst.flick(rng, level=0.30 - 0.05 * i, decay=0.055,
-                                            colour=2400.0 - 200.0 * i)))
-    parts.append((0.02, inst.tom(64.0, 150.0, 0.7, level=0.52)))
-    parts.append((0.30, inst.tom(38.0, 92.0, 1.1, level=0.46)))
-    parts.append((0.36, inst.land(rng, level=0.5, weight=1.4)))
-    # The roll: the same sweep three more times, each further off. They overlap on
-    # purpose. A sweep swells over the first third of its span, so laid end to end they
-    # would leave a hole between every pair and read as three thunders rather than one
-    # going away; each starts while the one before it is still at its loudest.
-    #
-    # None of them runs as low as it could, either. The rumble that reads as enormous on
-    # a desk is under the range a phone speaker reproduces at all, and a roll nobody can
-    # hear is a gap with a number on it.
-    for at, span, start, end, level in ((0.50, 0.95, 720.0, 120.0, 0.46),
-                                        (1.00, 1.05, 540.0, 100.0, 0.36),
-                                        (1.55, 1.20, 400.0, 86.0, 0.25)):
-        parts.append((at, inst.sweepnoise(rng, span, start, end, level=level)))
-    # A shoulder under the roll, kept below it. A drum louder than the weather it is
-    # holding up is a second bang, and the roll then reads as two thunders again.
-    parts.append((0.88, inst.tom(46.0, 98.0, 1.3, level=0.13)))
-    return _finish(parts, 3.1, wet=0.36, decay=3.0, peak=0.86, stereo=True)
+    rng = _rng(827)
+    parts = _cards_leaving(rng, count=5, stride=0.04, colour=3400.0)
+    rockets = ((0.04, 0.42, 650.0, 1900.0, -0.45, 0.9), (0.30, 0.38, 720.0, 2250.0, 0.5, 0.9),
+               (0.58, 0.36, 820.0, 2500.0, 0.0, 1.3))
+    for at, rise, start, end, position, glitter in rockets:
+        parts.append((at, inst.whistle(rng, rise, start, end, level=0.16), position))
+        burst = at + rise
+        parts.append((burst, inst.pop(rng, level=0.34), position))
+        parts.append((burst + 0.02, inst.crackle(rng, glitter, sparks=90, level=0.26), 0.0))
+    for i, note in enumerate((84, 88, 91)):
+        parts.append((0.47 + i * 0.03, inst.handbell(dsp.midi_hz(note), 1.4, level=0.12), -0.3 + 0.3 * i))
+    return _stage(parts, 2.3, wet=0.2, decay=1.8, peak=0.86)
 
 
 def cheer_oro() -> np.ndarray:
-    """A purse emptied across the table, and the table not the same afterwards.
+    """The jackpot: a purse emptied across the table, and the room lit up by it.
 
-    This is the top of the shelf and it used to be the shortest thing on it: eleven
-    coins over two seconds, which is a handful of change and not a fortune. It is the
-    longest sound the game makes now, and the only cheer with a struck bell under it.
+    It opens on a till's ka-ching, a coin and two bells, and a glockenspiel runs up the
+    chord while twenty coins pour out on a closing stride, each struck a little lower
+    than the last so the pile goes away from you. A second, thinner spill follows for
+    the ones that carried on across the cloth, and the whole chord rings out at the end
+    with the last three coins still spinning down into it — everybody else has stopped
+    clapping and there is still gold moving, which is what makes it the dear one.
 
-    Four things rather than one. The purse goes over — a thud and a bell, struck
-    together, which is the gold arriving as one object before it becomes coins. Then
-    the cascade, twenty coins on a closing stride so the fall tips rather than ticks.
-    Then the spill: a second, lower fall for the ones that carried on across the cloth.
-    Then three stragglers, spinning down one at a time into a bell still ringing, which
-    is the part that makes it expensive — everybody else has stopped clapping and
-    there is still gold moving.
+    It used to open on a drum and a low bell and end on one bell alone; the drum and the
+    lonely bell are gone.
     """
-    rng = _rng(1049)
-    parts = [(0.0, inst.sweepnoise(rng, 0.26, 6500.0, 1500.0, level=0.30))]
-    # The sweep itself, at the front of every cheer.
-    for i in range(5):
-        parts.append((i * 0.036, inst.flick(rng, level=0.38 - 0.05 * i, decay=0.05,
-                                            colour=4000.0 - 280.0 * i)))
-    # The purse going over.
-    parts.append((0.02, inst.tom(58.0, 152.0, 0.5, level=0.40)))
-    parts.append((0.03, inst.bell(1046.50, 3.1, level=0.30, strike=0.7)))
-    parts.append((0.06, inst.bell(698.46, 3.5, level=0.22, strike=0.42)))
+    rng = _rng(1051)
+    parts = _cards_leaving(rng, count=5, stride=0.036, colour=4000.0)
+    parts.append((0.02, inst.coin(rng, level=0.34, freq=3100.0), 0.0))
+    parts.append((0.02, inst.handbell(dsp.midi_hz(88), 1.2, level=0.26), 0.1))
+    parts.append((0.09, inst.handbell(dsp.midi_hz(96), 1.4, level=0.22), -0.1))
 
-    # The cascade. The stride closes, so the fall tips over rather than keeping time,
-    # and each coin is struck a little lower than the last: the pile goes away from you.
     at = 0.05
     for i in range(20):
-        parts.append((at, inst.coin(rng, level=0.40 - 0.013 * i, freq=2900.0 - 82.0 * i)))
+        parts.append((at, inst.coin(rng, level=0.36 - 0.012 * i, freq=2900.0 - 70.0 * i),
+                      float(np.sin(i * 1.7)) * 0.6))
         at += 0.062 * (0.94 ** i)
-    parts.append((0.52, inst.land(rng, level=0.46, weight=1.1)))
+    for i, note in enumerate((72, 76, 79, 84, 88)):
+        parts.append((0.14 + i * 0.075, inst.handbell(dsp.midi_hz(note), 1.3, level=0.2), -0.4 + 0.2 * i))
+    parts.append((0.52, inst.land(rng, level=0.34, weight=0.6), 0.0))
 
-    # The spill: what went on across the cloth after the purse was empty, lower and
-    # thinner, and far enough behind the cascade to read as a consequence of it.
     at = 0.86
     for i in range(9):
-        parts.append((at, inst.coin(rng, level=0.24 - 0.018 * i, freq=2050.0 - 95.0 * i)))
+        parts.append((at, inst.coin(rng, level=0.22 - 0.016 * i, freq=2300.0 - 80.0 * i),
+                      float(np.cos(i * 2.3)) * 0.7))
         at += 0.085 * (0.92 ** i)
-    parts.append((0.94, inst.tom(44.0, 104.0, 0.7, level=0.22)))
 
-    # The stragglers, one at a time, into the tail of the bell.
-    for at, freq, level in ((1.52, 2400.0, 0.20), (1.94, 1800.0, 0.15), (2.38, 1450.0, 0.11)):
-        parts.append((at, inst.coin(rng, level=level, freq=freq)))
-    parts.append((1.40, inst.bell(523.25, 2.2, level=0.14, strike=0.3)))
-    parts.append((0.22, inst.vibes(84, 1.6, level=0.17)))
-    parts.append((1.10, inst.vibes(91, 1.8, level=0.10)))
+    for i, note in enumerate((72, 76, 79, 84)):
+        parts.append((1.3 + i * 0.02, inst.handbell(dsp.midi_hz(note), 1.9, level=0.16), -0.3 + 0.2 * i))
+    parts.append((1.3, inst.vibes(84, 1.8, level=0.14), 0.0))
+    for at, freq, level, position in ((1.52, 2600.0, 0.18, -0.4), (1.9, 2200.0, 0.14, 0.45),
+                                      (2.26, 1900.0, 0.1, 0.0)):
+        parts.append((at, inst.coin(rng, level=level, freq=freq), position))
+    return _stage(parts, 3.2, wet=0.24, decay=2.0, peak=0.9)
 
-    out = _finish(parts, 3.3, wet=0.32, decay=2.7, peak=0.92, stereo=True)
-    # Opened out at the end rather than panned coin by coin: the cascade is one thing
-    # happening across the table, not twenty things each in its own place.
-    return dsp.trim(dsp.widen(out, delay=0.009, level=0.32), 0.92)
+
+def _cards_leaving(rng: np.random.Generator, count: int, stride: float,
+                   colour: float) -> list[tuple[float, np.ndarray, float]]:
+    """The sweep itself, which every scopa sound opens on: a hand across the felt and
+    the cards going with it. Kept above 1800 Hz so it rustles rather than rumbles.
+    """
+    parts = [(0.0, inst.sweepnoise(rng, 0.26, 5200.0, 1800.0, level=0.3), 0.0)]
+    for i in range(count):
+        parts.append((i * stride, inst.flick(rng, level=0.42 - 0.045 * i, decay=0.05,
+                                             colour=colour - 260.0 * i), -0.2 + 0.08 * i))
+    parts.append((count * stride + 0.02, inst.land(rng, level=0.4, weight=0.7), 0.0))
+    return parts
+
+
+def _reed(notes: list[float], duration: float, level: float) -> np.ndarray:
+    """An accordion chord with its bellows opened and closed, rather than switched."""
+    tone = inst.accordion(notes, duration + 0.06, level=level)
+    return tone * dsp.swell(len(tone), 0.012, duration * 0.6, duration * 0.4 + 0.06)
+
+
+def _stage(parts: list[tuple[float, np.ndarray, float]], duration: float, *,
+           wet: float = 0.18, decay: float = 1.4, peak: float = 0.88) -> np.ndarray:
+    """`_finish` for the celebrations, where each part has its own place across the
+    room, −1 left to +1 right. A stereo part keeps the image it came with.
+
+    People clapping and fireworks are all over the place, and a party made of one voice
+    copied into both ears sounds like a sample of one.
+    """
+    dry = np.zeros((2, dsp.seconds(duration)))
+    send = dsp.silence(duration)
+    for at, signal, position in parts:
+        stereo = signal if signal.ndim > 1 else dsp.pan(signal, position) * np.sqrt(2.0)
+        for channel in range(2):
+            dsp.place(dry[channel], stereo[channel], at)
+        dsp.place(send, stereo.mean(axis=0), at)
+    space = dsp.room(send * wet, decay=decay, damping=6500.0, predelay=0.01)
+    return dsp.trim(dsp.fade_out(dsp.saturate(dry + space, 1.1), 0.06), peak)
 
 
 def theirs(seed: int = 0) -> np.ndarray:
@@ -301,13 +324,15 @@ def denaro() -> np.ndarray:
 
 
 def purchase() -> np.ndarray:
-    """The shop till: a handful of coins and a chord."""
+    """The shop till: coins into the drawer, the bell on the till, and a chord up."""
     rng = _rng(109)
-    parts = [(i * 0.075, inst.coin(rng, level=0.5 - 0.08 * i, freq=1900.0 + 320.0 * i))
-             for i in range(3)]
+    parts = [(i * 0.07, inst.coin(rng, level=0.46 - 0.07 * i, freq=2000.0 + 330.0 * i),
+              -0.3 + 0.3 * i) for i in range(3)]
+    parts.append((0.16, inst.handbell(dsp.midi_hz(91), 0.9, level=0.2), 0.2))
+    parts.append((0.22, inst.handbell(dsp.midi_hz(96), 1.1, level=0.18), -0.1))
     for i, note in enumerate((72, 76, 79, 84)):
-        parts.append((0.1 + i * 0.045, inst.vibes(note, 1.5, level=0.24 - 0.03 * i)))
-    return _finish(parts, 1.5, wet=0.28, decay=1.8, peak=0.82, stereo=True)
+        parts.append((0.12 + i * 0.045, inst.vibes(note, 1.3, level=0.22 - 0.025 * i), -0.2 + 0.15 * i))
+    return _stage(parts, 1.4, wet=0.22, decay=1.5, peak=0.8)
 
 
 # MARK: Wood
@@ -396,7 +421,7 @@ CATALOGUE = {
     "sfx_scopa": scopa,
     "sfx_cheer_campana": cheer_campana,
     "sfx_cheer_festa": cheer_festa,
-    "sfx_cheer_tuono": cheer_tuono,
+    "sfx_cheer_fuochi": cheer_fuochi,
     "sfx_cheer_oro": cheer_oro,
     "sfx_deal": deal,
     "sfx_settebello": settebello,

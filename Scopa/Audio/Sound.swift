@@ -25,7 +25,7 @@ enum Sound: String, CaseIterable {
     // The bought cheers, played in place of `scopa` for your own sweeps. See `Cheer`.
     case cheerCampana
     case cheerFesta
-    case cheerTuono
+    case cheerFuochi
     case cheerOro
     /// Your turn.
     case turn
@@ -64,7 +64,7 @@ enum Sound: String, CaseIterable {
         // because the forge names its files the way Python names its functions.
         case .cheerCampana: ["sfx_cheer_campana"]
         case .cheerFesta: ["sfx_cheer_festa"]
-        case .cheerTuono: ["sfx_cheer_tuono"]
+        case .cheerFuochi: ["sfx_cheer_fuochi"]
         case .cheerOro: ["sfx_cheer_oro"]
         default: ["sfx_\(rawValue)"]
         }
@@ -78,7 +78,7 @@ enum Sound: String, CaseIterable {
     var standIn: Sound? {
         switch self {
         case .scopa: .sweep
-        case .cheerCampana, .cheerFesta, .cheerTuono, .cheerOro: .scopa
+        case .cheerCampana, .cheerFesta, .cheerFuochi, .cheerOro: .scopa
         default: nil
         }
     }
@@ -99,16 +99,14 @@ enum Sound: String, CaseIterable {
     var duck: Duck? {
         switch self {
         case .settebello: Duck(depth: 0.34, hold: 1.4)
-        // Held past the end of the recording, because this one is a shouted voice.
-        case .scopa: Duck(depth: 0.28, hold: 1.8)
-        // The bells, the thunder and the gold all run longer than the guitar, so the
-        // music stays down for as long as they do rather than climbing back over the
-        // tail. Each hold is that recording's own length: a cheer whose last coin lands
-        // under a track already on its way back up is a cheer that was cut off.
-        case .cheerCampana: Duck(depth: 0.24, hold: 2.6)
-        case .cheerTuono: Duck(depth: 0.18, hold: 3.1)
-        case .cheerOro: Duck(depth: 0.16, hold: 3.3)
-        case .cheerFesta: Duck(depth: 0.26, hold: 2.0)
+        // Each hold is that recording's own length, since the hold is counted from when
+        // the sound starts: a cheer whose last coin lands under a track already on its
+        // way back up is a cheer that was cut off. Re-check them when a sound changes length.
+        case .scopa: Duck(depth: 0.28, hold: 1.6)
+        case .cheerCampana: Duck(depth: 0.24, hold: 2.3)
+        case .cheerFuochi: Duck(depth: 0.2, hold: 2.3)
+        case .cheerOro: Duck(depth: 0.16, hold: 3.2)
+        case .cheerFesta: Duck(depth: 0.26, hold: 1.9)
         case .victory, .defeat: Duck(depth: 0.16, hold: 3.0)
         case .roundOver, .reveal: Duck(depth: 0.42, hold: 1.4)
         case .purchase: Duck(depth: 0.5, hold: 1.0)

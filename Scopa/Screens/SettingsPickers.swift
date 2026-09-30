@@ -68,6 +68,31 @@ struct AssistPicker: View {
     }
 }
 
+/// Whether a tap plays a card outright when it has one move only. Drawn like the pickers
+/// around it, title and line under it, so the group reads as one list.
+struct OneTapToggle: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle(isOn: $isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Play with one tap")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.onTable)
+                Text("A card with only one move is played on the first tap, not the second")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .tint(Palette.terracotta)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .sensoryFeedback(.selection, trigger: isOn)
+        .sound(.toggle, trigger: isOn)
+    }
+}
+
 /// Bot strength for the tables the player sets up. It changes how long a bot thinks, not
 /// what it can see.
 struct BotPicker: View {

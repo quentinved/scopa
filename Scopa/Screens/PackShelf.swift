@@ -103,6 +103,7 @@ final class PackTill {
                 guard let item = won.item else { continue }
                 await purse.win(item, key: opened.key(forWon: place))
             }
+            if opened.deck { await purse.award(opened.volume) }
         }
     }
 }
@@ -123,7 +124,9 @@ private struct PackTillModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .fullScreenCover(item: $till.opening) { opened in
+                // Drawn in the volume's own deck, whatever the table is dressed in.
                 PackOpening(opening: opened, name: name)
+                    .environment(\.cardTheme, opened.volume.theme)
             }
             .confirmationDialog(Text(verbatim: till.buying?.title ?? ""),
                                 isPresented: Binding(get: { till.buying != nil },

@@ -32,6 +32,9 @@ struct ContentView: View {
             BannerSlot(ads: ads, isVisible: ads.showsBanner(on: store.route))
         }
         .animation(.easeInOut(duration: 0.25), value: store.route)
+        // Over every screen, under the notices, the toasts and a full screen ad, and inside
+        // the environment below so it is drawn in the player's language and cloth.
+        .ladderCeremony(store: store)
         // Measured once here and handed down: every screen that folds sideways needs to
         // know whether it is being held that way, and on an iPad the size classes cannot
         // say — it is `.regular` both ways round. Nothing inside settles this size, so
@@ -65,13 +68,13 @@ struct ContentView: View {
 
     // MARK: Reactions
 
-    /// The purse follows the ads: sweeping them away unlocks the shop, and a stake that
-    /// found no table comes back.
+    /// The purse follows the ads: sweeping them away pays the passphrase's denari, and a
+    /// stake that found no table comes back.
     private func purseReactions(_ content: some View) -> some View {
         content
             .onChange(of: ads.adsAreOn) { _, areOn in
                 guard !areOn else { return }
-                Task { await purse.unlockEverything() }
+                Task { await purse.grantSweepGift() }
             }
             .task { await loadPurse() }
             .task(id: store.refusedStake?.id) { await refundRefusedStake() }
@@ -117,8 +120,8 @@ struct ContentView: View {
         await purse.grandfather([Cosmetics.item(for: store.cardTheme.style),
                                  Cosmetics.item(for: store.cardTheme.skin),
                                  Cosmetics.item(for: store.tableFelt)])
-        // `-noAds` is a screenshot flag: it must not unlock the shop, which is persisted.
-        if !ads.adsAreOn && !DebugLaunch.hidesAds { await purse.unlockEverything() }
+        // `-noAds` is a screenshot flag: it must not pay the gift, which is persisted.
+        if !ads.adsAreOn && !DebugLaunch.hidesAds { await purse.grantSweepGift() }
         #if DEBUG
         if let denari = DebugLaunch.grantedDenari { await purse.grantForDebugging(denari) }
         // After the grant, so the two together land on the figure `-purse` asked for.

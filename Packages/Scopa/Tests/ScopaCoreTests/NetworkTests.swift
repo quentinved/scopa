@@ -139,6 +139,26 @@ private func recordOf(_ u: TableUpdate?) -> GameRecord? { if case .record(let r)
         await host.stop()
     }
 
+    /// "Play again" deals new cards. A table with no bots never draws on the host's own
+    /// generator, so a session handed a copy of it would shuffle the rematch the same way.
+    @Test func aRematchIsDealtFreshCards() async throws {
+        let (host, hostRecorder, _) = await Self.table(guests: ["Bea"])
+        _ = await hostRecorder.first { (lobbyOf($0)?.players.count ?? 0) == 2 }
+        try await host.startGame()
+        let first = try #require(await host.session)
+        for _ in 0..<2_000 where await !first.state.isFinished {
+            let state = await first.state
+            if state.phase != .playing { await first.startRound(); continue }
+            _ = try await first.play(Rules.automaticMove(in: state)!)
+        }
+        try await host.playAgain()
+
+        let before = await first.record.rounds.map(\.deck)
+        let after = await host.session?.record.rounds.first?.deck
+        #expect(after != nil && after != before.first)
+        await host.stop()
+    }
+
     @Test func aGuestPlaysAndEveryoneSeesIt() async throws {
         let (host, hostRecorder, guests) = await Self.table(guests: ["Bea"])
         _ = await hostRecorder.first { (lobbyOf($0)?.players.count ?? 0) == 2 }

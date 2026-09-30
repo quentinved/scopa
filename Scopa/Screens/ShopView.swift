@@ -60,10 +60,12 @@ struct ShopContent: View {
                 cheers
                 sayings
                 earning
+                PromoCodeRow(purse: purse, book: store.albumBook)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
         }
+        .defaultScrollAnchor(DebugLaunch.promoCode == nil ? nil : .bottom)
         .softScrollEdge(.top)
         .background(TableGround())
         .packTill(till, book: store.albumBook, purse: purse, name: store.playerName)
@@ -189,7 +191,9 @@ struct ShopContent: View {
                            owned: purse.owns(pattern),
                            equipped: store.cardBack == pattern,
                            affordable: affordable(Cosmetics.item(for: pattern)),
-                           justBought: bought == Cosmetics.item(for: pattern)?.id) {
+                           justBought: bought == Cosmetics.item(for: pattern)?.id,
+                           earnedBy: fromAlbum(Cosmetics.item(for: pattern)),
+                           earnedGlyph: "books.vertical.fill") {
                         CardBack(width: 52)
                             .environment(\.cardBack, pattern)
                             .environment(\.cardTheme, store.cardTheme)
@@ -266,7 +270,9 @@ struct ShopContent: View {
                            owned: purse.owns(companion),
                            equipped: store.companion == companion,
                            affordable: affordable(Cosmetics.item(for: companion)),
-                           justBought: bought == Cosmetics.item(for: companion)?.id) {
+                           justBought: bought == Cosmetics.item(for: companion)?.id,
+                           earnedBy: fromAlbum(Cosmetics.item(for: companion)),
+                           earnedGlyph: "books.vertical.fill") {
                         CompanionSwatch(companion: companion, felt: store.tableFelt)
                     }
                 }
@@ -387,7 +393,9 @@ struct ShopContent: View {
                            owned: purse.owns(flourish),
                            equipped: store.flourish == flourish,
                            affordable: affordable(Cosmetics.item(for: flourish)),
-                           justBought: bought == Cosmetics.item(for: flourish)?.id) {
+                           justBought: bought == Cosmetics.item(for: flourish)?.id,
+                           earnedBy: fromAlbum(Cosmetics.item(for: flourish)),
+                           earnedGlyph: "books.vertical.fill") {
                         FlourishSwatch(flourish: flourish, felt: store.tableFelt)
                     }
                 }
@@ -421,7 +429,7 @@ struct ShopContent: View {
                            equipped: store.cheer == cheer,
                            affordable: affordable(Cosmetics.item(for: cheer)),
                            justBought: bought == Cosmetics.item(for: cheer)?.id) {
-                        CheerSwatch(cheer: cheer, owned: purse.owns(cheer))
+                        CheerSwatch(cheer: cheer)
                     }
                 }
                 .buttonStyle(.plain)
@@ -556,6 +564,11 @@ struct ShopContent: View {
         item.map(purse.canAfford) ?? true
     }
 
+    /// Which album hands this over, for a tile that has no price because it has no sale.
+    private func fromAlbum(_ item: ShopItem?) -> LocalizedStringKey? {
+        Volume.awarding(item).map { volume -> LocalizedStringKey in "\(volume.title) album" }
+    }
+
     private func pick(_ option: some DeckOption) {
         buyIfNeeded(option.shopItem) { store.cardTheme = option.applied(to: store.cardTheme) }
     }
@@ -597,14 +610,12 @@ struct ShopContent: View {
         buyIfNeeded(Cosmetics.item(for: flourish)) { store.flourish = flourish }
     }
 
-    /// A cheer equips and plays. It is the only thing in the shop that cannot be seen, so
-    /// the tile has to say it out loud — and an owned one says it again on every tap, which
-    /// is how anybody decides between two of them.
+    /// A cheer plays on every tap, bought or not. It is the only thing in the shop that
+    /// cannot be seen, so the tile has to say it out loud, and a sound nobody can hear
+    /// before paying for it is a sound nobody buys. The purchase question comes up over it.
     private func pick(_ cheer: Cheer) {
-        buyIfNeeded(Cosmetics.item(for: cheer)) {
-            store.cheer = cheer
-            Audio.shared.play(cheer.sound)
-        }
+        Audio.shared.play(cheer.sound)
+        buyIfNeeded(Cosmetics.item(for: cheer)) { store.cheer = cheer }
     }
 
     /// A pack equips nothing: its reactions simply appear in the row at the table.
@@ -617,6 +628,12 @@ struct ShopContent: View {
         guard let item, !purse.owns(item) else {
             Audio.shared.play(.toggle)
             return equip()
+        }
+        // Priced at nothing because it is earned rather than sold: a streak or an album is
+        // the only way in, and the tile says which.
+        if item.price == .zero {
+            Audio.shared.play(.refused)
+            return
         }
         ask(for: item, then: equip)
     }

@@ -253,6 +253,60 @@ enum Ladder {
         return answer
     }
 
+    /// The season's board: everyone who has played ranked this season, highest rating first.
+    struct SeasonBoard: Codable, Hashable {
+        struct Row: Codable, Hashable, Identifiable {
+            let id: String
+            let name: String
+            let rating: Int
+            let games: Int
+            let wins: Int
+            let standing: RankAnswer.Standing
+        }
+
+        /// Where the reader stands. No rank until they have played a ranked game this season.
+        struct Place: Codable, Hashable {
+            let played: Int
+            let rank: Int?
+            let percentile: Int?
+        }
+
+        let season: String
+        /// As the Worker wrote it, like `RankAnswer.seasonEndsAt`.
+        let seasonEndsAt: String
+        let top: [Row]
+        let you: Place?
+
+        var isEmpty: Bool { top.isEmpty }
+
+        /// Whole days left before the divisions start again.
+        var daysLeft: Int? {
+            let reader = ISO8601DateFormatter()
+            reader.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            guard let end = reader.date(from: seasonEndsAt) else { return nil }
+            return max(Calendar.current.dateComponents([.day], from: Date(), to: end).day ?? 0, 0)
+        }
+    }
+
+    static func seasonBoard(gamePlayerID: String?) async throws -> SeasonBoard? {
+        guard let baseURL else { return nil }
+        var url = baseURL.appending(path: "v1/ranked/board")
+        if let gamePlayerID {
+            url.append(queryItems: [URLQueryItem(name: "player", value: gamePlayerID)])
+        }
+        return try await get(url)
+    }
+
+    /// The season's board among the reader's Game Center friends, with the reader on it. The
+    /// ids come from this phone: the Worker keeps no friend list to look them up in.
+    static func friendsSeasonBoard(friends: [String], gamePlayerID: String?) async throws -> SeasonBoard? {
+        struct Post: Encodable {
+            let player: String?
+            let friends: [String]
+        }
+        return try await unsignedPost("v1/ranked/board/friends", body: Post(player: gamePlayerID, friends: friends))
+    }
+
     struct Best: Codable, Hashable {
         let day: String
         let name: String
@@ -475,17 +529,18 @@ extension Ladder {
             let friends: [String]
             let identity: GameCenterIdentity
         }
-        return try await presencePost("v1/presence", body: Post(friends: friends, identity: identity))
+        return try await unsignedPost("v1/presence", body: Post(friends: friends, identity: identity))
     }
 
     /// Off every friend's list now, rather than when the last beat runs out.
     static func leavePresence(identity: GameCenterIdentity) async throws {
         struct Post: Encodable { let identity: GameCenterIdentity }
         struct Done: Decodable {}
-        let _: Done? = try await presencePost("v1/presence/leave", body: Post(identity: identity))
+        let _: Done? = try await unsignedPost("v1/presence/leave", body: Post(identity: identity))
     }
 
-    private static func presencePost<Body: Encodable, Answer: Decodable>(_ path: String, body: Body) async throws -> Answer? {
+    /// POSTs a body that carries its own signature, or needs none.
+    private static func unsignedPost<Body: Encodable, Answer: Decodable>(_ path: String, body: Body) async throws -> Answer? {
         guard let baseURL else { return nil }
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = "POST"

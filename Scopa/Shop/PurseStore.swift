@@ -95,12 +95,19 @@ final class PurseStore {
         }
     }
 
-    /// The passphrase unlocks the shop as well as removing ads. Safe to call on every
-    /// launch, since anything already owned is left as it is.
-    func unlockEverything() async {
-        guard !ownsEverything else { return }
-        if let updated = try? await wallet.unlockEverything(in: Cosmetics.catalogue, note: "balai") {
-            purse = updated
+    /// What the passphrase puts in the purse, besides sweeping the ads away.
+    static let sweepGift: Denari = 10_000
+
+    /// The passphrase's denari, once. It used to unlock the whole shop; now it hands over
+    /// enough to buy what you like, and whatever it unlocked before stays unlocked, because
+    /// those purchases are in the ledger. Keyed on the phrase rather than the device, so the
+    /// player's second phone saying it too pays nothing more. Safe to call on every launch.
+    func grantSweepGift() async {
+        do {
+            _ = try await wallet.grant(Self.sweepGift, note: "balai", key: "balai/denari")
+            purse = try await wallet.purse()
+        } catch {
+            problem = "Your denari could not be saved on this device."
         }
     }
 
@@ -274,6 +281,21 @@ final class PurseStore {
         }
     }
 
+    /// Pays for reaching a level. Keyed on the level, so the same level reached on two
+    /// devices, or a summary shown twice, pays once. Nil when it was already paid — which is
+    /// also how the caller knows whether the milestone pack is still owed.
+    func awardLevel(_ number: Int) async -> Denari? {
+        let amount = Level.denari(reaching: number)
+        do {
+            let fresh = try await wallet.grant(amount, note: "level/\(number)", key: "level/\(number)")
+            purse = try await wallet.purse()
+            return fresh.isEmpty ? nil : amount
+        } catch {
+            problem = "Your level reward could not be saved."
+            return nil
+        }
+    }
+
     /// Pays what an opened pack came to: the spares in it, and any suit or deck it
     /// finished. Keyed on the opening, so a grant retried pays once and two packs holding
     /// the same three cards are still two packs.
@@ -299,6 +321,25 @@ final class PurseStore {
             purse = try await wallet.purse()
         } catch {
             problem = "Your friend's gift could not be saved."
+        }
+    }
+
+    /// Pays a coupon's denari and whatever it hands over off the shelves. Keyed on the code,
+    /// so a coupon answered twice — a retry, a lost reply asked again — pays once. True when
+    /// this was the first time, which is the caller's cue to give the packs; nil when it could
+    /// not be saved.
+    func redeem(_ coupon: Coupon.Reward) async -> Bool? {
+        do {
+            let fresh = try await wallet.grant(coupon.denari, note: coupon.key, key: coupon.key)
+            // Keyed one by one, so these are safe to hand over again whatever the answer.
+            for item in coupon.shopItems {
+                try await wallet.unlock(item, key: "\(coupon.key)/\(item.id.rawValue)")
+            }
+            purse = try await wallet.purse()
+            return !fresh.isEmpty
+        } catch {
+            problem = "Your coupon could not be saved. Try the code again."
+            return nil
         }
     }
 

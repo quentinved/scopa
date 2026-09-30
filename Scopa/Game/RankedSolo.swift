@@ -50,7 +50,7 @@ enum RankedSolo: String, CaseIterable, Identifiable, Sendable {
     var detail: LocalizedStringKey {
         switch self {
         case .headsUp: "You and the one opponent the search finds. No house at the table."
-        case .teams: "Four seats: one opponent near your league, with the house behind each of you."
+        case .teams: "Four seats: one real opponent, with the house behind each of you."
         }
     }
 

@@ -10,7 +10,7 @@ import ScopaRewards
 struct OnlineSheet: View {
     @Bindable var store: TableStore
 
-    /// Ranked is one real opponent near your league, for the league. Casual is whoever
+    /// Ranked is one real opponent, of any league, for the league. Casual is whoever
     /// else is looking, for nothing. One door, two ways through it.
     private enum Mode: Hashable { case ranked, casual }
 
@@ -20,6 +20,8 @@ struct OnlineSheet: View {
     @State private var friends: [GKPlayer]?
     @State private var isLoadingFriends = false
     @State private var friendsProblem: FriendsProblem?
+    @State private var showsSeason = false
+    @State private var showsRoad = false
     @Environment(\.dismiss) private var dismiss
 
     private var isBusy: Bool { store.onlineStatus != nil }
@@ -28,12 +30,16 @@ struct OnlineSheet: View {
     @Environment(\.tableFelt) private var felt
 
     var body: some View {
-        SheetScaffold(title: "Ranked", subtitle: "Real people near your league. Or a casual table, for nothing.",
+        SheetScaffold(title: "Ranked", subtitle: "Real people, for the league. Or a casual table, for nothing.",
                       close: { dismiss() }) {
             VStack(alignment: .leading, spacing: 20) {
                 // Where you stand comes before how to play: the door is called Ranked, and
                 // the league is what somebody opening it has come to look at.
-                LeaguePanel(store: store)
+                VStack(spacing: 10) {
+                    LeaguePanel(store: store)
+                    seasonLink
+                    roadLink
+                }
                 modePicker
                 if mode == .ranked { rankedIntro } else { casualSetup }
             }
@@ -53,9 +59,77 @@ struct OnlineSheet: View {
                 store.playRankedDuo(with: friend)
             }
         }
+        .sheet(isPresented: $showsSeason) { SeasonBoardSheet(store: store) }
+        .sheet(isPresented: $showsRoad) { LadderRoadSheet(store: store) }
+        #if DEBUG
+        .task {
+            guard DebugLaunch.showsRoad else { return }
+            try? await Task.sleep(for: .seconds(0.8))
+            showsRoad = true
+        }
+        .task {
+            guard DebugLaunch.showsSeasonBoard else { return }
+            // Once this sheet has finished arriving: a sheet asked for on the way in is dropped.
+            try? await Task.sleep(for: .seconds(0.8))
+            showsSeason = true
+        }
+        #endif
         // Full height: the league now leads the sheet, and at the medium detent it pushed the
         // choice the Solo button obeys down behind the buttons.
         .presentationDetents([.large])
+    }
+
+    /// The way to the season's board, under the league it ranks.
+    private var seasonLink: some View {
+        Button { showsSeason = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "list.number")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Palette.goldLight)
+                    .frame(width: 24)
+                Text("The season's ladder")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.onTable)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(Palette.onTableSoft)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .glassPanel(radius: GlassRadius.control)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The way to the road: every league in order, and what each gives that only ranked can.
+    private var roadLink: some View {
+        Button { showsRoad = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "trophy.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.goldLight)
+                    .frame(width: 24)
+                Text("The road, and its prizes")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.onTable)
+                Spacer(minLength: 0)
+                if let next = nextPrize {
+                    LeagueMedal(league: next.rawValue, size: 18)
+                }
+                Image(systemName: "chevron.right").foregroundStyle(Palette.onTableSoft)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .glassPanel(radius: GlassRadius.control)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The next league with prizes still to win, whose medal the road link wears.
+    private var nextPrize: League? {
+        guard let best = LadderPrizes.best else { return .bronze }
+        return best.next
     }
 
     private var modePicker: some View {
@@ -161,12 +235,13 @@ struct OnlineSheet: View {
 
     /// What the wait is for, once a table is being looked for.
     private var waitingLabel: LocalizedStringKey {
-        store.isRanked ? "Looking for someone near your league" : "Looking for players"
+        store.isRanked ? "Looking for an opponent" : "Looking for players"
     }
 }
 
-/// Why the friends list has nobody in it, when it is not simply empty.
-private enum FriendsProblem: Equatable {
+/// Why the friends list has nobody in it, when it is not simply empty. Shared with the
+/// season's board, whose friends' tab fails the same four ways.
+enum FriendsProblem: Equatable {
     case signedOut
     case denied
     case restricted

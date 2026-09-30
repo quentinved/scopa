@@ -204,6 +204,9 @@ enum Cosmetics {
         case .riccio: 300
         case .tartaruga: 320
         case .ferdinando: 350
+        // Earned rather than bought: the Notturna album hands her over, and the zero price is
+        // what lets the ledger record her as owned.
+        case .civetta: .zero
         }
     }
 
@@ -221,14 +224,18 @@ enum Cosmetics {
     /// Priced like a colourway. One pattern rather than forty drawings, but it is the card
     /// art seen most often.
     private static func price(of back: CardBackPattern) -> Denari? {
-        back == .free ? nil : 150
+        if back == .free { return nil }
+        // Earned rather than bought: the Napoli album hands it over, the shop only shows it.
+        if back == .golfo { return .zero }
+        return 150
     }
 
     static func item(for back: CardBackPattern) -> ShopItem? {
         guard let price = price(of: back) else { return nil }
+        // The album's back is graded like the other things only an album gives.
         return ShopItem(id: ShopItem.ID("back.\(back.rawValue)"), kind: .cardBack,
                         title: back.name, detail: "card back \(back.rawValue)", price: price,
-                        grade: .comune)
+                        grade: back == .golfo ? .prezioso : .comune)
     }
 
     // MARK: The colour of your mark

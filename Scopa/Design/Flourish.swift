@@ -13,21 +13,23 @@ import SwiftUI
 enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The band on its own, which is what the game shipped with.
     case stendardo
-    /// Paper confetti, falling and turning.
+    /// Paper confetti, fired from the corners and falling back turning.
     case coriandoli
-    /// Embers thrown up off the cloth.
+    /// Fireworks, four shells opening over the cloth.
     case scintille
-    /// A shower of coins, tumbling.
+    /// Coins thrown up out of the sweep, and more raining down.
     case pioggia
     /// A ring of gold pushed out from the middle, once.
     case aureola
+    /// A wax seal pressed onto the cloth. Never sold: the Pergamena album is the only way.
+    case sigillo
 
     var id: String { rawValue }
 
     static let stored = "flourish"
 
-    /// The ones the shop sells. `stendardo` is never locked.
-    static let forSale: [Flourish] = allCases.filter { $0 != .stendardo }
+    /// The ones the shop sells. `stendardo` is never locked, and the seal is earned.
+    static let forSale: [Flourish] = allCases.filter { $0 != .stendardo && $0 != .sigillo }
 
     var title: String {
         switch self {
@@ -36,6 +38,7 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
         case .scintille: "Scintille"
         case .pioggia: "Pioggia"
         case .aureola: "Aureola"
+        case .sigillo: "Sigillo"
         }
     }
 
@@ -44,9 +47,10 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
         switch self {
         case .stendardo: "The band on its own"
         case .coriandoli: "Paper confetti over the table"
-        case .scintille: "Embers off the cloth"
+        case .scintille: "Fireworks over the table"
         case .pioggia: "A shower of denari"
         case .aureola: "A ring of gold, pushed out once"
+        case .sigillo: "A wax seal pressed on the cloth"
         }
     }
 
@@ -54,9 +58,10 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
         switch self {
         case .stendardo: "Just the band"
         case .coriandoli: "Paper, falling"
-        case .scintille: "Embers, rising"
+        case .scintille: "Fireworks, bursting"
         case .pioggia: "It rains denari"
         case .aureola: "One ring of gold"
+        case .sigillo: "Sealed in wax"
         }
     }
 
@@ -65,7 +70,7 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
         case .stendardo: .comune
         case .coriandoli, .scintille: .raro
         case .pioggia: .prezioso
-        case .aureola: .leggendario
+        case .aureola, .sigillo: .leggendario
         }
     }
 
@@ -77,112 +82,49 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
         case .scintille: 220
         case .pioggia: 480
         case .aureola: 900
+        // Earned rather than bought: finishing the Pergamena album hands it over, and the
+        // zero price is what lets the ledger record it as owned.
+        case .sigillo: .zero
         }
     }
 }
 
 /// A flourish, played once over the whole table.
 ///
-/// It runs off a single `phase` driven from 0 to 1 by one animation, rather than a timer
-/// per mote: forty independent animations is forty things that can be left running when
-/// the banner leaves, and one is one. The motes are laid out from a seeded generator so a
-/// sweep looks the same every time it is replayed in a preview and different between the
-/// five flourishes.
+/// Every mote is worked out from the time since the sweep, every frame, in one `Canvas`
+/// on its own clock. They used to be views on an animated `@State` phase, which SwiftUI
+/// only interpolates between its two ends: each piece of confetti slid down a straight
+/// line at an even pace and faded the whole way, whatever curve the code asked for. Now
+/// confetti is fired from two cannons and flutters down, sparks burst out of shells and
+/// slow, and coins are thrown up out of the sweep and fall back — real curves, and a
+/// flat cost of one layer however many motes there are.
 struct FlourishView: View {
     var flourish: Flourish
     /// Where the sweep happened, so the burst has somewhere to come from. Unit space.
     var origin: UnitPoint = .center
 
-    @State private var phase: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The longest any of them runs, which the shop's looping tile waits out.
+    static let length: TimeInterval = 2.3
 
     fileprivate static let count = 34
 
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
-            ZStack {
+        ZStack {
+            if !reduceMotion {
                 switch flourish {
                 case .stendardo: EmptyView()
-                case .coriandoli: motes(in: size, kind: .paper)
-                case .scintille: motes(in: size, kind: .ember)
-                case .pioggia: motes(in: size, kind: .coin)
-                case .aureola: if !reduceMotion { Aureola(origin: origin) }
+                case .coriandoli: Motes(kind: .paper, origin: origin)
+                case .scintille: Motes(kind: .spark, origin: origin)
+                case .pioggia: Motes(kind: .coin, origin: origin)
+                case .aureola: Aureola(origin: origin)
+                case .sigillo: Sigillo(origin: origin)
                 }
             }
-            .frame(width: size.width, height: size.height)
         }
         .allowsHitTesting(false)
         .ignoresSafeArea()
-        .onAppear {
-            // The aureola keeps its own clock; see `Aureola`.
-            guard !reduceMotion, flourish != .stendardo, flourish != .aureola else { return }
-            withAnimation(.easeOut(duration: 2.1)) { phase = 1 }
-        }
-    }
-
-    // MARK: The motes
-
-    private enum Mote { case paper, ember, coin }
-
-    private func motes(in size: CGSize, kind: Mote) -> some View {
-        ForEach(0..<Self.count, id: \.self) { index in
-            let seed = Self.seeds(index)
-            mote(kind, seed: seed)
-                .position(place(seed, kind: kind, in: size))
-                .rotationEffect(.degrees(seed.spin * 720 * phase))
-                .opacity(fade(kind))
-        }
-    }
-
-    @ViewBuilder private func mote(_ kind: Mote, seed: Seed) -> some View {
-        switch kind {
-        case .paper:
-            RoundedRectangle(cornerRadius: 1)
-                .fill(Self.confettiColours[Int(seed.tint * 5) % 5])
-                .frame(width: 6 + seed.scale * 5, height: 9 + seed.scale * 7)
-                // Turned about its own short axis as it falls, which is what makes paper
-                // read as paper rather than as a falling rectangle.
-                .rotation3DEffect(.degrees(seed.spin * 900 * phase), axis: (x: 1, y: 0.3, z: 0))
-        case .ember:
-            Circle()
-                .fill(RadialGradient(colors: [.white, Palette.goldLight, Palette.terracotta.opacity(0)],
-                                     center: .center, startRadius: 0, endRadius: 5 + seed.scale * 4))
-                .frame(width: 8 + seed.scale * 7, height: 8 + seed.scale * 7)
-                .blur(radius: 0.6)
-        case .coin:
-            DenariMark(size: 13 + seed.scale * 9)
-                // Flipping edge-on and back, so a shower reads as coins turning.
-                .rotation3DEffect(.degrees(seed.spin * 1080 * phase), axis: (x: 0.2, y: 1, z: 0))
-        }
-    }
-
-    /// Where a mote is at the current phase. Paper and coins fall from above the top edge;
-    /// embers are thrown up out of the sweep and slow as they rise.
-    private func place(_ seed: Seed, kind: Mote, in size: CGSize) -> CGPoint {
-        let x: CGFloat
-        let y: CGFloat
-        switch kind {
-        case .paper, .coin:
-            let drift = sin((seed.offset + phase) * .pi * 2) * 26
-            x = seed.across * size.width + drift
-            y = -60 + (size.height + 140) * Self.eased(phase, delay: seed.offset * 0.35)
-        case .ember:
-            let rise = Self.eased(phase, delay: seed.offset * 0.3)
-            let spread = (seed.across - 0.5) * size.width * 0.9
-            x = origin.x * size.width + spread * rise
-            // Decelerating rather than linear: an ember is thrown, not dropped.
-            y = origin.y * size.height - size.height * 0.55 * (1 - pow(1 - rise, 2.2))
-        }
-        return CGPoint(x: x, y: y)
-    }
-
-    /// Paper and coins are gone by the time they reach the bottom; embers burn out early.
-    private func fade(_ kind: Mote) -> Double {
-        switch kind {
-        case .paper, .coin: phase < 0.75 ? 1 : max(0, 1 - (phase - 0.75) / 0.25)
-        case .ember: phase < 0.45 ? 1 : max(0, 1 - (phase - 0.45) / 0.55)
-        }
     }
 
     // MARK: The seeded scatter
@@ -216,10 +158,260 @@ struct FlourishView: View {
         return min(max((phase - delay) / (1 - delay), 0), 1)
     }
 
-    private static let confettiColours: [Color] = [
+    /// Where something thrown from `start` at `velocity` has got to after `time`, with
+    /// `gravity` pulling it down and `drag` taking its speed off. The closed form rather
+    /// than a step, so a frame needs nothing from the frame before it.
+    fileprivate static func flight(from start: CGPoint, velocity: CGVector, gravity: CGFloat,
+                                   drag: CGFloat, time: CGFloat) -> CGPoint {
+        let slowed = (1 - exp(-drag * time)) / drag
+        let terminal = gravity / drag
+        return CGPoint(x: start.x + velocity.dx * slowed,
+                       y: start.y + terminal * time + (velocity.dy - terminal) * slowed)
+    }
+
+    fileprivate static let confettiColours: [Color] = [
         Palette.goldLight, Palette.terracotta, Palette.cream,
         Color(red: 0.400, green: 0.749, blue: 0.702), Color(red: 0.706, green: 0.400, blue: 0.741),
     ]
+}
+
+/// The three flourishes made of motes, painted on one clock.
+private struct Motes: View {
+    enum Kind { case paper, spark, coin }
+
+    let kind: Kind
+    var origin: UnitPoint
+
+    @State private var start = Date.now
+    @State private var isDone = false
+
+    var body: some View {
+        TimelineView(.animation(paused: isDone)) { timeline in
+            let age = CGFloat(timeline.date.timeIntervalSince(start))
+            Canvas { context, size in
+                guard age < FlourishView.length else { return }
+                switch kind {
+                case .paper: Confetti.paint(&context, size: size, age: age)
+                case .spark: Fireworks.paint(&context, size: size, age: age)
+                case .coin: CoinFountain.paint(&context, size: size, age: age, origin: origin)
+                }
+            } symbols: {
+                if kind == .coin { DenariMark(size: CoinFountain.drawn).tag(CoinFountain.symbol) }
+            }
+        }
+        // Stops the clock once everything has gone, so a banner that lingers costs nothing.
+        .task {
+            try? await Task.sleep(for: .seconds(FlourishView.length + 0.1))
+            isDone = true
+        }
+    }
+}
+
+/// How much a mote has left once the last stretch of the flourish starts taking it away.
+private func fading(_ age: CGFloat, from: CGFloat, to: CGFloat = FlourishView.length) -> Double {
+    Double(min(max((to - age) / (to - from), 0), 1))
+}
+
+/// Paper confetti, fired up out of the two bottom corners and fluttering back down.
+///
+/// Paper is almost all drag: it goes up fast, stops, and then comes down at a walking
+/// pace, swaying, and turning over as it falls — the turning is what reads as paper
+/// rather than as coloured rectangles, so each piece is drawn flattened by how far over
+/// it has turned, and darker on its back.
+private enum Confetti {
+    static let pieces = 72
+
+    static func paint(_ context: inout GraphicsContext, size: CGSize, age: CGFloat) {
+        let unit = min(max(min(size.width, size.height) / 390, 0.6), 1.3)
+        let left = fading(age, from: FlourishView.length * 0.72)
+        for index in 0..<pieces {
+            let seed = FlourishView.seeds(index)
+            let time = age - seed.offset * 0.14
+            guard time > 0 else { continue }
+            let fromLeft = index.isMultiple(of: 2)
+            let start = CGPoint(x: fromLeft ? -8 : size.width + 8, y: size.height + 8)
+            let across = size.width * (0.1 + 0.45 * seed.across) * 2
+            let velocity = CGVector(dx: fromLeft ? across : -across,
+                                    dy: -size.height * (1.8 + 0.7 * seed.scale))
+            var at = FlourishView.flight(from: start, velocity: velocity, gravity: size.height * 0.62,
+                                         drag: 2, time: time)
+            // The sway only starts once the throw has worn off.
+            at.x += sin(time * (5 + 3 * seed.tint) + seed.spin * 6) * size.width * 0.04 * (1 - exp(-time * 1.6))
+            let turn = cos(time * (7 + 7 * seed.scale) + seed.across * 6)
+            let width = (6 + 4 * seed.scale) * unit
+            let height = (10 + 6 * seed.tint) * unit
+            var piece = context
+            piece.opacity = left
+            piece.translateBy(x: at.x, y: at.y)
+            piece.rotate(by: .degrees(Double(seed.spin) * 400 * Double(time) + Double(seed.tint) * 180))
+            piece.scaleBy(x: 1, y: max(abs(turn), 0.12))
+            let rect = CGRect(x: -width / 2, y: -height / 2, width: width, height: height)
+            let colour = FlourishView.confettiColours[Int(seed.tint * 5) % 5]
+            piece.fill(Path(roundedRect: rect, cornerRadius: 1.2 * unit), with: .color(colour))
+            if turn < 0 {
+                piece.fill(Path(roundedRect: rect, cornerRadius: 1.2 * unit), with: .color(.black.opacity(0.22)))
+            }
+        }
+    }
+}
+
+/// Fireworks: four shells go up from the foot of the table and open over it, one after
+/// another, in the house colours.
+///
+/// A shell is a rising spark with a tail, a flash where it opens, and a ring of sparks
+/// thrown out that slow almost at once and droop — drawn as short streaks from where
+/// each was a moment ago, which is what makes them read as moving light. They twinkle as
+/// they go out. Lit additively, so where two meet it gets brighter rather than muddier.
+private enum Fireworks {
+    struct Shell {
+        let launch: CGFloat
+        let at: UnitPoint
+        let reach: CGFloat
+        let colours: [Color]
+    }
+
+    static let shells = [
+        Shell(launch: 0.0, at: UnitPoint(x: 0.27, y: 0.27), reach: 0.24,
+              colours: [Palette.goldLight, .white]),
+        Shell(launch: 0.24, at: UnitPoint(x: 0.74, y: 0.21), reach: 0.24,
+              colours: [Color(red: 0.94, green: 0.52, blue: 0.40), Palette.goldLight]),
+        Shell(launch: 0.48, at: UnitPoint(x: 0.5, y: 0.13), reach: 0.3,
+              colours: [Palette.cream, Color(red: 0.45, green: 0.85, blue: 0.78)]),
+        Shell(launch: 0.7, at: UnitPoint(x: 0.68, y: 0.74), reach: 0.22,
+              colours: [Palette.goldLight, Color(red: 0.80, green: 0.55, blue: 0.86)]),
+    ]
+    static let rise: CGFloat = 0.36
+    static let sparks = 30
+    static let burn: CGFloat = 1.15
+
+    static func paint(_ context: inout GraphicsContext, size: CGSize, age: CGFloat) {
+        context.blendMode = .plusLighter
+        for (number, shell) in shells.enumerated() {
+            let time = age - shell.launch
+            guard time > 0 else { continue }
+            let burst = CGPoint(x: shell.at.x * size.width, y: shell.at.y * size.height)
+            if time < rise {
+                rocket(&context, to: burst, height: size.height, progress: time / rise)
+            } else {
+                open(&context, shell, number: number, at: burst, size: size, time: time - rise)
+            }
+        }
+    }
+
+    /// Going up: fast off the ground and slowing, with a fading tail under it.
+    private static func rocket(_ context: inout GraphicsContext, to burst: CGPoint, height: CGFloat,
+                               progress: CGFloat) {
+        let climb = 1 - pow(1 - progress, 2)
+        let y = height + 10 + (burst.y - height - 10) * climb
+        let head = CGPoint(x: burst.x, y: y)
+        var tail = Path()
+        tail.move(to: head)
+        tail.addLine(to: CGPoint(x: burst.x, y: y + height * 0.07 * (1 - climb * 0.6)))
+        context.stroke(tail, with: .linearGradient(Gradient(colors: [Palette.goldLight, .clear]),
+                                                   startPoint: head,
+                                                   endPoint: CGPoint(x: head.x, y: y + height * 0.07)),
+                       style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+        context.fill(Circle().path(in: CGRect(x: head.x - 2.5, y: head.y - 2.5, width: 5, height: 5)),
+                     with: .color(.white))
+    }
+
+    private static func open(_ context: inout GraphicsContext, _ shell: Shell, number: Int, at burst: CGPoint,
+                             size: CGSize, time: CGFloat) {
+        guard time < burn else { return }
+        let reach = min(size.width, size.height) * shell.reach
+        let unit = min(max(min(size.width, size.height) / 390, 0.6), 1.3)
+        flash(&context, at: burst, reach: reach, time: time)
+        for index in 0..<sparks {
+            let seed = FlourishView.seeds(index + number * sparks)
+            let angle = (CGFloat(index) + seed.offset * 0.6) / CGFloat(sparks) * 2 * .pi
+            let speed = reach * 3.2 * (0.8 + 0.4 * seed.scale)
+            let velocity = CGVector(dx: cos(angle) * speed, dy: sin(angle) * speed)
+            func place(_ t: CGFloat) -> CGPoint {
+                FlourishView.flight(from: burst, velocity: velocity, gravity: size.height * 0.25,
+                                    drag: 3.2, time: max(t, 0))
+            }
+            let head = place(time)
+            let trail = place(time - 0.06)
+            var life = 1 - pow(time / burn, 1.6)
+            // Twinkling out: in the second half each spark flickers on its own beat.
+            if time > burn * 0.45 {
+                life *= 0.55 + 0.45 * sin(time * 38 + seed.spin * 20)
+            }
+            guard life > 0.01 else { continue }
+            let colour = shell.colours[index % shell.colours.count]
+            var streak = Path()
+            streak.move(to: trail)
+            streak.addLine(to: head)
+            var spark = context
+            spark.opacity = Double(life)
+            spark.stroke(streak, with: .color(colour), style: StrokeStyle(lineWidth: 2.4 * unit, lineCap: .round))
+            if time < 0.35 {
+                spark.fill(Circle().path(in: CGRect(x: head.x - 1.6 * unit, y: head.y - 1.6 * unit,
+                                                    width: 3.2 * unit, height: 3.2 * unit)),
+                           with: .color(.white))
+            }
+        }
+    }
+
+    /// The moment a shell opens: a bloom of light, over in a quarter of a second.
+    private static func flash(_ context: inout GraphicsContext, at burst: CGPoint, reach: CGFloat, time: CGFloat) {
+        let left = 1 - min(time / 0.25, 1)
+        guard left > 0 else { return }
+        let radius = reach * (0.35 + 0.4 * (1 - left))
+        context.fill(Circle().path(in: CGRect(x: burst.x - radius, y: burst.y - radius,
+                                              width: radius * 2, height: radius * 2)),
+                     with: .radialGradient(Gradient(colors: [.white.opacity(0.7 * left),
+                                                             Palette.goldLight.opacity(0.35 * left), .clear]),
+                                           center: burst, startRadius: 0, endRadius: radius))
+    }
+}
+
+/// Denari thrown up out of the sweep in a fountain, and a second fall of them from above
+/// the table: it rains money.
+///
+/// Coins are heavy, so these carry almost no drag and arc properly, spinning edge-on and
+/// back as they go. Each is the house coin, drawn narrowed by how far it has turned and
+/// shaded on its far side.
+private enum CoinFountain {
+    static let symbol = 0
+    /// The size the coin is rendered at before it is scaled into place.
+    static let drawn: CGFloat = 26
+    static let thrown = 24
+    static let rained = 14
+
+    static func paint(_ context: inout GraphicsContext, size: CGSize, age: CGFloat, origin: UnitPoint) {
+        guard let coin = context.resolveSymbol(id: symbol) else { return }
+        let unit = min(max(min(size.width, size.height) / 390, 0.6), 1.3)
+        let left = fading(age, from: FlourishView.length * 0.8)
+        let source = CGPoint(x: origin.x * size.width, y: origin.y * size.height)
+        for index in 0..<(thrown + rained) {
+            let seed = FlourishView.seeds(index)
+            let at: CGPoint
+            let time: CGFloat
+            if index < thrown {
+                time = age - seed.offset * 0.16
+                let velocity = CGVector(dx: (seed.across - 0.5) * size.width * 1.2,
+                                        dy: -size.height * (1.15 + 0.5 * seed.scale))
+                at = FlourishView.flight(from: source, velocity: velocity, gravity: size.height * 2.4,
+                                         drag: 0.5, time: max(time, 0))
+            } else {
+                time = age - 0.25 - seed.offset * 0.7
+                let top = CGPoint(x: seed.across * size.width, y: -30 * unit)
+                at = FlourishView.flight(from: top, velocity: CGVector(dx: 0, dy: size.height * 0.2),
+                                         gravity: size.height * 1.6, drag: 1.2, time: max(time, 0))
+            }
+            guard time > 0, at.y < size.height + 30 * unit else { continue }
+            let turn = cos(time * (8 + 8 * seed.scale) + seed.tint * 6)
+            let scale = (0.7 + 0.45 * seed.scale) * unit
+            var piece = context
+            piece.opacity = left
+            piece.translateBy(x: at.x, y: at.y)
+            piece.rotate(by: .degrees(Double(seed.spin) * 25))
+            piece.scaleBy(x: scale * max(abs(turn), 0.1), y: scale)
+            if turn < 0 { piece.addFilter(.brightness(-0.18)) }
+            piece.draw(coin, at: .zero, anchor: .center)
+        }
+    }
 }
 
 /// The `leggendario` flourish: gold, pushed out from where the sweep landed.

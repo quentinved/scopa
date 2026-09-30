@@ -62,7 +62,8 @@ enum Achievements {
     static func markProgress(streak: Int, suits: Set<Suit> = [], deck: Bool = false) -> MarkProgress {
         let defaults = UserDefaults.standard
         return MarkProgress(suits: suits, deck: deck, wins: defaults.integer(forKey: Key.wins),
-                            scope: defaults.integer(forKey: Key.scope), streak: streak)
+                            scope: defaults.integer(forKey: Key.scope), streak: streak,
+                            league: LadderPrizes.best)
     }
 
     /// A finished game, whatever it paid. `streak` is the daily run as it stands after it.

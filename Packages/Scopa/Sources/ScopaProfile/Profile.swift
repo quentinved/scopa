@@ -39,11 +39,15 @@ public struct Profile: Codable, Hashable, Sendable {
     /// nobody is handed a win they did not play.
     public var counters: [String: Int]
 
-    /// The album, by card code — "7d" for the seven of coins. A count of one card only ever
-    /// climbs, so the larger wins, card by card.
+    /// The album, by card code — "7d" for the seven of coins, "napoli/7d" for the same card
+    /// in a later volume. A count of one card only ever climbs, so the larger wins, card by
+    /// card.
     public var album: [String: Int]
 
     /// Suits whose completion bonus has already been paid for. A set, so union is the merge.
+    /// The album's later volumes write theirs here too, prefixed — "napoli/coins", and
+    /// "napoli/deck" for the whole volume — so they travel without a field an older build
+    /// would drop.
     public var paidSuits: Set<String>
     /// Whether the whole deck's bonus has been paid for. Paid once, so either side saying
     /// yes settles it.

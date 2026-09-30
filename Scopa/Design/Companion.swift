@@ -19,6 +19,9 @@ enum Companion: String, CaseIterable, Codable, Sendable, Identifiable {
     case tartaruga
     /// A duck, sat where the cards fall. The only one here with a name.
     case ferdinando
+    /// A little owl, awake when the rest of the table is not. Never sold: finishing the
+    /// Notturna album is the only way to her.
+    case civetta
 
     static let `default` = Companion.nessuno
 
@@ -43,6 +46,7 @@ enum Companion: String, CaseIterable, Codable, Sendable, Identifiable {
         case .riccio: "Riccio"
         case .tartaruga: "Tartaruga"
         case .ferdinando: "Ferdinand"
+        case .civetta: "Civetta"
         }
     }
 
@@ -55,6 +59,7 @@ enum Companion: String, CaseIterable, Codable, Sendable, Identifiable {
         case .riccio: "A hedgehog, spines up"
         case .tartaruga: "A tortoise, in no hurry"
         case .ferdinando: "A duck called Ferdinand"
+        case .civetta: "A little owl, awake at night"
         }
     }
 
@@ -68,6 +73,7 @@ enum Companion: String, CaseIterable, Codable, Sendable, Identifiable {
         case .riccio: "Poke it: every spine at once"
         case .tartaruga: "Poke it: gone. Back out once you behave"
         case .ferdinando: "Poke him: wings out, and one enormous quack"
+        case .civetta: "Poke her: the head goes all the way over"
         }
     }
 
@@ -80,6 +86,7 @@ enum Companion: String, CaseIterable, Codable, Sendable, Identifiable {
         case .riccio: "exclamationmark"
         case .tartaruga: "zzz"
         case .ferdinando: "quote.bubble.fill"
+        case .civetta: "moon.stars.fill"
         }
     }
 
@@ -154,6 +161,7 @@ struct CompanionView: View {
         case .riccio: return -size * 0.10
         case .tartaruga: return -size * 0.02
         case .ferdinando: return -size * 0.17
+        case .civetta: return -size * 0.08
         }
     }
 
@@ -168,6 +176,7 @@ struct CompanionView: View {
             case .riccio: return -11
             case .tartaruga: return 6
             case .ferdinando: return -9
+            case .civetta: return 5
             }
         }
         let base: Double = switch mood {
@@ -204,6 +213,7 @@ struct CompanionView: View {
         case .riccio: HedgehogArt(pose: pose)
         case .tartaruga: TortoiseArt(pose: pose)
         case .ferdinando: DuckArt(pose: pose)
+        case .civetta: OwlArt(pose: pose)
         }
     }
 

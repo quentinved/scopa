@@ -80,6 +80,40 @@ public struct HandSelection: Hashable, Sendable {
         return .play
     }
 
+    /// A first tap, for a player who has asked for one tap to play: the card is sent at
+    /// once when it allows one move only, exactly as a second tap would send it. Anything
+    /// else is `.select`, and the card is picked up as it would be without the setting —
+    /// two ways to take is still a choice for the player to make on the cloth.
+    public mutating func tapToPlay(_ handCard: Card, in view: PlayerView) -> HandTap {
+        guard view.isMyTurn else { return .select }
+        var attempt = self
+        if attempt.card != handCard { attempt.select(handCard, on: view.table) }
+        guard attempt.tapInHand(handCard, in: view) == .play else { return .select }
+        self = attempt
+        return .play
+    }
+
+    /// A card flicked at the table: "play it". With nothing chosen on the cloth it is sent
+    /// with its one move, as a second tap would send it; at normal a flick used to lay a
+    /// card that had to take, and the rules refused it. Two ways to take leaves the card
+    /// up to choose from. A take the player has built goes as built, and the rules answer.
+    public mutating func flick(_ handCard: Card, in view: PlayerView) -> HandTap {
+        guard view.isMyTurn else { return .select }
+        if card != handCard { select(handCard, on: view.table) }
+        if chosen.isEmpty { return tapInHand(handCard, in: view) }
+        return move(in: view) == nil ? .select : .play
+    }
+
+    /// The cards in hand a tap would send there and then: the picked one when a second tap
+    /// plays it, and with `oneTap` every card that has one move only. For the hint that
+    /// says "play" rather than "pick up".
+    public func playsOnTap(in view: PlayerView, oneTap: Bool) -> Set<Card> {
+        Set(view.hand.filter { card in
+            var probe = self
+            return (oneTap ? probe.tapToPlay(card, in: view) : probe.tapInHand(card, in: view)) == .play
+        })
+    }
+
     /// The selection that dropping the played card onto `tableCard` would finish, when that
     /// makes a take the rules accept. `nil` while the take is unfinished, such as a sum
     /// needing a second card, so the caller picks the card up and waits for the rest.

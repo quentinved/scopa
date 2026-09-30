@@ -15,6 +15,8 @@ struct Swatch<Preview: View>: View {
     /// How this one is had when it cannot be bought, such as "7-day streak". A key rather
     /// than a string: the wording inflects on the number, which only `Text` resolves.
     var earnedBy: LocalizedStringKey? = nil
+    /// The glyph beside `earnedBy`: a flame for a streak, a book for an album.
+    var earnedGlyph = "flame.fill"
     @ViewBuilder var preview: Preview
 
     /// How rare the thing is, which is a different question from what it costs and is why
@@ -92,7 +94,7 @@ struct Swatch<Preview: View>: View {
                 .foregroundStyle(Palette.onTableSoft)
         } else if let earnedBy {
             HStack(spacing: 4) {
-                Image(systemName: "flame.fill").font(.system(size: 10, weight: .semibold))
+                Image(systemName: earnedGlyph).font(.system(size: 10, weight: .semibold))
                 Text(earnedBy).font(.system(size: 11, weight: .semibold))
             }
             .foregroundStyle(Palette.goldLight)
@@ -215,9 +217,10 @@ struct FlourishSwatch: View {
             .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.gold.opacity(0.35)) }
             .frame(width: 84, height: 58)
             .overlay {
-                // Scaled down rather than re-drawn small: the flourish is sized off the
-                // space it is given, and a tile is a small table.
+                // Laid out on a table twice the tile's size and scaled down onto it, so the
+                // cannons sit in the tile's own corners and the fireworks open inside it.
                 FlourishView(flourish: flourish, origin: .center)
+                    .frame(width: 168, height: 116)
                     .id(run)
                     .scaleEffect(0.5)
             }
@@ -228,7 +231,7 @@ struct FlourishSwatch: View {
             .task {
                 guard !reduceMotion, flourish != .stendardo else { return }
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(2600))
+                    try? await Task.sleep(for: .seconds(FlourishView.length + 0.5))
                     guard !Task.isCancelled else { return }
                     run += 1
                 }
@@ -239,7 +242,6 @@ struct FlourishSwatch: View {
 /// A cheer, which cannot be shown. The tile draws what it is of and says to tap it.
 struct CheerSwatch: View {
     let cheer: Cheer
-    let owned: Bool
 
     /// The cloth under it, so the glass is tinted with the table's own shadow.
     @Environment(\.tableFelt) private var felt
@@ -254,13 +256,11 @@ struct CheerSwatch: View {
                     Image(systemName: cheer.symbol)
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(Palette.goldLight)
-                    if owned {
-                        HStack(spacing: 3) {
-                            Image(systemName: "play.fill").font(.system(size: 7, weight: .bold))
-                            Text("Hear it").font(.system(size: 9, weight: .semibold))
-                        }
-                        .foregroundStyle(Palette.onTableSoft)
+                    HStack(spacing: 3) {
+                        Image(systemName: "play.fill").font(.system(size: 7, weight: .bold))
+                        Text("Hear it").font(.system(size: 9, weight: .semibold))
                     }
+                    .foregroundStyle(Palette.onTableSoft)
                 }
             }
     }

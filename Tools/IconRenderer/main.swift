@@ -6,15 +6,15 @@ import UniformTypeIdentifiers
 // same drawing the app ships. Run it with Tools/render-icon.sh after changing the artwork.
 MainActor.assumeIsolated {
     let arguments = CommandLine.arguments
-    guard (3...4).contains(arguments.count), let side = Double(arguments[1]) else {
+    guard (3...5).contains(arguments.count), let side = Double(arguments[1]) else {
         FileHandle.standardError.write(
-            Data("usage: render-icon <size> <output.png> [light|dark|tinted]\n".utf8))
+            Data("usage: render-icon <size> <output.png> [light|dark|tinted] [classic|silver|gold|platinum|diamond|maestro]\n".utf8))
         exit(2)
     }
     let output = URL(fileURLWithPath: arguments[2])
 
     let appearance: IconArtwork.Appearance
-    switch arguments.count == 4 ? arguments[3] : "light" {
+    switch arguments.count >= 4 ? arguments[3] : "light" {
     case "light": appearance = .light
     case "dark": appearance = .dark
     case "tinted": appearance = .tinted
@@ -23,7 +23,13 @@ MainActor.assumeIsolated {
         exit(2)
     }
 
-    let renderer = ImageRenderer(content: IconArtwork(size: side, appearance: appearance))
+    let finishName = arguments.count == 5 ? arguments[4] : "classic"
+    guard let finish = IconArtwork.Finish(rawValue: finishName) else {
+        FileHandle.standardError.write(Data("unknown finish: \(finishName)\n".utf8))
+        exit(2)
+    }
+
+    let renderer = ImageRenderer(content: IconArtwork(size: side, appearance: appearance, finish: finish))
     renderer.scale = 1
     guard let drawing = renderer.cgImage else {
         FileHandle.standardError.write(Data("the renderer produced no image\n".utf8))

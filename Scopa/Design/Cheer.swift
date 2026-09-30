@@ -3,8 +3,8 @@ import SwiftUI
 
 /// What a sweep sounds like when you are the one who made it.
 ///
-/// The house sound is the room reacting: a nylon guitar answering in the key the table
-/// music is already in. A bought cheer replaces it, and only for your own sweeps — the
+/// The house sound is the room reacting: a nylon guitar landing on a major chord and the
+/// table clapping along. A bought cheer replaces it, and only for your own sweeps — the
 /// people across the table keep hearing the house one, because a cheer is your voice and
 /// not theirs. It is the one cosmetic in the shop nobody can see.
 ///
@@ -14,12 +14,13 @@ import SwiftUI
 enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The guitar, which is what the game shipped with.
     case casa
-    /// A church bell, tolling long past the cards.
+    /// Wedding bells, pealing down the scale.
     case campana
     /// An accordion and a tambourine.
     case festa
-    /// Thunder, and no metal at all.
-    case tuono
+    /// Fireworks. Stored as `tuono`, which it was sold as when it was thunder, so a purse
+    /// that bought the thunder owns the fireworks.
+    case fuochi = "tuono"
     /// A purse emptied across the table.
     case oro
 
@@ -36,7 +37,7 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casa: .scopa
         case .campana: .cheerCampana
         case .festa: .cheerFesta
-        case .tuono: .cheerTuono
+        case .fuochi: .cheerFuochi
         case .oro: .cheerOro
         }
     }
@@ -46,7 +47,7 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casa: "Casa"
         case .campana: "Campana"
         case .festa: "Festa"
-        case .tuono: "Tuono"
+        case .fuochi: "Fuochi"
         case .oro: "Oro"
         }
     }
@@ -55,9 +56,9 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
     var detail: String {
         switch self {
         case .casa: "The guitar answering"
-        case .campana: "A church bell"
+        case .campana: "A peal of bells"
         case .festa: "An accordion and a tambourine"
-        case .tuono: "Thunder"
+        case .fuochi: "Fireworks"
         case .oro: "A purse emptied on the table"
         }
     }
@@ -67,7 +68,7 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casa: "The guitar answers"
         case .campana: "The village hears about it"
         case .festa: "The band strikes up"
-        case .tuono: "The room goes dark"
+        case .fuochi: "Fireworks over the square"
         case .oro: "Coins, everywhere"
         }
     }
@@ -78,7 +79,7 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casa: "guitars.fill"
         case .campana: "bell.fill"
         case .festa: "music.note.list"
-        case .tuono: "cloud.bolt.rain.fill"
+        case .fuochi: "fireworks"
         case .oro: "sparkles"
         }
     }
@@ -87,7 +88,7 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
         switch self {
         case .casa: .comune
         case .campana, .festa: .raro
-        case .tuono: .prezioso
+        case .fuochi: .prezioso
         case .oro: .leggendario
         }
     }
@@ -97,7 +98,7 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casa: nil
         case .campana: 240
         case .festa: 240
-        case .tuono: 500
+        case .fuochi: 500
         case .oro: 950
         }
     }

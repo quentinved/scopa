@@ -2,8 +2,9 @@ import SwiftUI
 
 /// The app icon, drawn rather than painted, so it can be re-rendered at any size.
 ///
-/// Bottle green under a gold frame, a burst of rays, three cards fanned above a gold
-/// broom, and the name on a glass plaque.
+/// One card on the felt: the settebello, the seven of coins every hand is fought over,
+/// printed on parchment with its coins struck in the icon's metal. Flat, the way a card
+/// is printed, with one shadow under it and one lit edge on each coin.
 ///
 /// The colours are written out rather than taken from `Palette`, so the icon does not
 /// shift when the interface palette is tuned and this file compiles on its own for
@@ -14,371 +15,314 @@ struct IconArtwork: View {
     /// pixels take the tint, dark ones stay dark.
     enum Appearance { case light, dark, tinted }
 
-    /// Everything is expressed against this, so 1024 and 180 draw the same picture.
+    /// The metal the coins are struck in. `classic` is the one on the App Store; the others
+    /// are won on the ranked ladder, one per league from Silver up. Each keeps what the one
+    /// below it has: a gilt edge from Gold, a double frame in the metal from Platinum, a
+    /// stone in every coin and glints from Diamond, and rubies and a terracotta line at
+    /// Maestro.
+    enum Finish: String, CaseIterable { case classic, silver, gold, platinum, diamond, maestro }
+
+    /// Everything is expressed against this, so 1024 and 40 draw the same picture.
     var size: CGFloat
     var appearance: Appearance = .light
+    var finish: Finish = .classic
 
     private var unit: CGFloat { size / 1024 }
+    private var rank: Int { Finish.allCases.firstIndex(of: finish) ?? 0 }
 
-    private static let deepGreen = Color(red: 0.055, green: 0.180, blue: 0.114)
-    private static let green = Color(red: 0.153, green: 0.310, blue: 0.204)
-    private static let lightGreen = Color(red: 0.278, green: 0.451, blue: 0.302)
-    private static let cream = Color(red: 0.988, green: 0.973, blue: 0.933)
-    private static let stock = Color(red: 0.937, green: 0.906, blue: 0.827)
-    private static let terracotta = Color(red: 0.788, green: 0.310, blue: 0.220)
-    private static let gold = Color(red: 0.851, green: 0.643, blue: 0.267)
-    private static let goldLight = Color(red: 0.976, green: 0.855, blue: 0.494)
-    private static let goldDeep = Color(red: 0.678, green: 0.478, blue: 0.153)
-    private static let steel = Color(red: 0.259, green: 0.290, blue: 0.322)
-    private static let ink = Color(red: 0.114, green: 0.098, blue: 0.086)
-    /// The bottom of the dark icon's ground: green gone almost to black.
-    private static let night = Color(red: 0.020, green: 0.067, blue: 0.043)
-
-    var body: some View {
-        drawing.grayscale(appearance == .tinted ? 1 : 0)
+    /// The cloth and the metal for one finish. The cloth runs from `felt` at the top to
+    /// `feltDeep` at the foot; the dark icon uses `night` and `nightDeep` instead.
+    private struct Tones {
+        let felt: Color
+        let feltDeep: Color
+        let night: Color
+        let nightDeep: Color
+        let metalLight: Color
+        let metal: Color
+        let metalDeep: Color
     }
 
-    private var drawing: some View {
+    /// The tinted icon strikes its coins near white, so they take the full tint.
+    private var tones: Tones {
+        guard appearance != .tinted else { return Self.tintable }
+        switch finish {
+        case .classic: return Self.bottleGreen
+        case .silver: return Self.slate
+        case .gold: return Self.claret
+        case .platinum: return Self.teal
+        case .diamond: return Self.navy
+        case .maestro: return Self.ebony
+        }
+    }
+
+    private static func rgb(_ red: Double, _ green: Double, _ blue: Double) -> Color {
+        Color(red: red, green: green, blue: blue)
+    }
+
+    private static let gold = rgb(0.851, 0.604, 0.153)
+    private static let goldLight = rgb(0.973, 0.808, 0.380)
+    private static let goldDeep = rgb(0.604, 0.388, 0.063)
+    private static let terracotta = rgb(0.808, 0.353, 0.243)
+    private static let ruby = rgb(0.702, 0.114, 0.157)
+    private static let sky = rgb(0.694, 0.859, 0.965)
+    private static let parchment = rgb(0.957, 0.925, 0.851)
+    private static let parchmentEdge = rgb(0.788, 0.729, 0.604)
+    private static let charcoal = rgb(0.157, 0.176, 0.165)
+    private static let charcoalEdge = rgb(0.078, 0.086, 0.082)
+
+    private static let bottleGreen = Tones(
+        felt: rgb(0.063, 0.345, 0.216), feltDeep: rgb(0.031, 0.247, 0.149),
+        night: rgb(0.031, 0.102, 0.067), nightDeep: rgb(0.008, 0.035, 0.024),
+        metalLight: goldLight, metal: gold, metalDeep: goldDeep)
+    private static let slate = Tones(
+        felt: rgb(0.196, 0.239, 0.298), feltDeep: rgb(0.106, 0.137, 0.184),
+        night: rgb(0.063, 0.075, 0.098), nightDeep: rgb(0.016, 0.024, 0.035),
+        metalLight: rgb(0.980, 0.984, 0.992), metal: rgb(0.722, 0.749, 0.788),
+        metalDeep: rgb(0.376, 0.408, 0.455))
+    private static let claret = Tones(
+        felt: rgb(0.412, 0.086, 0.122), feltDeep: rgb(0.271, 0.039, 0.071),
+        night: rgb(0.122, 0.027, 0.039), nightDeep: rgb(0.043, 0.008, 0.016),
+        metalLight: goldLight, metal: gold, metalDeep: goldDeep)
+    private static let teal = Tones(
+        felt: rgb(0.059, 0.259, 0.302), feltDeep: rgb(0.027, 0.161, 0.200),
+        night: rgb(0.020, 0.071, 0.082), nightDeep: rgb(0.004, 0.027, 0.035),
+        metalLight: rgb(0.992, 0.996, 1.000), metal: rgb(0.784, 0.824, 0.859),
+        metalDeep: rgb(0.380, 0.447, 0.518))
+    private static let navy = Tones(
+        felt: rgb(0.086, 0.141, 0.345), feltDeep: rgb(0.035, 0.071, 0.212),
+        night: rgb(0.031, 0.043, 0.106), nightDeep: rgb(0.008, 0.012, 0.043),
+        metalLight: rgb(1.000, 1.000, 1.000), metal: rgb(0.698, 0.839, 0.949),
+        metalDeep: rgb(0.259, 0.431, 0.612))
+    private static let ebony = Tones(
+        felt: rgb(0.106, 0.094, 0.082), feltDeep: rgb(0.039, 0.035, 0.031),
+        night: rgb(0.051, 0.047, 0.043), nightDeep: rgb(0.008, 0.008, 0.008),
+        metalLight: rgb(1.000, 0.886, 0.541), metal: gold, metalDeep: goldDeep)
+    private static let tintable = Tones(
+        felt: .black, feltDeep: .black, night: .black, nightDeep: .black,
+        metalLight: .white, metal: rgb(0.925, 0.925, 0.925), metalDeep: rgb(0.560, 0.560, 0.560))
+
+    var body: some View {
         ZStack {
             ground
-            // Scaled and lifted as one group, so the plaque sits under the picture and the
-            // fan keeps its proportions.
-            ZStack {
-                rays
-                fan
-                broom
-            }
-            .scaleEffect(0.86)
-            .offset(y: -84 * unit)
-            wordmark
+            card
+                .rotationEffect(.degrees(-6))
+                .offset(x: 4 * unit, y: -6 * unit)
+            if rank >= 4 { glints }
         }
         .frame(width: size, height: size)
         .clipped()
-        .overlay { frame }
-        .overlay { sheen }
+        .grayscale(appearance == .tinted ? 1 : 0)
     }
 
-    // MARK: Ground
+    /// The cloth, lit a shade from above. Banked down to near black for the dark icon, and
+    /// black for the tinted one.
+    @ViewBuilder private var ground: some View {
+        switch appearance {
+        case .light:
+            LinearGradient(colors: [tones.felt, tones.feltDeep], startPoint: .top, endPoint: .bottom)
+        case .dark:
+            LinearGradient(colors: [tones.night, tones.nightDeep], startPoint: .top, endPoint: .bottom)
+        case .tinted:
+            Color.black
+        }
+    }
 
-    /// Bottle green lit from the top left — banked down for the dark icon, and taken to
-    /// black for the tinted one so the cards and the broom are what the tint lands on.
-    private var ground: some View {
+    // MARK: The card
+
+    private static let cardWidth: CGFloat = 480
+    private static let cardHeight: CGFloat = 712
+    private var corner: CGFloat { 50 * unit }
+
+    /// The dark and tinted icons turn the paper dark, the way the system's own icons do, so
+    /// the coins are what the eye and the tint land on.
+    private var night: Bool { appearance != .light }
+
+    /// Parchment rather than white, or charcoal at night.
+    private var stock: Color { night ? Self.charcoal : Self.parchment }
+
+    /// The sheet's thickness, showing under its bottom edge. Gilt from Gold up.
+    private var edge: Color {
+        if rank >= 2 { return tones.metalDeep }
+        return night ? Self.charcoalEdge : Self.parchmentEdge
+    }
+
+    private var card: some View {
         ZStack {
-            switch appearance {
-            case .light:
-                LinearGradient(colors: [Self.lightGreen, Self.green, Self.deepGreen],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [.white.opacity(0.26), .clear],
-                               center: UnitPoint(x: 0.14, y: 0.02),
-                               startRadius: 0, endRadius: 620 * unit)
-                RadialGradient(colors: [Self.deepGreen.opacity(0.85), .clear],
-                               center: UnitPoint(x: 0.92, y: 1.04),
-                               startRadius: 0, endRadius: 720 * unit)
-            case .dark:
-                LinearGradient(colors: [Self.green, Self.deepGreen, Self.night],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [.white.opacity(0.10), .clear],
-                               center: UnitPoint(x: 0.14, y: 0.02),
-                               startRadius: 0, endRadius: 620 * unit)
-            case .tinted:
-                Color.black
-                RadialGradient(colors: [.white.opacity(0.12), .clear],
-                               center: UnitPoint(x: 0.14, y: 0.02),
-                               startRadius: 0, endRadius: 620 * unit)
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .fill(edge)
+                .offset(y: 14 * unit)
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
+                .fill(stock)
+            printedFrame
+            coins
+        }
+        .frame(width: Self.cardWidth * unit, height: Self.cardHeight * unit)
+        .background { shadow }
+    }
+
+    private var shadow: some View {
+        RoundedRectangle(cornerRadius: corner, style: .continuous)
+            .fill(Color.black.opacity(night ? 0.5 : 0.30))
+            .offset(x: 10 * unit, y: 30 * unit)
+            .blur(radius: 16 * unit)
+    }
+
+    /// The line printed round the face: terracotta, struck in the metal from Platinum with a
+    /// finer line outside it, which Maestro prints in terracotta.
+    private var printedFrame: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: corner - 24 * unit, style: .continuous)
+                .strokeBorder(rank >= 3 ? tones.metalDeep : Self.terracotta, lineWidth: 8 * unit)
+                .padding(24 * unit)
+            if rank >= 3 {
+                RoundedRectangle(cornerRadius: corner - 12 * unit, style: .continuous)
+                    .strokeBorder(rank >= 5 ? Self.terracotta : tones.metalDeep.opacity(0.7),
+                                  lineWidth: 4 * unit)
+                    .padding(12 * unit)
             }
         }
     }
 
-    /// The burst behind the cards, as light rather than drawn gold.
-    private var rays: some View {
-        Sunburst(count: 22)
-            .fill(RadialGradient(colors: [Self.goldLight.opacity(0.42), Self.gold.opacity(0.16), .clear],
-                                 center: .center, startRadius: 120 * unit, endRadius: 470 * unit))
-            .blur(radius: 9 * unit)
-            .frame(width: 1080 * unit, height: 1080 * unit)
-            .offset(y: -110 * unit)
-            .blendMode(.plusLighter)
-    }
+    // MARK: The coins
 
-    // MARK: The fan
+    private static let coin: CGFloat = 120
 
-    /// Three cards, the middle one in front.
-    private var fan: some View {
+    /// Two, three, two: the seven as the deck lays it out.
+    private static let spots: [CGPoint] = {
+        let pair = coin * 0.64, row = coin + 10, rise: CGFloat = 214
+        return [CGPoint(x: -pair, y: -rise), CGPoint(x: pair, y: -rise),
+                CGPoint(x: -row, y: 0), CGPoint(x: 0, y: 0), CGPoint(x: row, y: 0),
+                CGPoint(x: -pair, y: rise), CGPoint(x: pair, y: rise)]
+    }()
+
+    private var coins: some View {
         ZStack {
-            card(suit: .cup)
-                .rotationEffect(.degrees(-22))
-                .offset(x: -198 * unit, y: 44 * unit)
-            card(suit: .sword)
-                .rotationEffect(.degrees(22))
-                .offset(x: 198 * unit, y: 44 * unit)
-            card(suit: .coin)
-                .offset(y: -24 * unit)
+            ForEach(Self.spots.indices, id: \.self) { index in
+                coinMark.offset(x: Self.spots[index].x * unit, y: Self.spots[index].y * unit)
+            }
         }
     }
 
-    private enum IconSuit { case cup, coin, sword }
-
-    private func card(suit: IconSuit) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
-                .fill(LinearGradient(colors: [Self.cream, Self.stock],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-            // The gold hairline inside the card edge.
-            RoundedRectangle(cornerRadius: 22 * unit, style: .continuous)
-                .strokeBorder(Self.gold.opacity(0.55), lineWidth: 4 * unit)
-                .padding(16 * unit)
-            mark(for: suit)
-            RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
-                .fill(LinearGradient(stops: [
-                    .init(color: .white.opacity(0.5), location: 0.0),
-                    .init(color: .clear, location: 0.4),
-                ], startPoint: .topLeading, endPoint: .bottomTrailing))
-            RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
-                .strokeBorder(edge(for: suit), lineWidth: 5 * unit)
-        }
-        .frame(width: 256 * unit, height: 380 * unit)
-        .shadow(color: Self.deepGreen.opacity(0.55), radius: 28 * unit, y: 14 * unit)
-    }
-
-    /// The specular edge each card carries, in gold for the coin card at the front.
-    private func edge(for suit: IconSuit) -> LinearGradient {
-        let colours: [Color] = suit == .coin
-            ? [Self.goldLight, Self.gold.opacity(0.55), Self.goldLight.opacity(0.9)]
-            : [.white, .white.opacity(0.4), .white.opacity(0.8)]
-        return LinearGradient(colors: colours, startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
-
-    @ViewBuilder private func mark(for suit: IconSuit) -> some View {
-        switch suit {
-        case .coin: coinMark
-        case .cup: cupMark
-        case .sword: swordMark
-        }
-    }
-
+    /// The coins-suit rosette: a struck disc with a rim and a ring, eight petals and a boss,
+    /// and one lit arc at the top left as the only shading.
     private var coinMark: some View {
-        ZStack {
-            Circle().fill(LinearGradient(colors: [Self.goldLight, Self.gold],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-            Circle().strokeBorder(Self.goldDeep.opacity(0.8), lineWidth: 8 * unit).padding(24 * unit)
-            Circle().fill(Self.goldDeep.opacity(0.8)).frame(width: 24 * unit)
-            Circle().strokeBorder(.white.opacity(0.7), lineWidth: 4 * unit)
-        }
-        .frame(width: 176 * unit, height: 176 * unit)
-        .offset(y: -40 * unit)
-    }
-
-    private var cupMark: some View {
-        VStack(spacing: 0) {
-            UnevenRoundedRectangle(bottomLeadingRadius: 54 * unit, bottomTrailingRadius: 54 * unit,
-                                   style: .continuous)
-                .fill(Self.terracotta)
-                .frame(width: 128 * unit, height: 94 * unit)
-            Rectangle().fill(Self.terracotta).frame(width: 24 * unit, height: 34 * unit)
-            Capsule().fill(Self.terracotta).frame(width: 104 * unit, height: 22 * unit)
-        }
-        .overlay(alignment: .top) {
-            Capsule().fill(.white.opacity(0.45))
-                .frame(width: 72 * unit, height: 14 * unit)
-                .offset(y: 17 * unit)
-        }
-        .offset(y: -40 * unit)
-    }
-
-    private var swordMark: some View {
-        VStack(spacing: 0) {
-            Blade().fill(Self.steel).frame(width: 58 * unit, height: 126 * unit)
-            Capsule().fill(Self.gold).frame(width: 146 * unit, height: 19 * unit)
-            Rectangle().fill(Self.steel).frame(width: 22 * unit, height: 29 * unit)
-            Circle().fill(Self.gold).frame(width: 32 * unit)
-        }
-        .offset(y: -46 * unit)
-    }
-
-    // MARK: The broom
-
-    /// The broom the game is named after, in front of the fan.
-    private var broom: some View {
-        ZStack {
-            Circle()
-                .fill(Self.gold.opacity(0.30))
-                .frame(width: 500 * unit, height: 500 * unit)
-                .offset(y: 130 * unit)
-                .blur(radius: 100 * unit)
-            handle
-            bristles
-            collar
-        }
-        .rotationEffect(.degrees(74))
-        .offset(x: 62 * unit, y: 137 * unit)
-        .shadow(color: Self.deepGreen.opacity(0.6), radius: 30 * unit, y: 18 * unit)
-    }
-
-    private var handle: some View {
-        Capsule()
-            .fill(LinearGradient(colors: [Color(red: 0.271, green: 0.235, blue: 0.204), Self.ink],
-                                 startPoint: .leading, endPoint: .trailing))
-            .overlay {
-                Capsule()
-                    .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                         startPoint: .leading, endPoint: .center))
-            }
-            .overlay { Capsule().strokeBorder(.white.opacity(0.25), lineWidth: 3 * unit) }
-            .frame(width: 44 * unit, height: 240 * unit)
-            .offset(y: -190 * unit)
-    }
-
-    /// Slats hinged just under the collar, narrow enough to separate at the tips.
-    private var bristles: some View {
-        let count = 11
-        return ForEach(0..<count, id: \.self) { index in
-            let position = Double(index) / Double(count - 1) * 2 - 1
-            Capsule()
-                .fill(LinearGradient(colors: [Self.gold, Self.goldLight],
-                                     startPoint: .top, endPoint: .bottom))
-                .overlay {
-                    Capsule()
-                        .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                             startPoint: .topLeading, endPoint: .center))
-                }
-                .frame(width: 21 * unit, height: (272 - abs(position) * 36) * unit)
-                .offset(y: 146 * unit)
-                .rotationEffect(.degrees(position * 26))
-        }
-    }
-
-    private var collar: some View {
-        RoundedRectangle(cornerRadius: 11 * unit, style: .continuous)
-            .fill(LinearGradient(colors: [Color(red: 0.937, green: 0.494, blue: 0.353),
-                                          Color(red: 0.827, green: 0.337, blue: 0.239)],
-                                 startPoint: .top, endPoint: .bottom))
-            .overlay {
-                RoundedRectangle(cornerRadius: 11 * unit, style: .continuous)
-                    .fill(LinearGradient(colors: [.white.opacity(0.55), .clear],
-                                         startPoint: .top, endPoint: .center))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 11 * unit, style: .continuous)
-                    .strokeBorder(.white.opacity(0.4), lineWidth: 3 * unit)
-            }
-            .frame(width: 162 * unit, height: 52 * unit)
-            .offset(y: -18 * unit)
-    }
-
-    // MARK: The name
-
-    /// The name on a glass plaque, dark enough that the gold letters keep their edges over
-    /// the bristles behind them.
-    private var wordmark: some View {
-        letters
-            .padding(.horizontal, 54 * unit)
-            .padding(.vertical, 20 * unit)
-            .background { plaque }
-            .offset(y: 330 * unit)
-    }
-
-    private var letters: some View {
-        Text(verbatim: "SCOPA")
-            .font(.system(size: 126 * unit, weight: .heavy, design: .serif))
-            .tracking(13 * unit)
-            .foregroundStyle(LinearGradient(colors: [Self.goldLight, Self.gold, Self.goldDeep],
-                                            startPoint: .top, endPoint: .bottom))
-            .shadow(color: Self.deepGreen.opacity(0.7), radius: 6 * unit, y: 4 * unit)
-    }
-
-    private var plaque: some View {
-        let edge = LinearGradient(colors: [Self.goldLight, Self.gold.opacity(0.6),
-                                           Self.goldLight.opacity(0.9)],
-                                  startPoint: .topLeading, endPoint: .bottomTrailing)
+        let side = Self.coin * unit
         return ZStack {
-            Capsule(style: .continuous)
-                .fill(LinearGradient(colors: [Self.green.opacity(0.86),
-                                              Self.deepGreen.opacity(0.94)],
-                                     startPoint: .top, endPoint: .bottom))
-            Capsule(style: .continuous)
-                .fill(LinearGradient(stops: [
-                    .init(color: .white.opacity(0.34), location: 0.0),
-                    .init(color: .clear, location: 0.45),
-                ], startPoint: .top, endPoint: .bottom))
-            Capsule(style: .continuous)
-                .strokeBorder(edge, lineWidth: 6 * unit)
+            Circle().fill(tones.metalDeep).offset(y: side * 0.04)
+            Circle().fill(tones.metal)
+            Circle().strokeBorder(tones.metalDeep, lineWidth: side * 0.035)
+            Circle().strokeBorder(tones.metalDeep, lineWidth: side * 0.04).padding(side * 0.10)
+            ForEach(0..<8, id: \.self) { petal in
+                Petal()
+                    .fill(tones.metalDeep)
+                    .frame(width: side * 0.17, height: side * 0.30)
+                    .offset(y: -side * 0.17)
+                    .rotationEffect(.degrees(Double(petal) * 45 + 22.5))
+            }
+            boss(side)
+            Circle()
+                .trim(from: 0.56, to: 0.76)
+                .stroke(tones.metalLight, style: StrokeStyle(lineWidth: side * 0.045, lineCap: .round))
+                .padding(side * 0.03)
         }
-        .shadow(color: Self.deepGreen.opacity(0.65), radius: 26 * unit, y: 12 * unit)
+        .frame(width: side, height: side)
     }
 
-    // MARK: Edges
-
-    /// The gold border, thinned to a hairline. The system draws its own edge on top, so
-    /// this one sits well inside the mask.
-    private var frame: some View {
-        RoundedRectangle(cornerRadius: 189 * unit, style: .continuous)
-            .strokeBorder(LinearGradient(colors: [Self.goldLight, Self.gold.opacity(0.7),
-                                                  Self.goldLight.opacity(0.85)],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing),
-                          lineWidth: 9 * unit)
-            .padding(40 * unit)
-            .shadow(color: Self.deepGreen.opacity(0.5), radius: 8 * unit, y: 3 * unit)
+    /// Terracotta enamel, or from Diamond up a cut stone: pale blue, then rubies at Maestro.
+    @ViewBuilder private func boss(_ side: CGFloat) -> some View {
+        if rank >= 4 {
+            let stone = rank >= 5 ? Self.ruby : Self.sky
+            ZStack {
+                Stone().fill(stone)
+                // The table facet, a paler octagon inside the girdle.
+                Stone().fill(.white.opacity(0.38)).scaleEffect(0.56)
+                Stone().stroke(tones.metalDeep, lineWidth: side * 0.025)
+            }
+            .frame(width: side * 0.30, height: side * 0.30)
+        } else {
+            Circle().fill(Self.terracotta).frame(width: side * 0.20)
+        }
     }
 
-    /// The highlight that runs across every layer at once, plus the darkening at the
-    /// bottom right that gives the pane its thickness.
-    private var sheen: some View {
+    // MARK: Glints
+
+    /// Four-point glints caught on the card's corners, from Diamond up, and a third at Maestro.
+    private var glints: some View {
         ZStack {
-            LinearGradient(stops: [
-                .init(color: .white.opacity(0.20), location: 0.00),
-                .init(color: .white.opacity(0.05), location: 0.32),
-                .init(color: .clear, location: 0.50),
-                .init(color: Self.deepGreen.opacity(0.30), location: 1.00),
-            ], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .blendMode(.softLight)
-
-            Capsule()
-                .fill(.white.opacity(0.14))
-                .frame(width: 1500 * unit, height: 240 * unit)
-                .rotationEffect(.degrees(-32))
-                .offset(x: -150 * unit, y: -320 * unit)
-                .blur(radius: 90 * unit)
+            ForEach(Array(Self.glintSpots.prefix(rank >= 5 ? 3 : 2).enumerated()), id: \.offset) { _, spot in
+                Glint()
+                    .fill(tones.metalLight)
+                    .frame(width: spot.z * unit, height: spot.z * unit)
+                    .position(x: spot.x * unit, y: spot.y * unit)
+            }
         }
+        .frame(width: size, height: size)
         .allowsHitTesting(false)
+    }
+
+    /// Where the glints sit on a 1024 icon, and how big each is.
+    private static let glintSpots: [(x: CGFloat, y: CGFloat, z: CGFloat)] = [
+        (262, 190, 88), (786, 838, 72), (712, 142, 52),
+    ]
+}
+
+/// A petal, pointed at the tip and round at the foot.
+private struct Petal: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.midX, y: r.minY))
+        p.addQuadCurve(to: CGPoint(x: r.midX, y: r.maxY),
+                       control: CGPoint(x: r.maxX + r.width * 0.25, y: r.midY + r.height * 0.18))
+        p.addQuadCurve(to: CGPoint(x: r.midX, y: r.minY),
+                       control: CGPoint(x: r.minX - r.width * 0.25, y: r.midY + r.height * 0.18))
+        p.closeSubpath()
+        return p
     }
 }
 
-/// Wedges radiating from the centre.
-private struct Sunburst: Shape {
-    var count: Int
+/// A cut stone seen from above: an octagon.
+private struct Stone: Shape {
+    func path(in r: CGRect) -> Path {
+        let centre = CGPoint(x: r.midX, y: r.midY)
+        let radius = min(r.width, r.height) / 2
+        var p = Path()
+        for index in 0..<8 {
+            let angle = Double(index) * .pi / 4 + .pi / 8
+            let point = CGPoint(x: centre.x + cos(angle) * radius, y: centre.y + sin(angle) * radius)
+            if index == 0 { p.move(to: point) } else { p.addLine(to: point) }
+        }
+        p.closeSubpath()
+        return p
+    }
+}
 
+/// A four-pointed star with hollowed sides.
+private struct Glint: Shape {
     func path(in rect: CGRect) -> Path {
         let centre = CGPoint(x: rect.midX, y: rect.midY)
-        let inner = min(rect.width, rect.height) * 0.09
-        let outer = min(rect.width, rect.height) * 0.5
-        let half = .pi / Double(count) * 0.44
+        let outer = min(rect.width, rect.height) / 2
         var path = Path()
-        for index in 0..<count {
-            let angle = Double(index) / Double(count) * 2 * .pi
-            path.move(to: CGPoint(x: centre.x + cos(angle - half) * inner,
-                                  y: centre.y + sin(angle - half) * inner))
-            path.addLine(to: CGPoint(x: centre.x + cos(angle) * outer,
-                                     y: centre.y + sin(angle) * outer))
-            path.addLine(to: CGPoint(x: centre.x + cos(angle + half) * inner,
-                                     y: centre.y + sin(angle + half) * inner))
-            path.closeSubpath()
+        for index in 0..<4 {
+            let angle = Double(index) * .pi / 2 - .pi / 2
+            let tip = CGPoint(x: centre.x + cos(angle) * outer, y: centre.y + sin(angle) * outer)
+            let next = Double(index + 1) * .pi / 2 - .pi / 2
+            let following = CGPoint(x: centre.x + cos(next) * outer, y: centre.y + sin(next) * outer)
+            if index == 0 { path.move(to: tip) }
+            path.addQuadCurve(to: following, control: centre)
         }
+        path.closeSubpath()
         return path
     }
 }
 
-/// A blade: flat shoulders, then straight down.
-private struct Blade: Shape {
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        p.move(to: CGPoint(x: r.midX, y: r.minY))
-        p.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.20))
-        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
-        p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
-        p.addLine(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.20))
-        p.closeSubpath()
-        return p
+#Preview("The ladder's icons") {
+    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110))], spacing: 18) {
+        ForEach(IconArtwork.Finish.allCases, id: \.self) { finish in
+            IconArtwork(size: 110, finish: finish)
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
     }
+    .padding(30)
 }
 
 #Preview("App icon") {

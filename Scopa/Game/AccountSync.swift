@@ -181,9 +181,7 @@ final class AccountSync {
         return Profile(
             settings: settings,
             counters: counters,
-            album: store.albumBook.album.counts.reduce(into: [:]) { album, card in
-                album[card.key.code] = card.value
-            },
+            album: codes(of: store.albumBook),
             paidSuits: Set(defaults.stringArray(forKey: Stored.paidSuits) ?? []),
             paidDeck: defaults.bool(forKey: Stored.paidDeck),
             challengeWeek: store.challenges.week,
@@ -224,12 +222,29 @@ final class AccountSync {
         ads.sweepIfSaidElsewhere()
     }
 
-    private func writeAlbum(_ profile: Profile) {
-        let counts = profile.album.reduce(into: [Card: Int]()) { counts, found in
-            if let card = Card(code: found.key) { counts[card] = found.value }
+    /// Every volume's cards by code. The first volume's travel bare, as they always have;
+    /// a later one's carry the volume in front, "napoli/7d". An older build merges those
+    /// along with the rest and otherwise leaves them alone, since it cannot read one as a
+    /// card — so a device that has not updated yet still passes them on.
+    private func codes(of book: AlbumBook) -> [String: Int] {
+        Volume.allCases.reduce(into: [:]) { codes, volume in
+            for (card, count) in book.album(volume).counts {
+                codes[volume == .riviera ? card.code : "\(volume.rawValue)/\(card.code)"] = count
+            }
         }
-        if let data = try? JSONEncoder().encode(Album(counts: counts)) {
-            defaults.set(data, forKey: Stored.album)
+    }
+
+    private func writeAlbum(_ profile: Profile) {
+        var volumes: [Volume: [Card: Int]] = [.riviera: [:]]
+        for (code, count) in profile.album {
+            let parts = code.split(separator: "/", maxSplits: 1).map(String.init)
+            let volume = parts.count == 2 ? Volume(rawValue: parts[0]) : .riviera
+            guard let volume, let card = Card(code: parts[parts.count - 1]) else { continue }
+            volumes[volume, default: [:]][card] = count
+        }
+        for (volume, counts) in volumes {
+            guard let data = try? JSONEncoder().encode(Album(counts: counts)) else { continue }
+            defaults.set(data, forKey: AlbumBook.storageKey(for: volume))
         }
         defaults.set(Array(profile.paidSuits), forKey: Stored.paidSuits)
         // A bonus paid stays paid. Never written back to false: the other device having no
@@ -309,7 +324,7 @@ private enum Stored {
     /// Preferences and the cosmetics in use. Merged one key at a time, latest change wins.
     static let settings: [Setting] = [
         .init("playerName"), .init("assistLevel"), .init("botLevel"), .init("quickTable"),
-        .init("rankedSolo"),
+        .init("rankedSolo"), .init("oneTapPlays", .flag),
         .init("cardStyle"), .init("cardSkin"), .init("language"),
         .init("tableFelt"), .init("tapis"), .init("cardBack"), .init("seatMark"),
         .init("companion"), .init("cornice"), .init("livery"), .init("flourish"), .init("cheer"),
@@ -336,7 +351,6 @@ private enum Stored {
         "experience.total",
     ]
 
-    static let album = "album.cards"
     static let paidSuits = "album.paidSuits"
     static let paidDeck = "album.paidDeck"
     static let challengeWeek = "challenge.week"

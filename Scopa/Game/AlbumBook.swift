@@ -5,8 +5,8 @@ import ScopaRewards
 
 /// What has been collected, how many packs are waiting, and how close the next one is.
 ///
-/// A handful of values in `UserDefaults`, like `ChallengeBook`: the album itself, the packs
-/// owed and the games counted towards the next. Nothing is sent anywhere — an album is what
+/// A handful of values in `UserDefaults`, like `ChallengeBook`: one album per volume, the
+/// packs owed and the games counted towards the next. Nothing is sent anywhere — an album is what
 /// somebody has played for on this phone, and there is nothing in it for a server to check.
 ///
 /// It draws and opens; it never pays. The denari a spare card is worth, and anything off
@@ -17,7 +17,6 @@ import ScopaRewards
 @Observable
 final class AlbumBook {
     private enum Key {
-        static let album = "album.cards"
         static let waiting = "album.waiting"
         static let games = "album.games"
         static let paidSuits = "album.paidSuits"
@@ -28,7 +27,8 @@ final class AlbumBook {
 
     private let defaults: UserDefaults
 
-    private(set) var album: Album
+    /// Every volume collected so far. A volume nobody has started is simply not in here.
+    private(set) var albums: [Volume: Album]
     /// Packs earned and not opened yet.
     private(set) var waiting: Int
     /// Finished games counted towards the next pack.
@@ -49,13 +49,57 @@ final class AlbumBook {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.album = defaults.data(forKey: Key.album)
-            .flatMap { try? JSONDecoder().decode(Album.self, from: $0) } ?? Album()
+        self.albums = Self.albums(in: defaults)
         self.waiting = defaults.integer(forKey: Key.waiting)
         self.games = defaults.integer(forKey: Key.games)
         self.unannounced = defaults.integer(forKey: Key.announced)
         self.gifts = Self.gifts(in: defaults)
     }
+
+    // MARK: Volumes
+
+    /// Where a volume's cards are kept. The first keeps the key the album always had, so an
+    /// album collected before there were volumes is the first volume, untouched.
+    static func storageKey(for volume: Volume) -> String {
+        volume == .riviera ? "album.cards" : "album.\(volume.rawValue).cards"
+    }
+
+    /// How a bonus is written down among the paid ones: a suit, or the whole deck when
+    /// `suit` is nil. The first volume's suits keep their bare names as they always had,
+    /// and its deck its own flag; a later volume prefixes both, so they travel between
+    /// devices in the one list of paid bonuses an older build already carries along.
+    static func bonusKey(_ suit: Suit?, in volume: Volume) -> String {
+        if volume == .riviera, let suit { return suit.rawValue }
+        return "\(volume.rawValue)/\(suit?.rawValue ?? "deck")"
+    }
+
+    private static func albums(in defaults: UserDefaults) -> [Volume: Album] {
+        Volume.allCases.reduce(into: [:]) { albums, volume in
+            guard let data = defaults.data(forKey: storageKey(for: volume)),
+                  let album = try? JSONDecoder().decode(Album.self, from: data) else { return }
+            albums[volume] = album
+        }
+    }
+
+    private func store(_ volume: Volume) {
+        guard let data = try? JSONEncoder().encode(album(volume)) else { return }
+        defaults.set(data, forKey: Self.storageKey(for: volume))
+    }
+
+    /// One volume's album, empty until its first card.
+    func album(_ volume: Volume) -> Album { albums[volume] ?? Album() }
+
+    /// The first volume, which is the one the seat marks are worn off.
+    var album: Album { album(.riviera) }
+
+    /// Where packs go now: the first volume not yet full.
+    var openVolume: Volume { Volume.open(given: album(_:)) }
+
+    /// The album being collected, which is what the lobby's door and the settings count.
+    var openAlbum: Album { album(openVolume) }
+
+    /// The volumes filled to the last card, whose prizes are owed.
+    var finishedVolumes: [Volume] { Volume.allCases.filter { album($0).isComplete } }
 
     private static func gifts(in defaults: UserDefaults) -> [PackTier] {
         (defaults.string(forKey: Key.gifts) ?? "").split(separator: ",").compactMap { PackTier(rawValue: String($0)) }
@@ -69,8 +113,7 @@ final class AlbumBook {
     /// folding in whatever the player's other device has collected. Reads exactly what
     /// `init` reads, and sits beside it so the two cannot drift apart.
     func readStoredAgain() {
-        album = defaults.data(forKey: Key.album)
-            .flatMap { try? JSONDecoder().decode(Album.self, from: $0) } ?? Album()
+        albums = Self.albums(in: defaults)
         waiting = defaults.integer(forKey: Key.waiting)
         games = defaults.integer(forKey: Key.games)
         unannounced = defaults.integer(forKey: Key.announced)
@@ -145,7 +188,7 @@ final class AlbumBook {
         return open(tier: tier, owned: owned)
     }
 
-    /// Draws a pack of the given tier and folds it into the album.
+    /// Draws a pack of the given tier and folds it into the open volume.
     ///
     /// The bonuses come back only the first time they are earned: the phone remembers
     /// which suits it has already paid for, so an album finished twice — a spare turning
@@ -162,14 +205,12 @@ final class AlbumBook {
     private func open(tier: PackTier, owned: Set<ShopItem.ID>) -> Opening {
         var generator = SystemRandomNumberGenerator()
         let pack = Pack.draw(tier, using: &generator)
-        let opened = album.open(pack)
-        var paidSuits = Set(defaults.stringArray(forKey: Key.paidSuits) ?? [])
-        let suits = opened.suits.filter { !paidSuits.contains($0.rawValue) }
-        paidSuits.formUnion(suits.map(\.rawValue))
-        let deck = opened.deck && !defaults.bool(forKey: Key.paidDeck)
-        if deck { defaults.set(true, forKey: Key.paidDeck) }
-        defaults.set(Array(paidSuits), forKey: Key.paidSuits)
-        if let data = try? JSONEncoder().encode(album) { defaults.set(data, forKey: Key.album) }
+        let volume = openVolume
+        var collected = album(volume)
+        let opened = collected.open(pack)
+        albums[volume] = collected
+        store(volume)
+        let (suits, deck) = settle(opened, in: volume)
 
         var taken: Set<ShopItem.ID> = []
         var won: [Won] = []
@@ -187,7 +228,26 @@ final class AlbumBook {
             taken.insert(item.id)
             won.append(.item(item))
         }
-        return Opening(tier: tier, found: opened.found, suits: suits, deck: deck, won: won)
+        return Opening(volume: volume, tier: tier, found: opened.found, suits: suits, deck: deck, won: won)
+    }
+
+    /// Which of the bonuses an opening finished have not been paid before, written down as
+    /// paid now. The first volume's names are the ones it always used.
+    private func settle(_ opened: (found: [Album.Found], suits: [Suit], deck: Bool),
+                        in volume: Volume) -> (suits: [Suit], deck: Bool) {
+        var paid = Set(defaults.stringArray(forKey: Key.paidSuits) ?? [])
+        let suits = opened.suits.filter { !paid.contains(Self.bonusKey($0, in: volume)) }
+        paid.formUnion(suits.map { Self.bonusKey($0, in: volume) })
+        let deck: Bool
+        if volume == .riviera {
+            deck = opened.deck && !defaults.bool(forKey: Key.paidDeck)
+            if deck { defaults.set(true, forKey: Key.paidDeck) }
+        } else {
+            deck = opened.deck && !paid.contains(Self.bonusKey(nil, in: volume))
+            if deck { paid.insert(Self.bonusKey(nil, in: volume)) }
+        }
+        defaults.set(Array(paid), forKey: Key.paidSuits)
+        return (suits, deck)
     }
 
     /// Something off the shelves that a pack turned up — or the denari it paid instead,
@@ -211,11 +271,13 @@ final class AlbumBook {
     struct Opening: Identifiable, Equatable {
         /// Names this opening, in the ledger and to the sheet that shows it.
         let id = UUID()
+        /// The volume its cards went into, which is also the deck they are drawn in.
+        let volume: Volume
         let tier: PackTier
         let found: [Album.Found]
         /// Suits finished by this pack and not paid for before.
         let suits: [Suit]
-        /// Whether this pack was the one that finished the deck.
+        /// Whether this pack was the one that finished its volume.
         let deck: Bool
         /// What came off the shelves with it. Empty for the cheap tiers.
         let won: [Won]
@@ -247,18 +309,25 @@ final class AlbumBook {
 
     #if DEBUG
     /// Plants packs and a part-filled album, so the page can be looked at without a
-    /// hundred games behind it. `-packs 3 -album 18`.
-    func pretend(packs: Int, found: Int) {
+    /// hundred games behind it. `-packs 3 -collected 18`, and `-volume napoli` to have
+    /// every volume before that one full and the cards in that one.
+    func pretend(packs: Int, found: Int, in volume: Volume = .riviera) {
+        for earlier in Volume.allCases where earlier < volume {
+            var full = Album()
+            _ = full.open(Pack(cards: Deck.standard))
+            albums[earlier] = full
+            store(earlier)
+        }
         // In deck order rather than shuffled, so `-collected 10` is the coins finished and
         // the mark that goes with them, which is the thing worth looking at.
-        var album = Album()
+        var started = Album()
         for card in Deck.standard.prefix(found) {
-            _ = album.open(Pack(cards: [card]))
+            _ = started.open(Pack(cards: [card]))
         }
-        self.album = album
+        albums[volume] = started
+        store(volume)
         self.waiting = packs
         self.unannounced = packs
-        if let data = try? JSONEncoder().encode(album) { defaults.set(data, forKey: Key.album) }
         defaults.set(packs, forKey: Key.waiting)
         defaults.set(packs, forKey: Key.announced)
     }

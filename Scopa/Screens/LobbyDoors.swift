@@ -67,6 +67,8 @@ struct ModeDoor<Mark: View>: View {
     var league: Int? = nil
     /// A third of a row rather than half: the mark over the name, centred, and no line.
     var compact = false
+    /// A compact door's grade under its name, "Gold II", struck in the league's own metal.
+    var grade: String? = nil
     @ViewBuilder var mark: Mark
     let action: () -> Void
 
@@ -80,6 +82,16 @@ struct ModeDoor<Mark: View>: View {
                         .foregroundStyle(Palette.onTable)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
+                    if let grade, let league {
+                        Text(verbatim: grade)
+                            .textCase(.uppercase)
+                            .font(.system(size: 10 * lift, weight: .heavy))
+                            .tracking(0.8)
+                            .foregroundStyle(LeagueMetal.league(league).light)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .padding(.top, -3 * lift)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 12 * lift)

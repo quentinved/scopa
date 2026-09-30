@@ -22,6 +22,8 @@ struct WeekWonCard: View {
     /// Set a beat after the card arrives, so the laurel is caught landing.
     @State private var landed = false
 
+    private let badge: CGFloat = 96
+
     var body: some View {
         VStack(spacing: 0) {
             heading
@@ -56,15 +58,18 @@ struct WeekWonCard: View {
     }
 
     /// The badge at a size worth looking at, on a burst of its own light.
+    ///
+    /// The rays reach half a radius past the disc and no further. At twice the badge they
+    /// read as a spinner, a thing still loading, behind something already won.
     private var laurel: some View {
         ZStack {
             Burst(spokes: 14)
                 .fill(Palette.goldSheen)
-                .frame(width: 190, height: 190)
+                .frame(width: badge * 1.5, height: badge * 1.5)
                 .opacity(landed ? 0.22 : 0)
                 .rotationEffect(.degrees(landed ? 22 : 0))
                 .scaleEffect(landed ? 1 : 0.6)
-            SeatBadge(name: name, tint: Palette.seat(0), size: 96, mark: mark,
+            SeatBadge(name: name, tint: Palette.seat(0), size: badge, mark: mark,
                       honoured: true, cornice: cornice)
                 .scaleEffect(landed ? 1 : 0.7)
         }
