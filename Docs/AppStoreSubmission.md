@@ -5,10 +5,12 @@ script pushes, and every field it cannot reach, with the answer to give.
 
 ## 0. Blockers before submitting
 
-- [ ] **Deploy the updated privacy policy and support page** (`cd Server && npm run deploy`).
+- [ ] **Redeploy the privacy policy and support page** (`cd Server && npm run deploy`).
   Both now cover the synced copy of the game (profile, album, denari ledger), code-word
-  tables relayed through the Worker, the weekly challenge and the ranked extras. They are
-  dated 23 September 2026. Check https://scopa-ladder.quentin-vedrenne.workers.dev/privacy
+  tables relayed through the Worker, the weekly challenge and the ranked extras, dated
+  23 September 2026. The live Worker was deployed at 02:07 on the 23rd, but
+  `Server/src/privacy.ts` and `support.ts` were edited again at 02:26, so the live pages
+  are missing the last edits. Check https://scopa-ladder.quentin-vedrenne.workers.dev/privacy
   after the deploy.
 - [ ] **Archive a Release build and play it once.** `dev.sh` and CI build Debug only, so an
   `#if DEBUG` leak shows up only here (test ad units, debug launch flags, consent reset).
@@ -25,7 +27,7 @@ Run with `ASC_KEY=../key/"App Store Connect Auth Key.p8" ASC_KEY_ID=… ASC_ISSU
 | Support URL | https://scopa-ladder.quentin-vedrenne.workers.dev/support |
 | Copyright | 2026 Quentin Vedrenne |
 | Release | Automatically after approval |
-| Age rating questionnaire | Simulated gambling: infrequent/mild; advertising: yes; everything else none/no |
+| Age rating questionnaire | Simulated gambling: none (wager tables are off, `LobbyView.offersWagers`); loot box: yes (random packs); advertising: yes; everything else none/no |
 | Review contact | Quentin Vedrenne, contact@quentinvedrenne.com, phone from `SCOPA_CONTACT_PHONE` (**required by Apple**) |
 | Sign-in required | No |
 | Review notes | `Tools/StoreMetadata/main.swift`, "What review needs to know" |
@@ -80,14 +82,23 @@ Not collected: code-word table traffic (relayed in real time, not kept) and Near
       earns money from ads, so this is a trader account. That publishes an address, phone
       and email on the EU product page. Needed for any EU storefront.
 - [ ] Age rating: check that the computed rating (the script prints it) is what you expect,
-      probably 12+ because of simulated gambling.
+      4+ now that simulated gambling is none and loot box is yes (pushed 24 September).
 
 ### Version 1.0 page
 
 - [ ] **Build**: upload `dist/Scopa.ipa` (Transporter or `xcrun altool`) and select it.
       Export compliance is already answered by `ITSAppUsesNonExemptEncryption = NO`.
 - [ ] **Screenshots**: 6.9" iPhone and 13" iPad (the target is universal, so iPad is
-      required) × 3 languages: `Tools/push-screenshots.sh`.
+      required) × 3 languages × 7 shots. Take them with `Tools/dev.sh screenshots` (queues
+      behind the build and simulator locks, shoots on iOS 26 — iPhone 17 Pro Max and iPad
+      Pro 13-inch (M5) — and keeps the previous set as `Artwork/Screenshots-old-<date>`).
+      Look through every shot, caption and frame them with `Tools/frame-screenshots.sh`
+      (captions in `Tools/ScreenshotFramer/captions.swift`, output in
+      `Artwork/StoreScreenshots`, en-GB framed from the en-US shots), then upload with
+      `Tools/push-screenshots.sh`.
+- [ ] **Build is current**: `dist/Scopa.ipa` must be re-archived after the last code change
+      (`Tools/package-app.sh --method app-store-connect`). The 18 September one predates
+      a hundred changed source files.
 - [ ] **Game Center**: turn on the Game Center section on the version and **add the
       achievements and leaderboards** (`Tools/seed-achievements.sh` creates them). On a first
       release they are not live until they are attached to the version.

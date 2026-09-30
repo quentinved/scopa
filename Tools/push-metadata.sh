@@ -5,7 +5,8 @@
 # (`whisper-secrets pull`) or the environment.
 #
 # SCOPA_SUPPORT_URL overrides the support link, SCOPA_CONTACT_PHONE adds the review
-# contact number. Nothing here submits the app for review.
+# contact number, and SCOPA_VERSION=1.0.1 opens that version when the app is live and none
+# is being prepared. Nothing here submits the app for review.
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
 . "$root/Tools/asc-env.sh"

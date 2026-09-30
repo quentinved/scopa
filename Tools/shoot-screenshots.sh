@@ -34,7 +34,8 @@ terminate_quietly() {
     wait "$pid" 2>/dev/null || true
 }
 
-case "$device" in
+# Matched on the device's name, so a UDID works as well as "iPad Pro 13-inch (M5)".
+case "$(xcrun simctl list devices | grep -F "$device" | head -1)" in
     *iPad*) shopAds=-noAds ;;
     *)      shopAds=-placeholderAds ;;
 esac
@@ -58,10 +59,17 @@ xcrun simctl spawn "$device" defaults write "$bundle" hasSeenRules -bool true
 xcrun simctl status_bar "$device" override \
     --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
 
+# One launch to warm up: the first after an erase is slow enough that a shot timed for a
+# warm app catches the lobby, a card still in the air, or a blank white frame.
+xcrun simctl launch "$device" "$bundle" -noGameCenter -noAds >/dev/null
+sleep 15
+
 shot() {
     name=$1
     wait_for=$2
     shift 2
+    # SCOPA_ONLY="1-table 5-lobby" retakes just those, for a frame that came out wrong.
+    case " ${SCOPA_ONLY:-$name} " in *" $name "*) ;; *) return 0 ;; esac
     mkdir -p "$out/$locale"
     terminate_quietly
     # -noGameCenter keeps Apple's sign-in sheet off every shot, and the ad flags skip the
@@ -89,20 +97,26 @@ for locale in $languages; do
     rank="-rank 1480 -rankGames 42"
     # Ten seconds: at seven the deal is not finished and the shot is of the lobby. Check
     # what landed, and shoot it again if the bot swept first and left a bare cloth.
-    shot 1-table   10 -noAds -quickGame -selectFirst
+    # -assist normal: the coach turned on by 2-coach outlives the launch, and would
+    # otherwise make the next language's table shot a copy of its coach shot.
+    shot 1-table   13 -noAds -quickGame -selectFirst -assist normal
     # Long enough for the bot to have played and the coach to be explaining your
     # card rather than saying the bot is thinking.
     shot 2-coach   14 -noAds -coach -selectFirst
     # Sixteen seconds: three bots deal themselves in one after another, and under about
     # fifteen a card is still in the air over the cloth.
     shot 3-teams   16 -noAds -startTable -seats 4 -teams -bots 3 -selectFirst
-    shot 4-ranked  10 -noAds -online $rank
-    shot 5-lobby   11 -noAds $rank
+    shot 4-ranked  10 -noAds -online $rank -denari 2000
+    # The shop's 2000 denari outlive it too, so the lobby is given them up front rather
+    # than showing an empty purse in the first language and a full one in the rest.
+    shot 5-lobby   11 -noAds $rank -denari 2000
     # On the phone the shop sheet covers the screen and no ad slot shows, so the drawn
     # stand-ins are safe. On an iPad the sheet floats over the lobby and the stand-in
     # banner would show underneath, so that shot takes -noAds instead.
     shot 6-shop    16 $shopAds -shop -denari 2000
     shot 7-rules   13 -noAds -rules
+    # Every way to play people you know: the store's "play with friends" frame.
+    shot 8-friends 12 -noAds $rank -denari 2000 -friends
 done
 
 terminate_quietly

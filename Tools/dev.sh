@@ -9,6 +9,8 @@
 #   ./Tools/dev.sh build                      compile only
 #   ./Tools/dev.sh run [app args...]          build, install, launch
 #   ./Tools/dev.sh shot <out.png> [delay] [app args...]
+#   ./Tools/dev.sh screenshots [languages]    reshoot the App Store sets
+#                                             (SCOPA_ONLY="1-table" retakes just those)
 #   ./Tools/dev.sh status                     who holds the queues
 #   ./Tools/dev.sh boot / shutdown            the pinned simulator
 set -euo pipefail
@@ -125,6 +127,41 @@ do_shot() {
   log "wrote $out"
 }
 
+# The App Store sets, shot on iOS 26 because that is what players run: a 6.9" iPhone and
+# a 13" iPad, the two sizes the listing requires. Shot into a fresh directory and swapped
+# in only when both finish, so a failure halfway leaves the old set whole.
+SHOT_PHONE=${SCOPA_SHOT_PHONE:-789020F3-3FA3-43FB-8E97-ACA0B2D6777C}   # iPhone 17 Pro Max, iOS 26.5
+SHOT_IPAD=${SCOPA_SHOT_IPAD:-2FF35104-7610-4B05-AEB1-ED863948920A}     # iPad Pro 13-inch (M5), iOS 26.5
+
+do_screenshots() {
+  local shots="$PROJECT_DIR/Artwork/Screenshots" fresh pinned="$DEVICE" pair
+  fresh="$shots.new"
+  do_build
+  acquire "$SIM_LOCK" sim "${SCOPA_TASK:-screenshots} @ $(date +%H:%M)"
+  rm -rf "$fresh"
+  for pair in "iphone-6.9 $SHOT_PHONE" "ipad-13 $SHOT_IPAD"; do
+    set -- $pair
+    DEVICE=$2
+    log "shooting $1 on $DEVICE"
+    boot_device
+    "$PROJECT_DIR/Tools/shoot-screenshots.sh" "$(app_path)" "$DEVICE" "$fresh/$1" ${LANGUAGES:-}
+    xcrun simctl shutdown "$DEVICE" 2>/dev/null || true
+  done
+  if [ -n "${SCOPA_ONLY:-}" ] && [ -d "$shots" ]; then
+    # A retake of a few frames is laid over the set rather than replacing it.
+    ditto "$fresh" "$shots"
+    rm -rf "$fresh"
+  else
+    if [ -d "$shots" ]; then
+      mv "$shots" "$shots-old-$(date +%Y-%m-%d-%H%M)"
+    fi
+    mv "$fresh" "$shots"
+  fi
+  DEVICE=$pinned
+  boot_device
+  log "wrote $shots"
+}
+
 show_status() {
   local lock owner note
   for lock in "$BUILD_LOCK" "$SIM_LOCK"; do
@@ -151,10 +188,11 @@ case "${1:-}" in
   build)    shift; do_build "$@" ;;
   run)      shift; do_run "$@" ;;
   shot)     shift; [ $# -ge 1 ] || { log "usage: dev.sh shot <out.png> [delay] [app args]"; exit 2; }; do_shot "$@" ;;
+  screenshots) shift; LANGUAGES="$*" do_screenshots ;;
   status)   show_status ;;
   boot)     acquire "$SIM_LOCK" sim boot; boot_device ;;
   shutdown) xcrun simctl shutdown "$DEVICE" 2>/dev/null || true ;;
   device)   printf '%s\n' "$DEVICE" ;;
   derived)  printf '%s\n' "$DERIVED" ;;
-  *) sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 2 ;;
+  *) sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 2 ;;
 esac

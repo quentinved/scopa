@@ -13,6 +13,17 @@ guard arguments.count == 2 else { ASC.fail("usage: push-metadata <bundle id>") }
 let bundleID = arguments[1]
 let supportURL = ASC.environment["SCOPA_SUPPORT_URL"] ?? defaultSupportURL
 
+// Checked before the first call: Apple refuses an over-long field only once the locales
+// before it have already gone through.
+for listing in listings {
+    let limits = [("name", listing.name, 30), ("subtitle", listing.subtitle, 30),
+                  ("keywords", listing.keywords, 100), ("promotional text", listing.promotional, 170),
+                  ("description", listing.description, 4000)]
+    for (field, value, limit) in limits where value.count > limit {
+        ASC.fail("\(listing.locale) \(field) is \(value.count) characters, over \(limit)")
+    }
+}
+
 let app = ASC.app(bundleID: bundleID)
 print("\(app.name) (\(bundleID))")
 
@@ -54,13 +65,15 @@ for listing in listings {
 
 // MARK: The age rating
 
-// Answered against what the app contains. The one that matters is simulated gambling:
-// wager tables stake denari on a hand. Denari cannot be bought and the shop is cosmetic,
-// but staking a virtual currency on an outcome is what the question asks about.
+// Answered against what the app contains. Simulated gambling is None because the wager
+// tables are switched off (`LobbyView.offersWagers`): Apple will not review a gambling
+// rating from an individual account (2.3.6, September 2026). Turn them back on and this
+// goes back to INFREQUENT_OR_MILD. Card packs have random contents, which is a loot box
+// whether or not denari can be bought.
 let declaration: [String: Any] = [
     "alcoholTobaccoOrDrugUseOrReferences": "NONE",
     "contests": "NONE",
-    "gamblingSimulated": "INFREQUENT_OR_MILD",
+    "gamblingSimulated": "NONE",
     "gambling": false,
     "gunsOrOtherWeapons": "NONE",
     "horrorOrFearThemes": "NONE",
@@ -77,7 +90,7 @@ let declaration: [String: Any] = [
     "messagingAndChat": false,
     "userGeneratedContent": false,
     "unrestrictedWebAccess": false,
-    "lootBox": false,
+    "lootBox": true,
     "advertising": true,
     "healthOrWellnessTopics": false,
     // No age gate and no in-app parental controls: there is nothing in the game to gate.
@@ -92,12 +105,24 @@ print("  age rating: \(rated["appStoreAgeRating"] as? String ?? "not computed ye
 
 // MARK: The version
 
-let versions = ASC.many(ASC.call("GET", "/v1/apps/\(app.id)/appStoreVersions"))
-guard let version = versions.first(where: {
+// A live app takes a new listing only on a new version: SCOPA_VERSION=1.0.1 opens one when
+// none is being prepared. Apple copies the live version's text and screenshots into it.
+let isEditable: ([String: Any]) -> Bool = {
     let attributes = ASC.attributes($0)
     return attributes["platform"] as? String == "IOS"
-        && attributes["appVersionState"] as? String == "PREPARE_FOR_SUBMISSION"
-}) else { ASC.fail("no iOS version being prepared") }
+        && ASC.editableVersionStates.contains(attributes["appVersionState"] as? String ?? "")
+}
+var prepared = ASC.many(ASC.call("GET", "/v1/apps/\(app.id)/appStoreVersions")).first(where: isEditable)
+if prepared == nil, let wanted = ASC.environment["SCOPA_VERSION"] {
+    ASC.call("POST", "/v1/appStoreVersions", [
+        "data": ["type": "appStoreVersions",
+                 "attributes": ["platform": "IOS", "versionString": wanted],
+                 "relationships": ["app": ASC.link("apps", app.id)]],
+    ])
+    print("  version \(wanted): opened")
+    prepared = ASC.many(ASC.call("GET", "/v1/apps/\(app.id)/appStoreVersions")).first(where: isEditable)
+}
+guard let version = prepared else { ASC.fail("no iOS version being prepared (SCOPA_VERSION=x.y.z opens one)") }
 let versionID = ASC.id(version)
 let versionString = ASC.attributes(version)["versionString"] as? String ?? "?"
 
@@ -109,8 +134,8 @@ print("  version \(versionString): copyright set")
 
 let versionLocalizations = ASC.many(ASC.call("GET", "/v1/appStoreVersions/\(versionID)/appStoreVersionLocalizations"))
 for listing in listings {
-    // `whatsNew` is left alone: there is nothing new about a first release, and Apple
-    // rejects the field on one.
+    // `whatsNew` is left alone: it describes a build rather than the game, so it is written
+    // in App Store Connect when the build is chosen. Apple rejects it on a first release.
     let fields: [String: Any] = ["description": listing.description, "keywords": listing.keywords,
                                  "promotionalText": listing.promotional, "supportUrl": supportURL]
     if let known = versionLocalizations.first(where: { ASC.attributes($0)["locale"] as? String == listing.locale }) {
@@ -157,9 +182,8 @@ Pack contents are random, the odds are shown before opening ("What is in a pack"
 never repeats a card already owned, and a free pack also comes every three games. Nothing \
 bought or won changes how a hand is played or scored.
 
-Stakes: some online tables let a player put earned denari on the result (the reason the \
-age rating declares infrequent simulated gambling). Only earned, non-purchasable denari \
-can be staked; nothing can be cashed out or traded.
+No wagering: denari cannot be staked on the result of a game, and nothing can be cashed \
+out or traded.
 
 Ads: Google AdMob — a banner in the lobby, an occasional interstitial at the end of a \
 game, and the optional rewarded ad above. In the EEA, Google's consent form appears \

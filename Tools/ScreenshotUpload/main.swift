@@ -1,7 +1,7 @@
 import Foundation
 
-// Uploads the screenshots under Artwork/Screenshots to the App Store version being
-// prepared: one set per device size per language, in the order the files are named.
+// Uploads the framed screenshots under Artwork/StoreScreenshots to the App Store version
+// being prepared: one set per device size per language, in the order the files are named.
 // Run it with Tools/push-screenshots.sh.
 //
 // Idempotent by replacement: a set that already has shots is emptied first, so a re-shoot
@@ -25,7 +25,7 @@ let versions = ASC.many(ASC.call("GET", "/v1/apps/\(app.id)/appStoreVersions"))
 guard let version = versions.first(where: {
     let attributes = ASC.attributes($0)
     return attributes["platform"] as? String == "IOS"
-        && attributes["appVersionState"] as? String == "PREPARE_FOR_SUBMISSION"
+        && ASC.editableVersionStates.contains(attributes["appVersionState"] as? String ?? "")
 }) else { ASC.fail("no iOS version being prepared") }
 let versionID = ASC.id(version)
 

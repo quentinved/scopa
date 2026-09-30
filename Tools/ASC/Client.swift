@@ -9,6 +9,12 @@ import CryptoKit
 // half-applied pass is worse than one that stopped.
 
 enum ASC {
+    /// The states a version can be edited in: still being prepared, or sent back by review
+    /// (a rejected version takes new metadata, screenshots and a build, then resubmits).
+    static let editableVersionStates: Set<String> = [
+        "PREPARE_FOR_SUBMISSION", "REJECTED", "METADATA_REJECTED", "DEVELOPER_REJECTED",
+    ]
+
     static let environment = ProcessInfo.processInfo.environment
 
     static func fail(_ message: String) -> Never {

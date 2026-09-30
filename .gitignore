@@ -12,6 +12,7 @@ node_modules/
 # Store screenshots are hundreds of MB; the README keeps small copies in Docs/.
 Artwork/Screenshots/
 Artwork/Screenshots-old-*/
+Artwork/StoreScreenshots/
 
 # Local editor and assistant configuration.
 .vscode/

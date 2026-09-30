@@ -1,13 +1,14 @@
 #!/bin/sh
-# Uploads the screenshots in Artwork/Screenshots to App Store Connect.
+# Uploads the framed screenshots in Artwork/StoreScreenshots to App Store Connect.
 #
-# Take them first with Tools/shoot-screenshots.sh. Needs the same API key as the other
-# store tools. Re-running replaces what is there rather than adding to it.
+# Shoot them with Tools/shoot-screenshots.sh, then caption them with
+# Tools/frame-screenshots.sh. Needs the same API key as the other store tools.
+# Re-running replaces what is there rather than adding to it.
 set -e
 root=$(cd "$(dirname "$0")/.." && pwd)
 . "$root/Tools/asc-env.sh"
 bundle=${SCOPA_BUNDLE_ID:-com.quentinvedrenne.scopa}
-shots=${1:-"$root/Artwork/Screenshots"}
+shots=${1:-"$root/Artwork/StoreScreenshots"}
 build=$(mktemp -d)
 trap 'rm -rf "$build"' EXIT
 swiftc -O -swift-version 5 \
