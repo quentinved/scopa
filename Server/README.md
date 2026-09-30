@@ -152,6 +152,35 @@ wrangler d1 execute scopa --remote --file migrations/008-friend-codes.sql   # on
 ../Tools/friend-codes.sh who ROMANE                 # who, and when
 ```
 
+### Coupons
+
+A code the house hands out, typed in the shop under "Have a code?": a launch, an apology, a
+post somewhere. Worth any mix of denari, packs left waiting in the album, and things off the
+shop's shelves by catalogue id — never anything that changes how the cards fall. Each
+player takes a coupon once, and may take as many different ones as there are. A coupon may
+run out on a date, after so many players, or when it is switched off by hand. The shop's
+one field takes friend codes too: it tries a coupon first, then a friend's code.
+
+- `POST /v1/coupons/redeem` — `{code, device, identity}`. Forgiven like a friend code.
+  Returns `{code, denari, packs, items}`. Every refusal names itself in `error`: `404
+  "unknown code"`, `410 "expired"` (past its date, or disabled), `410 "used up"`, and `409
+  "already redeemed"`. That last one carries the reward again, but only to the `device` that
+  took it: that phone may never have heard the first answer, and its purse is keyed
+  `coupon/<CODE>`, so paying there again pays nothing twice. On any other phone it would.
+
+```sh
+wrangler d1 execute scopa --remote --file migrations/009-coupons.sql     # once
+../Tools/coupons.sh create NATALE --denari 500 --pack velluto --item felt.notte \
+    --uses 100 --expires 2026-12-31 --note "Christmas post"
+../Tools/coupons.sh list              # every coupon, how many took it, whether it works
+../Tools/coupons.sh who NATALE        # who, and when
+../Tools/coupons.sh disable NATALE    # stop it now (enable puts it back)
+../Tools/coupons.sh items             # the cosmetic ids --item takes
+```
+
+The script checks tiers, ids, numbers and dates before it writes, prints what it is about to
+write, and asks. `--local` runs it against the database `wrangler dev` uses instead.
+
 ### Tables
 
 A table two friends meet at, kept here rather than by Game Center. One Durable Object per

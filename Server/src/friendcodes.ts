@@ -8,7 +8,7 @@
 export const MAX_CODE_LENGTH = 24;
 
 /** The pack tiers the app knows. Anything else is dropped rather than sent. */
-const PACKS = new Set(["mazzetto", "bottega", "velluto", "reliquia", "scrigno", "forziere"]);
+export const PACKS = new Set(["mazzetto", "bottega", "velluto", "reliquia", "scrigno", "forziere"]);
 
 export interface FriendCodeRow {
   code: string;

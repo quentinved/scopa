@@ -12,6 +12,7 @@ import { cursor, invalidLedger, invalidProfile, LedgerPost, MAX_LEDGER_PAGE } fr
 import { isCode, makeCode, normaliseCode, Room } from "./room.ts";
 import { BEAT_SECONDS, fingerprint, friendSet, invalidFriends, WINDOW_SECONDS } from "./presence.ts";
 import { FriendCodeRow, giftOf, normaliseFriendCode } from "./friendcodes.ts";
+import { deviceOf, normaliseCoupon, redeemCoupon } from "./coupons.ts";
 
 export { Room };
 
@@ -65,6 +66,7 @@ const routes: Route[] = [
   { method: "POST", path: /^\/v1\/presence$/, handle: ({ request, env }) => postPresence(request, env) },
   { method: "POST", path: /^\/v1\/presence\/leave$/, handle: ({ request, env }) => leavePresence(request, env) },
   { method: "POST", path: /^\/v1\/codes\/redeem$/, handle: ({ request, env }) => redeemFriendCode(request, env) },
+  { method: "POST", path: /^\/v1\/coupons\/redeem$/, handle: ({ request, env }) => postCoupon(request, env) },
   { method: "GET", path: /^\/v1\/health$/, handle: () => json({ ok: true }) },
   // Tables are not signed: they work for players who never signed in to Game Center.
   { method: "POST", path: /^\/v1\/rooms$/, handle: ({ request, url, env }) => openRoom(request, url, env) },
@@ -237,6 +239,20 @@ async function redeemFriendCode(request: Request, env: Env): Promise<Response> {
   ).bind(playerID).first<{ code: string; owner: string }>();
   if (earlier?.code === code) return json({ ...giftOf(row), fresh: false });
   return json({ error: "already used", owner: earlier?.owner ?? "" }, 409);
+}
+
+// MARK: - Coupons
+
+/// One use of a coupon. See coupons.ts for what each refusal means.
+async function postCoupon(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as { code?: unknown; device?: unknown; identity: Identity };
+  const code = normaliseCoupon(body.code);
+  if (!code) return json({ error: "bad code" }, 400);
+  if (!body.identity?.gamePlayerID) return json({ error: "no identity" }, 400);
+  await verifyIdentity(body.identity, verifyOptions(env));
+  const player = { id: body.identity.gamePlayerID, name: displayName(body.identity), device: deviceOf(body.device) };
+  const answer = await redeemCoupon(env.DB, code, player);
+  return json(answer.body, answer.status);
 }
 
 // MARK: - Tables
