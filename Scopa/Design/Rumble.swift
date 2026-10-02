@@ -14,9 +14,8 @@ final class Rumble {
     private var engine: CHHapticEngine?
     private var isBroken = false
 
-    private var supportsHaptics: Bool {
-        CHHapticEngine.capabilitiesForHardware().supportsHaptics
-    }
+    /// Asked once: the hardware does not change while the app runs.
+    private let supportsHaptics = CHHapticEngine.capabilitiesForHardware().supportsHaptics
 
     private init() {}
 
@@ -123,29 +122,39 @@ final class Rumble {
                       fallback: [UIImpactFeedbackGenerator.FeedbackStyle],
                       gap: Duration = .milliseconds(110)) {
         guard supportsHaptics, !isBroken else { return knock(fallback, gap: gap) }
-        do {
-            let engine = try running()
-            let pattern = try CHHapticPattern(events: beats.map(\.event), parameterCurves: curves)
-            try engine.makePlayer(with: pattern).start(atTime: CHHapticTimeImmediate)
-        } catch {
-            // One failure is enough: a phone that cannot play a pattern will not start to.
-            isBroken = true
-            knock(fallback, gap: gap)
+        guard let engine = try? built(),
+              let pattern = try? CHHapticPattern(events: beats.map(\.event), parameterCurves: curves)
+        else { return giveUp(fallback, gap: gap) }
+        // Awaited rather than the blocking `start()`: after an auto-shutdown that waits on
+        // the haptic server, which was a dropped frame or two right as a card landed.
+        Task {
+            do {
+                try await engine.start()
+                try engine.makePlayer(with: pattern).start(atTime: CHHapticTimeImmediate)
+            } catch {
+                giveUp(fallback, gap: gap)
+            }
         }
     }
 
-    private func running() throws -> CHHapticEngine {
-        if let engine {
-            try engine.start()
-            return engine
-        }
+    /// One failure is enough: a phone that cannot play a pattern will not start to.
+    private func giveUp(_ fallback: [UIImpactFeedbackGenerator.FeedbackStyle], gap: Duration) {
+        isBroken = true
+        knock(fallback, gap: gap)
+    }
+
+    /// Made once and started by `play` each time. Not started here.
+    private func built() throws -> CHHapticEngine {
+        if let engine { return engine }
         let engine = try CHHapticEngine()
         // Powers down between turns instead of holding the hardware awake for a whole
-        // game. The `start()` above wakes it again in time.
+        // game. `play` wakes it again in time.
         engine.isAutoShutdownEnabled = true
+        // Every pattern here is touch alone, so the engine need not bring up the audio
+        // hardware with it: quicker to start and cheaper to keep.
+        engine.playsHapticsOnly = true
         engine.resetHandler = { [weak engine] in try? engine?.start() }
         engine.stoppedHandler = { _ in }
-        try engine.start()
         self.engine = engine
         return engine
     }

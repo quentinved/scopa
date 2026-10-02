@@ -158,7 +158,7 @@ struct OnlineSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .animation(.easeInOut(duration: 0.2), value: store.rankedSolo)
             }
-            Text("Nobody found in time means the house sits down instead, in the same seats. Duo is you and a friend against two of the house, rated together. Only real players are rated, and a league reached is yours for the season. A game against the house counts ten times a day; a game against somebody real always counts.")
+            Text("If nobody turns up within a few seconds, you can play the house instead, in the same seats. Duo is you and a friend against two of the house, rated together. Only real players are rated, and a league reached is yours for the season. A game against the house counts ten times a day; a game against somebody real always counts.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.onTableSoft)
                 .fixedSize(horizontal: false, vertical: true)
@@ -469,14 +469,23 @@ private struct LeaguePanel: View {
         .frame(height: 6)
     }
 
+    /// The season so far, then when it ends, each on its own line: the win rate made one
+    /// line too long to share.
     @ViewBuilder private var record: some View {
         if let rank = store.rank {
-            HStack(spacing: 6) {
-                Text("\(rank.wins) wins · \(rank.games) games")
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text("\(rank.wins) wins · \(rank.games) games")
+                    if let rate = Ladder.winRate(wins: rank.wins, games: rank.games, locale: locale) {
+                        Text(verbatim: "·")
+                        Text("\(rate) win rate")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Palette.onTable)
+                    }
+                }
                 // Only from a Worker that has seasons in it: an older one answers without
                 // a date and says nothing.
                 if let days = rank.daysLeftInSeason {
-                    Text(verbatim: "·")
                     Text(days == 0 ? "Season ends today" : "Season ends in \(days) days")
                         .foregroundStyle(Palette.goldLight.opacity(0.9))
                 }

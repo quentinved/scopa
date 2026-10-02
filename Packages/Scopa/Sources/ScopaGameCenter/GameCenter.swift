@@ -430,9 +430,17 @@ public enum GameCenter {
 
     /// A match comes back as soon as it is *made*; the other players can still be on their
     /// way in. Nothing is sent until they have all arrived.
+    ///
+    /// A search called off during the wait leaves the match behind it, so the match is
+    /// disconnected here: the caller only ever sees the error, never the match to leave.
     private static func waitUntilFull(_ match: GKMatch, patience: Int = 600) async throws {
         for _ in 0..<patience where match.expectedPlayerCount > 0 {
-            try await Task.sleep(for: .milliseconds(100))
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                match.disconnect()
+                throw error
+            }
         }
         guard match.expectedPlayerCount == 0 else {
             match.disconnect()

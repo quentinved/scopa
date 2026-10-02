@@ -4,11 +4,9 @@ import ScopaRewards
 
 /// The front door: who you are, what is on today, and the ways to sit down.
 ///
-/// The identity row stays at the top and the rest scrolls. Under the goals the four doors
-/// sit two by two, grouped by the question they answer: what the game is worth on the top
-/// row — the league and the stakes — and who is at the table on the bottom one, the bots or
-/// your friends. They were a wide tile over a row of three, which put the quick game and the
-/// league at different sizes without saying why.
+/// The identity row stays at the top and the rest scrolls. Under the goals, ranked and the
+/// campaign take the width, and the quick game — or the game saved on this phone — shares
+/// the row under them with friends.
 struct LobbyView: View {
     @Bindable var store: TableStore
     let ads: AdsStore
@@ -24,6 +22,7 @@ struct LobbyView: View {
     @State private var showsLadder = false
     @State private var showsWeekly = false
     @State private var showsAlbum = false
+    @State private var showsCampaign = false
     /// Asked once, after the rules on a first launch, if the name is still the stand-in.
     @State private var asksName = false
     /// The walkthrough ended on "deal me a hand". The table cannot be dealt from under the
@@ -31,16 +30,16 @@ struct LobbyView: View {
     @State private var startsCoached = false
     /// Asked before throwing away a saved game with denari on it: the stake would go too.
     @State private var confirmsForget = false
-    /// Asked before a quick game deals over the table saved on this phone. The quick door
-    /// used to be hidden while a game was saved, which is how the save was protected; both
-    /// tiles are on the grid now, so the question is asked instead of the door being taken
-    /// away.
-    @State private var confirmsDealOver = false
     /// Which page the friends sheet opens on; the debug launch can ask for the second.
     @State private var friendsPath: [FriendsSheet.Page] = []
     /// A season that ended while the app was closed, held until it has been collected.
     @State private var finishedSeason: Ladder.RankAnswer.Finish?
     @State private var isCollectingSeason = false
+    /// The rating ask, after a long sitting that ended in a win. See `ReviewPrompt`.
+    @State private var asksReview = false
+    /// The day's wheel, and whether its sheet is up. See `DailyWheel`.
+    @State private var wheel = DailyWheel()
+    @State private var showsWheel = false
 
     @Environment(\.verticalSizeClass) private var heightClass
     @Environment(\.horizontalSizeClass) private var widthClass
@@ -56,6 +55,18 @@ struct LobbyView: View {
             .onChange(of: store.route) { _, route in closePlaySheets(for: route) }
             // The day's result is news once: leaving the lobby spends it.
             .onDisappear { store.clearFreshDaily() }
+            .releaseMoment(store: store, purse: purse, isClear: isClearForNews) { shelf in
+                if shelf == .shop { showsShop = true } else { showsAlbum = true }
+            }
+    }
+
+    /// Nothing else on screen asking to be looked at, so a gift or a version's news can
+    /// have its turn: the first launch's walkthrough is done, and no card or sheet is up.
+    private var isClearForNews: Bool {
+        let sheets = [isEditingSettings, showsFriends, showsOnline, showsWager, showsShop, showsRules,
+                      showsLadder, showsWeekly, showsAlbum, asksName, startsCoached, showsWheel]
+        return store.hasSeenRules && finishedSeason == nil && store.finishedChallenge == nil
+            && !sheets.contains(true)
     }
 
     private var layout: some View {
@@ -69,6 +80,9 @@ struct LobbyView: View {
         // The season outranks the week: both landing at once is rare, and the season is the
         // one that only comes round every few weeks.
         .overlay { if finishedSeason == nil { weekWonOverlay } }
+        // Behind both: they are news, and the ask can wait for them to be taken.
+        .overlay { if finishedSeason == nil, store.finishedChallenge == nil { reviewOverlay } }
+        .animation(.spring(duration: 0.45, bounce: 0.2), value: asksReview)
         .animation(.spring(duration: 0.45, bounce: 0.2), value: finishedSeason)
         .animation(.spring(duration: 0.45, bounce: 0.2), value: store.finishedChallenge)
         .onChange(of: store.seasonFinish, initial: true) { _, finish in
@@ -91,6 +105,17 @@ struct LobbyView: View {
                 }
                 .padding(20 * lift)
                 .transition(.scale(scale: 0.92).combined(with: .opacity))
+            }
+        }
+    }
+
+    @ViewBuilder private var reviewOverlay: some View {
+        if asksReview {
+            ZStack {
+                Palette.ink.opacity(0.62).ignoresSafeArea()
+                ReviewAskCard { asksReview = false }
+                    .padding(20 * lift)
+                    .transition(.scale(scale: 0.92).combined(with: .opacity))
             }
         }
     }
@@ -128,6 +153,13 @@ struct LobbyView: View {
             }
             .sheet(isPresented: $showsAlbum) {
                 NavigationStack { AlbumView(store: store, purse: purse) }
+            }
+            .sheet(isPresented: $showsWheel) {
+                DailyWheelSheet(wheel: wheel, purse: purse, book: store.albumBook,
+                                name: store.playerName, day: store.today)
+            }
+            .sheet(isPresented: $showsCampaign) {
+                CampaignView().environment(store)
             }
             .sheet(isPresented: $showsRules, onDismiss: handleRulesDismissed) {
                 // No coached hand over a game already under way: it would be saved over
@@ -168,14 +200,24 @@ struct LobbyView: View {
         store.loadSavedGame()
         store.refreshRank()
         applyDebugLaunch()
+        if ReviewPrompt.take() || DebugLaunch.asksReview { askForReviewShortly() }
         // A first launch lands here, so this is where the rules introduce themselves.
         if DebugLaunch.showsRules || !store.hasSeenRules { showsRules = true }
+    }
+
+    /// A beat after the lobby is up, so the card lands in the room rather than with it.
+    private func askForReviewShortly() {
+        Task {
+            try? await Task.sleep(for: .milliseconds(900))
+            asksReview = true
+        }
     }
 
     private func applyDebugLaunch() {
         if DebugLaunch.showsSettings { isEditingSettings = true }
         if DebugLaunch.showsShop { showsShop = true }
         if DebugLaunch.showsAlbum { showsAlbum = true }
+        if DebugLaunch.showsWheel { showsWheel = true }
         if DebugLaunch.showsLadder {
             // `-ladder week` opens the week's own room instead, which is where the week's
             // card goes and the one page two devices and a Worker are needed to see.
@@ -206,6 +248,7 @@ struct LobbyView: View {
         showsOnline = false
         showsWager = false
         showsFriends = false
+        showsCampaign = false
     }
 
     // MARK: Layouts
@@ -228,7 +271,11 @@ struct LobbyView: View {
     private var column: some View {
         VStack(spacing: 0 * lift) {
             // The fan leans up out of the masthead's frame, so the top padding is its.
-            masthead.padding(.top, 28 * lift)
+            masthead
+                // The wheel sits in the masthead's corner on a phone: the top row has no room
+                // left for it without cutting the player's name short.
+                .overlay(alignment: .topTrailing) { wheelChip }
+                .padding(.top, 28 * lift * crestScale)
             goals.padding(.top, 14 * lift)
             doors.padding(.top, 10 * lift)
             ladderPeek.padding(.top, 10 * lift)
@@ -270,10 +317,18 @@ struct LobbyView: View {
         HStack(spacing: 10 * lift) {
             profileChip
             Spacer(minLength: 8 * lift)
+            if stage.isWide { wheelChip }
             purseChip
             RulesButton { showsRules = true }
         }
         .padding(.top, 8 * lift)
+    }
+
+    /// The day's wheel, with a dot while today's free turn is waiting.
+    private var wheelChip: some View {
+        WheelChip(isWaiting: purse.isReady && wheel.isAvailable(on: store.today, paid: purse.purse.keys)) {
+            showsWheel = true
+        }
     }
 
     private var profileChip: some View {
@@ -321,6 +376,7 @@ struct LobbyView: View {
                 Image(systemName: "bag.fill")
                     .font(.system(size: 12 * lift, weight: .semibold))
                     .foregroundStyle(Palette.onTableSoft)
+                    .overlay(alignment: .topTrailing) { shopPackDot }
             }
             .padding(.horizontal, 13 * lift)
             .padding(.vertical, 9 * lift)
@@ -328,6 +384,7 @@ struct LobbyView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Shop")
+        .accessibilityValue(shopPacks > 0 ? Text("^[\(shopPacks) pack](inflect: true) to open") : Text(verbatim: ""))
         // The name truncates before the balance does.
         .layoutPriority(1)
         .opacity(purse.isReady ? 1 : 0)
@@ -335,27 +392,49 @@ struct LobbyView: View {
         .animation(.snappy, value: purse.balance)
     }
 
+    private var shopPacks: Int { store.albumBook.waiting(on: .shop) }
+
+    /// A shop pack waiting to be torn — the house's gift, the wheel's gran premio — marks
+    /// the bag the way a card pack marks the album.
+    @ViewBuilder private var shopPackDot: some View {
+        if shopPacks > 0 {
+            Circle()
+                .fill(Palette.terracotta)
+                .overlay { Circle().strokeBorder(Palette.cream.opacity(0.9), lineWidth: 1.2) }
+                .frame(width: 9 * lift, height: 9 * lift)
+                .offset(x: 4 * lift, y: -4 * lift)
+                .accessibilityHidden(true)
+        }
+    }
+
     // MARK: The masthead
+
+    /// The broom, the fan and the wordmark drawn smaller on a short phone, an SE, so the
+    /// doors still clear the bottom of the screen with nothing scrolled.
+    private var crestScale: CGFloat {
+        !stage.isWide && screenSize.height > 0 && screenSize.height < 700 ? 0.6 : 1
+    }
 
     /// The broom on its glass coin, with a fan of the deck in use behind it.
     private var masthead: some View {
-        VStack(spacing: stage.pick(tall: 10, wide: 8) * lift) {
+        let crest = lift * crestScale
+        return VStack(spacing: stage.pick(tall: 10, wide: 8) * lift) {
             ZStack {
-                MastheadFan(width: stage.pick(tall: 46, wide: 38) * lift)
-                    .offset(y: stage.pick(tall: -24, wide: -20) * lift)
-                BroomMark(size: stage.pick(tall: 38, wide: 34) * lift, tint: Palette.goldLight)
-                    .padding(stage.pick(tall: 16, wide: 14) * lift)
+                MastheadFan(width: stage.pick(tall: 46, wide: 38) * crest)
+                    .offset(y: stage.pick(tall: -24, wide: -20) * crest)
+                BroomMark(size: stage.pick(tall: 38, wide: 34) * crest, tint: Palette.goldLight)
+                    .padding(stage.pick(tall: 16, wide: 14) * crest)
                     .glass(.riviera(), in: .circle)
-                    .offset(y: stage.pick(tall: 16, wide: 12) * lift)
+                    .offset(y: stage.pick(tall: 16, wide: 12) * crest)
             }
-            .frame(height: stage.pick(tall: 94, wide: 92) * lift)
+            .frame(height: stage.pick(tall: 94, wide: 92) * crest)
             Text(Brand.title)
-                .font(.display(stage.pick(tall: 50, wide: 50) * lift))
+                .font(.display(stage.pick(tall: 50, wide: 50) * crest))
                 .foregroundStyle(Palette.onTable)
                 .padding(.top, stage.pick(tall: 4, wide: 2) * lift)
-            RankPlate(rank: store.rank) { showsOnline = true }
-            // The album rides under the league: both are where you stand rather than ways to
+            // The album rides under the wordmark: it is where you stand rather than a way to
             // play, and a pill here costs the column one line instead of a slab of its own.
+            // The league's plate that sat over it is the ranked door now.
             albumStrip
         }
     }
@@ -406,67 +485,41 @@ struct LobbyView: View {
 
     // MARK: The doors
 
-    /// One way to play, and a row of the others.
+    /// Ranked across the width, the campaign under it, and a row of the small doors.
     ///
-    /// It was four doors of equal weight, two by two, each with its own sentence — on top of
-    /// the goals, the album and the ladder, a lobby of a dozen things to tap and no telling
-    /// which one was the game. The quick game is the door most people want most evenings,
-    /// so it takes the width; ranked, the denari tables and friends share one row as small
-    /// doors, a mark and a name each (the denari tables only while `offersWagers` is on). A
-    /// saved game still takes the width above it all.
+    /// The quick game had the width once, as the door most people want most evenings. It
+    /// still deals in one tap from half a row; the league and the campaign take the width
+    /// because they are the doors with somewhere to go — a grade to climb, a road to walk —
+    /// and the reasons to come back after the bots are beaten. A saved game no longer takes
+    /// a row of its own either: it is the quick door's face until it is played out or
+    /// thrown away.
+    /// Where the road has reached, once a stage is won; until then the door sells the trip.
+    private var campaignProgress: LocalizedStringKey? {
+        let book = store.campaignBook
+        guard book.totalStars > 0 else { return nil }
+        let stage = book.current
+        return "Stage \(stage.number) · \(stage.region.title)"
+    }
+
     private var doors: some View {
         VStack(spacing: 10 * lift) {
-            if let saved = store.savedGame { resumeDoor(saved) }
-            quickDoor
+            RankedHero(rank: store.rank) { showsOnline = true }
+            CampaignDoor(progress: campaignProgress) { showsCampaign = true }
             HStack(spacing: 10 * lift) {
-                rankedDoor
+                quickDoor
                 if Self.offersWagers { denariDoor }
                 friendsDoor
             }
             .fixedSize(horizontal: false, vertical: true)
         }
         // Only on the way open: read as one flag, the close of a sheet would tap too.
-        .sound(trigger: showsWager || showsFriends || showsOnline) { _, open in open ? .tap : nil }
+        .sound(trigger: showsWager || showsFriends || showsOnline || showsCampaign) { _, open in open ? .tap : nil }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: store.savedGame == nil)
-        .confirmationDialog("Deal over the saved game?", isPresented: $confirmsDealOver,
-                            titleVisibility: .visible) {
-            Button(dealOverIsCostly ? "Deal, and lose the stake" : "Deal a new table",
-                   role: .destructive) { dealOverSavedGame() }
-            Button("Resume that one instead") { store.resumeSavedGame() }
-            Button("Cancel", role: .cancel) {}
+        .confirmationDialog("Forget this game?", isPresented: $confirmsForget, titleVisibility: .visible) {
+            Button("Forget it, and lose the stake", role: .destructive) { forgetSavedGame() }
+            Button("Keep it", role: .cancel) {}
         } message: {
-            if let stake = store.savedGame?.stake {
-                Text("Your stake of \(stake.amount.coins) denari is on that table.")
-            } else {
-                Text("The table you left is kept on this phone until it is played out.")
-            }
-        }
-    }
-
-    /// Whether dealing over the saved game would cost denari as well as the table.
-    private var dealOverIsCostly: Bool { store.savedGame?.stake != nil }
-
-    /// A quick game is a hot-seat table, and a hot-seat table writes itself over whatever is
-    /// saved on this phone the moment the first card lands. Asked first, then thrown away
-    /// deliberately rather than by a side effect.
-    private func dealOverSavedGame() {
-        store.forgetSavedGame()
-        store.playQuickGame()
-    }
-
-    /// The door with a league behind it wears the medal, the edge of its own grade, and what
-    /// the next game up the ladder costs.
-    private var rankedDoor: some View {
-        ModeDoor(title: "Ranked", league: rankedLeague, compact: true, grade: rankedGrade) {
-            if let league = rankedLeague {
-                LeagueMedal(league: league, size: 30 * lift)
-            } else {
-                Image(systemName: "globe.europe.africa.fill")
-                    .font(.system(size: 24 * lift, weight: .semibold))
-                    .foregroundStyle(Palette.goldLight)
-            }
-        } action: {
-            showsOnline = true
+            Text("Your stake of \(store.savedGame?.stake?.amount.coins ?? 0) denari is on that table.")
         }
     }
 
@@ -484,16 +537,20 @@ struct LobbyView: View {
         }
     }
 
-    /// A fresh game against the bots, at whichever table the pills are set to. It asks its
-    /// question on the tile, so nothing stands between the door and the cards.
+    /// A fresh game against the bots, at whichever table the pills are set to, or the game
+    /// saved on this phone while there is one. Nothing stands between the door and the cards.
     private var quickDoor: some View {
-        QuickDoor(table: $store.quickTable) {
-            if store.savedGame != nil { confirmsDealOver = true } else { store.playQuickGame() }
+        QuickDoor(table: $store.quickTable, saved: store.savedGame) {
+            store.playQuickGame()
+        } resume: {
+            store.resumeSavedGame()
+        } forget: {
+            if store.savedGame?.stake != nil { confirmsForget = true } else { forgetSavedGame() }
         }
     }
 
     private var friendsDoor: some View {
-        ModeDoor(title: "With friends", compact: true) {
+        ModeDoor(title: "With friends", detail: "This phone, a code, or Game Center") {
             Image(systemName: "person.2.fill")
                 .font(.system(size: 24 * lift, weight: .semibold))
                 .foregroundStyle(Palette.goldLight)
@@ -502,64 +559,6 @@ struct LobbyView: View {
             showsFriends = true
         }
     }
-
-    /// The game saved on this phone, with an × to throw it away. It keeps the full width:
-    /// a scoreline, a round number and a way out do not fit in half a row.
-    private func resumeDoor(_ saved: SavedGame) -> some View {
-        DoorTile(title: "Resume", detail: resumeDetail(saved), tint: Palette.terracotta,
-                 wide: true, showsChevron: false) {
-            HStack(spacing: -12) {
-                CardBack(width: 22).rotationEffect(.degrees(-8))
-                CardBack(width: 22).rotationEffect(.degrees(6))
-            }
-        } action: {
-            store.resumeSavedGame()
-        }
-        // The × takes the chevron's slot: a corner button on a one-line tile overlapped it.
-        .overlay(alignment: .trailing) { forgetButton(saved) }
-        .confirmationDialog("Forget this game?", isPresented: $confirmsForget, titleVisibility: .visible) {
-            Button("Forget it, and lose the stake", role: .destructive) { forgetSavedGame() }
-            Button("Keep it", role: .cancel) {}
-        } message: {
-            Text("Your stake of \(saved.stake?.amount.coins ?? 0) denari is on that table.")
-        }
-    }
-
-    private func forgetButton(_ saved: SavedGame) -> some View {
-        Button {
-            if saved.stake != nil { confirmsForget = true } else { forgetSavedGame() }
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 12 * lift, weight: .bold))
-                .foregroundStyle(Palette.cream.opacity(0.9))
-                .frame(width: 34 * lift, height: 34 * lift)
-                .background { Circle().fill(Palette.ink.opacity(0.18)) }
-                .contentShape(.circle)
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 6 * lift)
-        .accessibilityLabel("Forget this game")
-    }
-
-    /// "Hugo · 3 – 1 · Round 2": who, where it stands, how far in.
-    private func resumeDetail(_ saved: SavedGame) -> LocalizedStringKey {
-        let names = saved.opponentNames.formatted(.list(type: .and, width: .short))
-        return "\(names) · \(saved.ownScore) – \(saved.bestOtherScore) · Round \(saved.state.roundNumber)"
-    }
-
-    /// The league to dress the ranked door in. Nil until the ladder has answered for a game
-    /// actually played: an unranked door must not wear bronze, which somebody earned.
-    private var rankedLeague: Int? {
-        guard let rank = store.rank, rank.games > 0 else { return nil }
-        return rank.standing.league
-    }
-
-    /// "Gold II" under the door's name, on the same terms as the medal.
-    private var rankedGrade: String? {
-        guard rankedLeague != nil else { return nil }
-        return store.rank?.standing.leagueTitle(locale: locale)
-    }
-
 
     /// The way into the album, on the lobby rather than three taps down a settings page.
     ///

@@ -146,20 +146,19 @@ struct RarityBurst: View {
     var tint: Color
     var size: CGFloat
 
-    @State private var turn: Double = 0
     @State private var bloom: CGFloat = 0.4
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if count > 0 {
             ZStack {
                 RadialGradient(colors: [tint.opacity(0.55), tint.opacity(0.0)],
                                center: .center, startRadius: 0, endRadius: size * 0.55)
-                Rays(count: count)
-                    .fill(RadialGradient(colors: [tint.opacity(0.0), tint.opacity(0.7), tint.opacity(0.0)],
-                                         center: .center, startRadius: size * 0.16,
-                                         endRadius: size * 0.6))
-                    .rotationEffect(.degrees(turn))
+                // Baked once and turned as a picture, on the slow ambient clock rather than
+                // a `repeatForever` at the display's full rate. Every ray ends inside the
+                // inscribed circle, so the square texture never clips one as it turns.
+                AmbientClock { time in
+                    rays.rotationEffect(.degrees(time.cycle(of: 26) * 360))
+                }
             }
             .frame(width: size, height: size)
             .scaleEffect(bloom)
@@ -167,12 +166,16 @@ struct RarityBurst: View {
             .allowsHitTesting(false)
             .onAppear {
                 withAnimation(.spring(duration: 0.55, bounce: 0.3)) { bloom = 1 }
-                guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 26).repeatForever(autoreverses: false)) {
-                    turn = 360
-                }
             }
         }
+    }
+
+    private var rays: some View {
+        Rays(count: count)
+            .fill(RadialGradient(colors: [tint.opacity(0.0), tint.opacity(0.7), tint.opacity(0.0)],
+                                 center: .center, startRadius: size * 0.16,
+                                 endRadius: size * 0.6))
+            .drawingGroup()
     }
 
     private struct Rays: Shape {

@@ -21,10 +21,15 @@ struct RankedVerdict: View {
         let won: Bool
         /// Wins in a row including this one, as the ladder counts them now.
         var streak: Int = 0
+        /// A game against the house, which leaves the run where it stood either way.
+        var isHouse = false
 
         var change: Int { after - before }
         /// A run worth saying out loud: the second win of one is where it starts paying.
-        var isOnARun: Bool { won && streak >= 2 }
+        var isOnARun: Bool { won && streak >= 2 && !isHouse }
+        /// A run the house game left alone, said so that a win over it is not read as the
+        /// run growing, nor a loss to it as the run lost.
+        var keepsRun: Bool { isHouse && streak > 0 }
         /// A loss the floor swallowed.
         var isHeld: Bool { !won && change == 0 }
     }
@@ -215,16 +220,26 @@ struct RankedVerdict: View {
             }
     }
 
-    /// The run this win is on, at the far end of the line under the bar. Part of what the
-    /// game paid is the run, and this is what says so.
+    /// The run, at the far end of the line under the bar: a flame a win, the newest
+    /// catching as it is shown. Part of what the game paid is the run, and this says so.
+    /// After a house game the flames are banked and the words say the run was kept.
     private var runTag: some View {
-        Text("\(move.streak) IN A ROW")
+        HStack(spacing: 5) {
+            RunFlames(count: move.streak, lit: !move.isHouse, catches: move.isOnARun)
+            Group {
+                if move.isHouse {
+                    Text("RUN OF \(move.streak) KEPT")
+                } else {
+                    Text("\(move.streak) IN A ROW")
+                }
+            }
             .font(.system(size: 10, weight: .heavy))
             .tracking(1.1)
-            .foregroundStyle(Palette.goldLight)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .transition(.scale(scale: 0.6).combined(with: .opacity))
+            .foregroundStyle(move.isHouse ? Palette.onTableSoft : Palette.goldLight)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .transition(.scale(scale: 0.6).combined(with: .opacity))
     }
 
     // MARK: The line under it
@@ -234,7 +249,7 @@ struct RankedVerdict: View {
     private var caption: some View {
         HStack(spacing: 6) {
             word
-            if showsChange, move.isOnARun {
+            if showsChange, move.isOnARun || move.keepsRun {
                 Spacer(minLength: 4)
                 runTag
             }
@@ -285,7 +300,8 @@ struct RankedVerdict: View {
         let change = move.change >= 0
             ? String(localized: "up \(move.change)", locale: locale)
             : String(localized: "down \(abs(move.change))", locale: locale)
-        let run = move.isOnARun ? ", " + String(localized: "\(move.streak) wins in a row", locale: locale) : ""
+        let run = move.isOnARun ? ", " + String(localized: "\(move.streak) wins in a row", locale: locale)
+            : move.keepsRun ? ", " + String(localized: "run of \(move.streak) kept", locale: locale) : ""
         return "\(title), \(change)\(run)"
     }
 
@@ -407,6 +423,7 @@ extension Standing {
             RankedVerdict(move: .init(before: 430, after: 455, won: true))
             RankedVerdict(move: .init(before: 588, after: 613, won: true))
             RankedVerdict(move: .init(before: 430, after: 456, won: true, streak: 4))
+            RankedVerdict(move: .init(before: 430, after: 455, won: true, streak: 3, isHouse: true))
             RankedVerdict(move: .init(before: 455, after: 443, won: false))
             RankedVerdict(move: .init(before: 705, after: 685, won: false))
             RankedVerdict(move: .init(before: 600, after: 600, won: false))

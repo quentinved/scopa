@@ -31,6 +31,8 @@ struct ShopContent: View {
 
     @Environment(\.locale) private var locale
     @State private var isWatching = false
+    /// The last tap on the opt-in ad found no video to show.
+    @State private var noVideo = false
     /// The last item bought, so its tile can show the gilding.
     @State private var bought: ShopItem.ID?
     /// Kept after the dialog closes so the dismissal animation still has a title to draw.
@@ -44,9 +46,13 @@ struct ShopContent: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 30) {
                 balance
+                // Packs handed over rather than bought, torn here where they are sold.
+                ShopWaitingPacks(book: store.albumBook, purse: purse, till: till)
+                // Next to the balance it tops up, above the fold: further down, players
+                // did not know it was there.
+                watchForDenari
                 hero
                 packs
-                watchForDenari
                 drawings
                 colours
                 backs
@@ -66,6 +72,7 @@ struct ShopContent: View {
             .padding(.vertical, 16)
         }
         .defaultScrollAnchor(DebugLaunch.promoCode == nil ? nil : .bottom)
+        .scrollsToDebugShelf()
         .softScrollEdge(.top)
         .background(TableGround())
         .packTill(till, book: store.albumBook, purse: purse, name: store.playerName)
@@ -247,6 +254,7 @@ struct ShopContent: View {
             }
         }
         .reactsToPick(store.tapis)
+        .id("tapis")
     }
 
     // MARK: Who sits with you
@@ -510,9 +518,10 @@ struct ShopContent: View {
 
     // MARK: The rewarded ad
 
-    /// Absent rather than greyed out when no ad is loaded or the day's allowance is spent.
+    /// Stands whenever ads are on, so it is never taken for gone, and a tap with no video to
+    /// hand says so. There is no daily allowance to spend.
     @ViewBuilder private var watchForDenari: some View {
-        if ads.offersReward {
+        if ads.isReady {
             VStack(alignment: .leading, spacing: 10) {
                 Caption(text: "Short of denari?")
                 Button(action: watch) {
@@ -522,9 +531,16 @@ struct ShopContent: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isWatching)
+                if noVideo {
+                    Text("No video to show right now. Try again in a little while.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.onTableSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity)
+                }
             }
             .transition(.opacity.combined(with: .scale(scale: 0.96)))
-            .animation(.spring(duration: 0.4, bounce: 0.2), value: ads.rewardsLeftToday)
+            .animation(.easeInOut(duration: 0.2), value: noVideo)
         }
     }
 
@@ -537,24 +553,37 @@ struct ShopContent: View {
                 Text("Watch a short ad")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Palette.onTable)
-                Text("\(ads.rewardsLeftToday) left today")
+                Text("As often as you like")
                     .font(.system(size: 13))
                     .foregroundStyle(Palette.onTableSoft)
             }
             Spacer(minLength: 0)
-            DenariLabel(amount: ads.reward, size: 15, signed: true)
+            if isWatching {
+                ProgressView().tint(Palette.goldLight)
+            } else {
+                DenariLabel(amount: ads.reward, size: 15, signed: true)
+            }
         }
     }
 
     private func watch() {
         guard !isWatching else { return }
         isWatching = true
+        noVideo = false
         Task {
             defer { isWatching = false }
             // Paid only on the network's word that the ad was watched to the end.
-            guard await ads.watchRewarded() else { return }
-            await purse.earnFromAd(ads.reward, key: "ad/\(ads.rewardsWatched)")
-            Audio.shared.play(.purchase)
+            switch await ads.watchRewarded() {
+            case .watched:
+                // The device as well as the count: the count is this phone's own, the ledger
+                // the account's, so a bare count would collide with another device's watches.
+                let key = "ad/\(Device.id)/\(ads.rewardsWatched)"
+                if await purse.earnFromAd(ads.reward, key: key) { Audio.shared.play(.purchase) }
+            case .unavailable:
+                noVideo = true
+            case .closedEarly:
+                break
+            }
         }
     }
 
@@ -669,6 +698,17 @@ struct ShopContent: View {
 }
 
 private extension View {
+    /// Scrolls to the shelf named by `-shelf`, for a screenshot. Inert without the flag.
+    func scrollsToDebugShelf() -> some View {
+        ScrollViewReader { reader in
+            task {
+                guard let shelf = DebugLaunch.shelf else { return }
+                try? await Task.sleep(for: .milliseconds(400))
+                reader.scrollTo(shelf, anchor: .top)
+            }
+        }
+    }
+
     /// The spring and the click every shelf gives when its equipped item changes.
     func reactsToPick<Value: Equatable>(_ value: Value) -> some View {
         animation(.spring(duration: 0.35, bounce: 0.2), value: value)

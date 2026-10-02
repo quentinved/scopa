@@ -26,6 +26,10 @@ struct RankedVerdictSheet: View {
              move: .init(before: 600, after: 600, won: false)),
         Case(id: "run", caption: "A win on a run, paid the run on top",
              move: .init(before: 430, after: 456, won: true, streak: 4)),
+        Case(id: "houseWin", caption: "A win over the house, the run left as it was",
+             move: .init(before: 430, after: 455, won: true, streak: 3, isHouse: true)),
+        Case(id: "houseLoss", caption: "A loss to the house, the run kept",
+             move: .init(before: 455, after: 450, won: false, streak: 3, isHouse: true)),
     ]
 
     var body: some View {
@@ -49,6 +53,7 @@ struct RankedVerdictSheet: View {
             }
             .padding(20)
         }
+        .defaultScrollAnchor(DebugLaunch.verdictOpensAtEnd ? .bottom : .top)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background { TableGround() }
     }
@@ -57,11 +62,21 @@ struct RankedVerdictSheet: View {
     private var stakes: some View {
         VStack(alignment: .leading, spacing: 18) {
             heading(Text(verbatim: "Before the game"))
-            RankedStakes(odds: RankedStakes.odds(mine: 745, theirs: [1_120]))
-            RankedStakes(odds: RankedStakes.odds(mine: 745, theirs: [760], streak: 4))
-            RankedStakes(odds: RankedStakes.houseOdds(mine: 745, theirs: 700, counting: true))
+            RankedStakes(odds: Self.recorded(RankedStakes.houseOdds(mine: 745, theirs: 700, counting: true, streak: 3)))
+            RankedStakes(odds: Self.recorded(RankedStakes.odds(mine: 745, theirs: [760], streak: 4)))
+            RankedStakes(odds: Self.recorded(RankedStakes.odds(mine: 745, theirs: [1_120])))
             RankedStakes(odds: RankedStakes.houseOdds(mine: 745, theirs: 700, counting: false))
+            RankedStakes(odds: RankedStakes.odds(mine: 600, theirs: []))
         }
+    }
+
+    /// A season behind both sides and a few house games spent, as a real table would have.
+    private static func recorded(_ odds: RankedStakes.Odds) -> RankedStakes.Odds {
+        var odds = odds
+        odds.myRecord = RankedStakes.Record(wins: 14, games: 26)
+        odds.theirRecord = RankedStakes.Record(wins: 31, games: 50)
+        if odds.isHouse { odds.housePlayed = 3 }
+        return odds
     }
 
     /// The verdict at the width and on the ground it has inside the end-of-game panel.

@@ -85,6 +85,9 @@ final class TableStore {
     /// The table an invitation is out to. No second table can be tapped while it is set: two
     /// invitations at once is one connection too many.
     private(set) var joining: NearbyTable?
+    /// The nearby table the last join could not reach, explained on the sheet itself: the
+    /// notice bar slides in behind a sheet, where nobody saw it.
+    private(set) var unreachedTable: NearbyTable?
     /// People whose device left mid-game. The host's bot plays their cards, and the table
     /// shows them as a bot until they come back.
     private(set) var departed: Set<PlayerID> = []
@@ -324,6 +327,11 @@ final class TableStore {
     /// itself all read the same numbers from here.
     let albumBook = AlbumBook()
 
+    /// The solo campaign's stars, and the way back to its map after a game.
+    let campaignBook = CampaignBook()
+    /// The campaign table being played. Nil at any other table.
+    private(set) var campaignStage: CampaignStage?
+
     /// The week's tasks, once the game that finished the last of them has ended, for the card
     /// that hands the laurel over. Cleared once shown, like `freshDailyDay`.
     private(set) var finishedChallenge: [WeeklyChallenge.Goal]?
@@ -393,8 +401,14 @@ final class TableStore {
     /// alone.
     struct RankedSearch: Equatable {
         let startedAt: Date
-        /// How long the whole search runs before the house takes the chair.
+        /// How long the whole search runs before it gives up.
         let length: TimeInterval
+        /// The house is on offer: a few seconds in, and again once the search has run out.
+        /// "Keep looking" puts it away while the search still has time.
+        var offersHouse = false
+        /// The search ran its length and found nobody. Nothing is being looked for, and the
+        /// offer waits for an answer rather than sitting the house down unasked.
+        var isOver = false
     }
 
     private(set) var rankedSearch: RankedSearch?
@@ -581,7 +595,7 @@ final class TableStore {
     ///
     /// Only a table of invited friends can: it is a Game Center match, so there is an
     /// invitation to send, and it waits for the host rather than dealing itself once it fills.
-    /// Friends find a nearby table through "Join a table" instead, and ranked and code tables
+    /// Friends find a nearby table through "Join a friend's table → Nearby" instead, and ranked and code tables
     /// are made for the people already at them.
     var canInviteFriends: Bool {
         #if DEBUG
@@ -669,6 +683,7 @@ final class TableStore {
         multipeer = session
         session.startBrowsing()
         isBrowsing = true
+        unreachedTable = nil
         watchForProblems(session.problems)
         browsePump = Task { [weak self] in
             for await tables in session.nearbyTables {
@@ -685,6 +700,7 @@ final class TableStore {
         multipeer?.stopBrowsing()
         isBrowsing = false
         nearby = []
+        unreachedTable = nil
     }
 
     /// Whether "Play again" belongs on the last summary: a table this phone can deal again by
@@ -695,7 +711,7 @@ final class TableStore {
     /// rating at stake on this phone's tap. Against the house there is nobody to ask, so the
     /// button stands.
     var canPlayAgain: Bool {
-        guard view?.isFinished == true, stake == nil, dailyDay == nil else { return false }
+        guard view?.isFinished == true, stake == nil, dailyDay == nil, campaignStage == nil else { return false }
         if isRanked, ladderTable == .people { return false }
         switch backend {
         case .host, .hotSeat: return true
@@ -759,6 +775,7 @@ final class TableStore {
         // The waiting room comes after the seat. Going there on the tap left a guest whose
         // invitation was quietly timing out staring at an empty table for twenty seconds.
         joining = table
+        unreachedTable = nil
         Log.table.info("Joining \(table.hostName, privacy: .public)'s table")
         Task { await sit(at: table, through: session, as: client) }
     }
@@ -781,6 +798,7 @@ final class TableStore {
             Log.table.error("Join failed: \(String(describing: error), privacy: .public)")
             joining = nil
             backend = .none
+            unreachedTable = table
             notice = .rejected("Could not reach that table")
         }
     }
@@ -1230,14 +1248,18 @@ final class TableStore {
 
     // MARK: Ranked
 
-    /// How long a ranked search runs before the house sits down instead. It was eight
+    /// How long a ranked search runs before it gives up and offers the house. It was eight
     /// seconds, which is about what Game Center takes to pair two phones that are both
-    /// searching, so two friends who tapped a moment apart each got the house.
+    /// searching, so two friends who tapped a moment apart each got the house. The offer
+    /// now comes early instead (`houseOfferDelay`), so the wait is the player's to cut short.
     static let rankedSearchTime: TimeInterval = 30
+
+    /// How far into a ranked search the house is offered, the search carrying on behind it.
+    static let houseOfferDelay: TimeInterval = 5
 
     /// A ranked table played alone: one real opponent, whatever their league. `rankedSolo`
     /// says whether that is the whole table or whether the house sits behind each of you.
-    /// Nobody found at all seats the house rather than turning the player away.
+    /// Nobody found yet offers the house rather than turning the player away.
     func playRanked() {
         let format = rankedSolo
         reset()
@@ -1249,16 +1271,16 @@ final class TableStore {
         rankedID = UUID()
         rankChange = nil
         onlineStatus = .signingIn
-        searchTask = Task {
+        searchTask = searchRanked(format)
+    }
+
+    /// Signs in, looks, and sits down with whoever is found. Nobody found leaves the house
+    /// on offer, and the task ends there.
+    private func searchRanked(_ format: RankedSolo) -> Task<Void, Never> {
+        Task {
             do {
                 let me = try await GameCenter.signIn { controller in Self.present(controller) }
-                guard !Task.isCancelled else { return }
-                onlineStatus = .searching
-                rankedSearch = RankedSearch(startedAt: .now, length: Self.rankedSearchTime)
-                let found = await findRankedMatch(format)
-                rankedSearch = nil
-                guard !Task.isCancelled else { return }
-                guard let found else { seatRankedStranger(); return }
+                guard !Task.isCancelled, let found = await lookForOpponent(format) else { return }
                 let ranked = isRanked, id = rankedID
                 await seatOnline(found, as: me, players: 2)
                 isRanked = ranked
@@ -1272,6 +1294,53 @@ final class TableStore {
                 notice = .rejected("Could not find a ranked game")
             }
         }
+    }
+
+    /// One run of the search, with the house offered a few seconds in. Nil when nobody was
+    /// found, which leaves the offer up, or when the search was called off, which changes
+    /// nothing: whoever called it off has already said what happens next.
+    private func lookForOpponent(_ format: RankedSolo) async -> GKMatch? {
+        onlineStatus = .searching
+        let search = RankedSearch(startedAt: .now, length: Self.rankedSearchTime)
+        rankedSearch = search
+        // Checked against this search's start, so a search stopped and started again within
+        // the delay does not have the old one's offer land on it early.
+        let offer = Task {
+            try? await Task.sleep(for: .seconds(Self.houseOfferDelay))
+            guard !Task.isCancelled, rankedSearch?.startedAt == search.startedAt else { return }
+            rankedSearch?.offersHouse = true
+        }
+        let found = await findRankedMatch(format)
+        offer.cancel()
+        guard !Task.isCancelled else { return nil }
+        guard let found else {
+            rankedSearch?.offersHouse = true
+            rankedSearch?.isOver = true
+            return nil
+        }
+        rankedSearch = nil
+        return found
+    }
+
+    /// The house, taken up on. The search is called off first — the matchmaker cancelled,
+    /// and a match caught on its way in disconnected by `GameCenter` — so nobody is left
+    /// waiting at a table this phone has walked away from.
+    func playTheHouse() {
+        guard rankedSearch != nil else { return }
+        GameCenter.cancelSearch()
+        searchTask?.cancel()
+        searchTask = nil
+        rankedSearch = nil
+        seatRankedStranger()
+    }
+
+    /// "Keep looking": the offer put away while the search still has time, or a fresh search
+    /// once it has run out.
+    func keepLooking() {
+        guard let search = rankedSearch else { return }
+        guard search.isOver else { rankedSearch?.offersHouse = false; return }
+        searchTask?.cancel()
+        searchTask = searchRanked(rankedFormat)
     }
 
     /// One queue per format, open to every league.
@@ -1297,14 +1366,40 @@ final class TableStore {
     /// be checked without typing it into the settings first.
     func pretendTieRules() { pretendsTieRules = true }
 
+    /// Puts a quick game behind the lobby's Resume door, dealt but never written to disk, so
+    /// the lobby can be judged with a game waiting without leaving one on the simulator.
+    /// `none` hides whatever the simulator has saved instead, without deleting it.
+    func pretendSavedGame(none: Bool = false) {
+        hasLookedForSavedGame = true
+        guard !none else { return savedGame = nil }
+        let seats = [LocalSeat.person(name: playerName)] + quickTable.botNames.map { LocalSeat.bot(name: $0) }
+        let (players, bots) = LocalSeat.table(seats)
+        guard let config = try? GameConfiguration(players: players, teams: quickTable.teams) else { return }
+        let table = HotSeatTable(configuration: config, bots: bots)
+        Task {
+            // Stopped first, so the deal does not wait on the bots playing their turns.
+            await table.stop()
+            await table.deal()
+            let snapshot = await table.snapshot
+            savedGame = SavedGame(snapshot: snapshot, bots: bots, deviceSeat: 0, stake: nil, wagerID: UUID(),
+                                  tally: nil, savedAt: .now)
+        }
+    }
+
     /// Puts a ranked search on screen, part-way through and staying there, so the line that
     /// runs out can be judged without a Game Center account. Nothing is actually searched for.
+    ///
+    /// Far enough in that the house is on offer, as it would be. `-rankedSearch over` shows
+    /// the search run out instead, and "Play the house" sits down as a real search would.
     func pretendSearching() {
         isRanked = true
+        rankedFormat = rankedSolo
+        rankedID = UUID()
         onlineStatus = .searching
         // Long enough to sit still for a screenshot, and started far enough back that the line
         // is drawn part-run rather than full.
-        rankedSearch = RankedSearch(startedAt: .now.addingTimeInterval(-24), length: 120)
+        rankedSearch = RankedSearch(startedAt: .now.addingTimeInterval(-24), length: 120,
+                                    offersHouse: true, isOver: DebugLaunch.rankedSearchIsOver)
     }
 
     /// Sits down at a ranked table against the house, as ranked does once the search time is
@@ -1343,8 +1438,8 @@ final class TableStore {
     }
     #endif
 
-    /// Ranked found nobody inside `rankedSearchTime`, so a house stranger takes the chair and
-    /// the game is played out as a ranked game.
+    /// Ranked found nobody, or nobody yet, and the player took up the house: a house stranger
+    /// takes the chair and the game is played out as a ranked game.
     ///
     /// It reaches the ladder at the house price, because nobody at this table can confirm the
     /// result but the phone that played it. See `ladderTable`. `targetScore` is eleven for
@@ -1672,6 +1767,14 @@ final class TableStore {
                          teams: table.teams)
     }
 
+    /// A table on the campaign's road, dealt as the stage says whatever the settings do.
+    /// Not saved for later: walking out is a game not played, and the map is one tap away.
+    func playCampaign(_ stage: CampaignStage) {
+        playOnThisDevice(seats: stage.seats(you: playerName), teams: stage.teams, turnClock: stage.clock,
+                         targetScore: stage.target, primiera: stage.primiera, strength: stage.strength)
+        if route == .table { campaignStage = stage }
+    }
+
     // MARK: The first game
 
     /// The hand that follows the walkthrough: the coach on, the easy bot across the table, no
@@ -1921,7 +2024,9 @@ final class TableStore {
         }
         // A game on this phone with nothing staked on it is kept, so an X tapped by mistake is
         // waiting in the lobby afterwards. A wager is not: the dialog said the stake stays behind.
-        if case .hotSeat(let table) = backend, dailyDay == nil {
+        // A campaign table goes back to its map rather than into the saved game.
+        if campaignStage != nil { campaignBook.showsMap = true }
+        if case .hotSeat(let table) = backend, dailyDay == nil, campaignStage == nil {
             if stake == nil, view?.isFinished == false {
                 saveTask?.cancel()
                 let bots = botSeats, seat = deviceSeat, id = wagerID, tally = tally
@@ -1988,7 +2093,7 @@ final class TableStore {
     /// Writes the table down a moment after it changes. Coalesced, because every move arrives
     /// as a view and then its events, and the tally is only right after the second.
     private func saveSoon() {
-        guard case .hotSeat(let table) = backend, dailyDay == nil else { return }
+        guard case .hotSeat(let table) = backend, dailyDay == nil, campaignStage == nil else { return }
         saveTask?.cancel()
         saveTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(250))
@@ -2346,6 +2451,7 @@ final class TableStore {
         dailyResult = nil
         stake = nil
         rankedSearch = nil
+        campaignStage = nil
     }
 }
 

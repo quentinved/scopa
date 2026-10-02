@@ -119,6 +119,9 @@ struct TurnEdge: View {
             .strokeBorder(Palette.terracotta, lineWidth: breathing ? 34 : 24)
             .blur(radius: breathing ? 22 : 16)
             .padding(-6)
+            // Baked into one texture. Left live, a full-screen blur is worked out again on
+            // every frame anything on the cloth moves, for the whole of your turn.
+            .drawingGroup()
             .opacity(isOn ? (breathing ? 0.95 : 0.85) : 0)
             .overlay {
                 RoundedRectangle(cornerRadius: 52, style: .continuous)

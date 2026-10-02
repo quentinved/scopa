@@ -48,6 +48,9 @@ struct ContentView: View {
         .environment(\.tapis, store.tapis)
         .environment(toaster)
         .environment(friendsOnline)
+        // For screens opened without arguments, such as `CampaignView`.
+        .environment(store)
+        .environment(purse)
         .tint(Palette.terracotta)
         .overlay(alignment: .top) { NoticeBar(store: store) }
         // Its own layer: news outlives the screen it was posted from.
@@ -64,16 +67,18 @@ struct ContentView: View {
             case .table: TableScreen(store: store, ads: ads, purse: purse)
             }
         }
+        // The campaign's map, shown again on the walk back from one of its tables.
+        .campaignCover(store)
     }
 
     // MARK: Reactions
 
-    /// The purse follows the ads: sweeping them away pays the passphrase's denari, and a
+    /// The purse follows the passphrase, which pays its denari wherever it was said, and a
     /// stake that found no table comes back.
     private func purseReactions(_ content: some View) -> some View {
         content
-            .onChange(of: ads.adsAreOn) { _, areOn in
-                guard !areOn else { return }
+            .onChange(of: ads.isSwept) { _, swept in
+                guard swept else { return }
                 Task { await purse.grantSweepGift() }
             }
             .task { await loadPurse() }
@@ -120,8 +125,7 @@ struct ContentView: View {
         await purse.grandfather([Cosmetics.item(for: store.cardTheme.style),
                                  Cosmetics.item(for: store.cardTheme.skin),
                                  Cosmetics.item(for: store.tableFelt)])
-        // `-noAds` is a screenshot flag: it must not pay the gift, which is persisted.
-        if !ads.adsAreOn && !DebugLaunch.hidesAds { await purse.grantSweepGift() }
+        if ads.isSwept { await purse.grantSweepGift() }
         #if DEBUG
         if let denari = DebugLaunch.grantedDenari { await purse.grantForDebugging(denari) }
         // After the grant, so the two together land on the figure `-purse` asked for.

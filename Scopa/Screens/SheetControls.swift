@@ -97,24 +97,29 @@ struct OnlineProgressLine: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Palette.onTableSoft)
             }
-            if let search { SearchCountdown(search: search) }
+            if let search, !search.isOver { SearchCountdown(search: search) }
+            if let search, search.offersHouse {
+                HouseOffer(store: store, isOver: search.isOver)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
         }
         .padding(14)
         .glassPanel(radius: GlassRadius.control)
+        .animation(.easeInOut(duration: 0.3), value: search)
     }
 
     private var label: LocalizedStringKey {
         switch status {
         case .signingIn: return "Signing in to Game Center"
         case .opening: return "Opening your table"
-        case .searching: return waiting
+        case .searching: return search?.isOver == true ? "Nobody found this time" : waiting
         case .seating: return "Taking your seats"
         }
     }
 }
 
 /// The line under a ranked search: gold that runs out over exactly the seconds the search
-/// has, and one line saying who sits down when it does.
+/// has, and one line saying who is there if nobody comes.
 ///
 /// Drawn from the clock rather than animated from a stored fraction, so a sheet redrawn
 /// mid-search picks the line up where it actually is instead of starting it over.
@@ -134,7 +139,7 @@ private struct SearchCountdown: View {
             }
             // The line is the sentence drawn; VoiceOver reads the sentence.
             .accessibilityHidden(true)
-            Text("The house takes the chair if nobody is found.")
+            Text("If nobody turns up, the house can take the chair.")
                 .font(.system(size: 11))
                 .foregroundStyle(Palette.onTableSoft)
         }
@@ -190,9 +195,18 @@ struct SheetScaffold<Content: View, Bottom: View>: View {
     var subtitle: LocalizedStringKey? = nil
     /// Nil where the sheet must not be left — a search with a stake already on the table.
     var close: (() -> Void)? = nil
+    /// On where the scroll is the sheet's own surface — the campaign's map — rather than
+    /// things laid on the table: it runs edge to edge and under the header, and the cloth
+    /// wears no border, which would frame it like a picture.
+    var bleeds = false
     @ViewBuilder var content: Content
     /// Pinned under the scroll: the sheet's own action, where it has one.
     @ViewBuilder var bottom: Bottom
+
+    @Environment(\.tableFelt) private var felt
+
+    /// How far the header's felt runs on below its rule, fading into what scrolls under it.
+    private static var fade: CGFloat { 36 }
 
     var body: some View {
         // The ground is a layer of the stack rather than a `.background` of the column.
@@ -200,16 +214,48 @@ struct SheetScaffold<Content: View, Bottom: View>: View {
         // lobby's own felt left standing down each side, which read as a bar on the right.
         ZStack {
             TableGround()
-            VStack(spacing: 0) {
-                header
-                rule
-                ScrollView { content }
-                    .softScrollEdge(.top)
-                    .scrollIndicators(.hidden)
-                    .safeAreaInset(edge: .bottom) { bottom }
-            }
+                .transformEnvironment(\.tapis) { if bleeds { $0 = .liscio } }
+            if bleeds { surface } else { column }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var column: some View {
+        VStack(spacing: 0) {
+            header
+            rule
+            ScrollView { content }
+                .softScrollEdge(.top)
+                .scrollIndicators(.hidden)
+                .safeAreaInset(edge: .bottom) { bottom }
+        }
+    }
+
+    /// The scroll filling the sheet, the header pinned over its top on a band of felt.
+    /// A scroll view draws into the safe areas it touches, so the content also runs on
+    /// under the home indicator and is cut only by the sheet's own rounded edge.
+    private var surface: some View {
+        ScrollView { content }
+            .scrollIndicators(.hidden)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) { header; rule }
+                    .background(alignment: .top) { band }
+            }
+            .softScrollEdge(.top)
+            .safeAreaInset(edge: .bottom) { bottom }
+    }
+
+    /// Felt behind the header, up under the status bar and down past the rule, where it
+    /// fades out so what scrolls beneath goes under softly rather than at a cut.
+    private var band: some View {
+        VStack(spacing: 0) {
+            LinearGradient(colors: [felt.light, felt.base], startPoint: .top, endPoint: .bottom)
+            LinearGradient(colors: [felt.base, felt.base.opacity(0)], startPoint: .top, endPoint: .bottom)
+                .frame(height: Self.fade)
+        }
+        .padding(.bottom, -Self.fade)
+        .ignoresSafeArea(edges: .top)
+        .allowsHitTesting(false)
     }
 
     /// The name on its own line with the way out beside it, and the line under it running

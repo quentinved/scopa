@@ -157,6 +157,20 @@ public actor Wallet {
         try await credit([LedgerEntry(date: date, amount: amount, reason: .granted(note), key: key)])
     }
 
+    /// A grant with an item handed over beside it, in one write: both land or neither, so a
+    /// failure cannot spend the key and lose the item. The item only comes with a fresh grant.
+    @discardableResult
+    public func grant(_ amount: Denari, note: String, key: String, unlocking item: ShopItem,
+                      itemKey: String, on date: Date = .now) async throws -> [LedgerEntry] {
+        try await loadIfNeeded()
+        guard !current.keys.contains(key) else { return [] }
+        var entries = [LedgerEntry(date: date, amount: amount, reason: .granted(note), key: key)]
+        if !current.owns(item) {
+            entries.append(LedgerEntry(date: date, amount: .zero, reason: .bought(item.id), key: itemKey))
+        }
+        return try await credit(entries)
+    }
+
     private func loadIfNeeded() async throws {
         guard !isLoaded else { return }
         try await reload()

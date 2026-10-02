@@ -217,6 +217,7 @@ final class AccountSync {
         if let data = try? Profile.encoder.encode(profile) { defaults.set(data, forKey: Mark.profile) }
 
         store.readStoredAgain()
+        store.campaignBook.readStoredAgain()
         Audio.shared.readStoredAgain()
         reminders.readStoredAgain()
         ads.sweepIfSaidElsewhere()
@@ -349,7 +350,7 @@ private enum Stored {
         "achievements.scope", "achievements.settebelli", "achievements.cappotti",
         "achievements.wins", "achievements.losses", "achievements.daily", "achievements.onlineWins",
         "experience.total",
-    ]
+    ] + CampaignBook.counterKeys
 
     static let paidSuits = "album.paidSuits"
     static let paidDeck = "album.paidDeck"

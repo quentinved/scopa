@@ -119,30 +119,29 @@ enum Cosmetics {
 
     // MARK: Tapis
 
-    /// A cloth costs more than a felt: a felt swaps three gradient stops, a tapis is a
-    /// pattern across the whole table. The brocade is priced with the other three
-    /// `leggendario` things rather than with the cloths, because that is what it is.
+    /// A cloth costs more than a felt: a felt swaps three gradient stops, a tapis is
+    /// drawn across the whole table. The velvet is priced with the other `leggendario`
+    /// things rather than with the cloths, because that is what it is. Prices and ids are
+    /// the ones the cloths they replaced had, so nobody's purse changes.
     private static func price(of tapis: Tapis) -> Denari? {
         switch tapis {
         case .liscio: nil
-        case .bordo: 180
-        case .intreccio: 200
-        case .damasco: 220
-        case .merletto: 260
-        case .broccato: 900
+        case .campo: 180
+        case .lino: 200
+        case .maiolica: 220
+        case .ventaglio: 260
+        case .velluto: 900
         }
     }
 
-    /// A pattern across the whole table, so nothing here is quite the floor. The lace is
-    /// the one with a border drawn as well as a weave; the brocade is the only cloth that
-    /// is woven rather than printed — its thread is lit by the table's own light, so the
-    /// figure is gold by the lamp and a watermark at the far corner.
+    /// Graded by accretion: a frame; a field with a hem; a field of figures; a field, a
+    /// frame and ornaments; and all of that with a solid gold cord on top.
     private static func grade(of tapis: Tapis) -> Grade {
         switch tapis {
-        case .liscio, .bordo: .comune
-        case .intreccio, .damasco: .raro
-        case .merletto: .prezioso
-        case .broccato: .leggendario
+        case .liscio, .campo: .comune
+        case .lino, .maiolica: .raro
+        case .ventaglio: .prezioso
+        case .velluto: .leggendario
         }
     }
 
@@ -383,7 +382,7 @@ enum Cosmetics {
         case .cardSkin: "What colour it is printed in"
         case .cardBack: "The back of the cards"
         case .felt: "The colour of the table"
-        case .tapis: "The cloth on it"
+        case .tapis: "How the table is dressed"
         case .mark: "The mark on your seat"
         case .cornice: "What goes round it"
         case .reactions: "What you can say"

@@ -64,6 +64,8 @@ final class Audio {
     @ObservationIgnored private var away = false
     @ObservationIgnored private var fading: Task<Void, Never>?
     @ObservationIgnored private var ducking: Task<Void, Never>?
+    /// Puts the engine down once the table has been quiet a while. See `napWhenQuiet`.
+    @ObservationIgnored private var napping: Task<Void, Never>?
     /// When the turn last came round to this player, measured by `nudge()`.
     @ObservationIgnored private var lastTurn = ContinuousClock.now - .seconds(60)
 
@@ -181,6 +183,24 @@ final class Audio {
         voice.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !voice.isPlaying { voice.play() }
         if let duck = sound.duck { step(back: duck) }
+        napWhenQuiet()
+    }
+
+    /// Long enough for the longest sound, the victory at three and a half seconds, to ring
+    /// out with room to spare.
+    private static let quietSpell: Duration = .seconds(10)
+
+    /// Pauses the engine after a spell with no music and no sound. A running engine keeps
+    /// the audio hardware and its render thread awake while every voice is silent, which
+    /// with the music off is nearly the whole game. The next sound wakes it, a beat late.
+    private func napWhenQuiet() {
+        napping?.cancel()
+        napping = Task { [weak self] in
+            try? await Task.sleep(for: Self.quietSpell)
+            guard !Task.isCancelled, let self, running, sounding == nil else { return }
+            engine.pause()
+            running = false
+        }
     }
 
     /// Chimes for the player's turn, but only after a six second wait, so a fast
@@ -290,6 +310,7 @@ final class Audio {
             }
             guard !Task.isCancelled else { return }
             for deck in decks { deck.stop() }
+            napWhenQuiet()
         }
     }
 

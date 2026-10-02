@@ -124,27 +124,63 @@ struct FeltSwatch: View {
     }
 }
 
-/// The weave the table draws, over the felt in use, with a card so the tile is not a green
-/// smudge on a green ground.
+/// The table in miniature, upright like the phone it is played on: the felt in use, the
+/// cloth drawn the whole way round it, the opponent's cards at the top, two on the table
+/// and a hand at the foot. A border cannot be judged from a corner of it.
 struct TapisSwatch: View {
     let tapis: Tapis
     let felt: TableFelt
+    var height: CGFloat = 132
+
+    /// A phone's proportions, a little stouter so the tile is not a sliver.
+    private var width: CGFloat { (height * 0.54).rounded() }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .fill(LinearGradient(colors: [felt.light, felt.base, felt.deep],
-                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-            .overlay { TapisWeave(tapis: tapis, scale: 0.34) }
-            .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.gold.opacity(0.35)) }
-            .frame(width: 84, height: 58)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            // Off to one side so the card does not cover the border a bordo or merletto draws.
-            .overlay(alignment: .bottomTrailing) {
-                CardView(card: .settebello, width: 26)
-                    .rotationEffect(.degrees(-8))
-                    .offset(x: -6, y: -4)
-            }
+        ZStack {
+            LinearGradient(colors: [felt.light, felt.base, felt.deep],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            RadialGradient(colors: [Palette.gold.opacity(0.14), .clear],
+                           center: UnitPoint(x: 0.5, y: 0.4), startRadius: 0, endRadius: height * 0.5)
+            // Drawn larger than a true miniature: at a phone's own proportion every rule
+            // would be a fraction of a pixel.
+            TapisWeave(tapis: tapis, scale: height / 520, finest: 0.8)
+            dealt
+        }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: height * 0.1, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: height * 0.1, style: .continuous)
+                .strokeBorder(Palette.ink.opacity(0.55), lineWidth: 1.5)
+        }
+        .drawingGroup()
     }
+
+    /// The game as it stands at the start of a hand, at the size the tile allows.
+    private var dealt: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: -height * 0.04) {
+                CardBack(width: height * 0.09).rotationEffect(.degrees(-5))
+                CardBack(width: height * 0.09).rotationEffect(.degrees(5))
+            }
+            .padding(.top, height * 0.1)
+            Spacer(minLength: 0)
+            HStack(spacing: height * 0.03) {
+                CardView(card: .settebello, width: height * 0.12).rotationEffect(.degrees(-4))
+                CardView(card: Card(.king, of: .cups), width: height * 0.12).rotationEffect(.degrees(3))
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: -height * 0.02) {
+                ForEach(Array(Self.hand.enumerated()), id: \.offset) { index, card in
+                    CardView(card: card, width: height * 0.13)
+                        .rotationEffect(.degrees(Double(index - 1) * 6))
+                        .offset(y: abs(Double(index - 1)) * height * 0.012)
+                }
+            }
+            .padding(.bottom, height * 0.07)
+        }
+    }
+
+    private static let hand: [Card] = [Card(.three, of: .swords), Card(.ace, of: .coins), Card(.five, of: .clubs)]
 }
 
 /// The companion on the cloth, awake. `nessuno` is the same tile with nothing on it.
@@ -223,6 +259,8 @@ struct FlourishSwatch: View {
                     .frame(width: 168, height: 116)
                     .id(run)
                     .scaleEffect(0.5)
+                    // A thumbnail at half size: thirty frames a second reads the same.
+                    .environment(\.flourishFrameGap, 1.0 / 30.0)
             }
             .overlay(alignment: .bottomLeading) {
                 CardBack(width: 22).rotationEffect(.degrees(-8)).offset(x: 6, y: -5)

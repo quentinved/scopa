@@ -40,7 +40,7 @@ enum Companion: String, CaseIterable, Codable, Sendable, Identifiable {
 
     var title: String {
         switch self {
-        case .nessuno: "Nobody"
+        case .nessuno: String(localized: "Nobody")
         case .gatto: "Gatto"
         case .cardellino: "Cardellino"
         case .riccio: "Riccio"
@@ -116,6 +116,9 @@ struct CompanionView: View {
     /// Whether a finger on the animal pokes it. False on the shop shelf, where the tile it
     /// sits on is a button and a gesture inside it would stop the tile being buyable.
     var interactive: Bool = true
+    /// Stirs about half as often. An opponent's animal: four of them on one table kept
+    /// something moving nearly all the time, which costs battery for no one's benefit.
+    var calm: Bool = false
 
     /// Mid-stir. True for about half a second at a time, false for the seconds between.
     @State private var stirs = false
@@ -302,7 +305,7 @@ struct CompanionView: View {
     /// jittered so four animals on one table do not stir in unison.
     private func idle() async {
         while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(.random(in: 3...7)))
+            try? await Task.sleep(for: .seconds(calm ? .random(in: 8...16) : .random(in: 3...7)))
             guard !Task.isCancelled else { return }
             // A poke wins: whatever it was about to do waits for the next round.
             guard poke == nil else { continue }

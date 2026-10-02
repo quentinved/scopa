@@ -11,6 +11,9 @@ final class AdsStore {
     /// False once the player has removed ads. Stored on the device.
     private(set) var adsAreOn: Bool
 
+    /// Whether the passphrase has been said, here or on the player's other device.
+    private(set) var isSwept: Bool
+
     private(set) var gateway: any AdsGateway
 
     let consent = AdsConsent()
@@ -24,15 +27,20 @@ final class AdsStore {
     /// phrase unlocks reads this rather than asking for it again.
     static var wasSwept: Bool { UserDefaults.standard.bool(forKey: sweptKey) }
 
+    /// Whether the phrase also takes the ads away. Off since 2026-10-01: for now it only pays
+    /// its denari, and a device swept before then gets its ads back. True brings the sweep back.
+    static let phraseRemovesAds = false
+
     init(adsAreOn: Bool? = nil) {
         #if DEBUG
         // `-noAds` removes ads for this launch only, writing nothing down.
-        let swept = DebugLaunch.hidesAds
+        let hidden = DebugLaunch.hidesAds
         #else
-        let swept = false
+        let hidden = false
         #endif
-        let on = !swept && (adsAreOn ?? !UserDefaults.standard.bool(forKey: Self.sweptKey))
+        let on = !hidden && (adsAreOn ?? !(Self.phraseRemovesAds && Self.wasSwept))
         self.adsAreOn = on
+        self.isSwept = Self.wasSwept
         self.gateway = on ? Self.liveGateway() : SweptAds()
     }
 
@@ -141,41 +149,53 @@ final class AdsStore {
     /// up. A game started at launch reaches its summary before consent has settled.
     private var wantsReward = false
 
-    /// What one watched ad is worth.
+    /// What one watched ad is worth, at the least.
     var reward: Denari { AdPolicy.reward }
 
-    /// How many opt-in ads are left today. Zero hides the offer.
-    var rewardsLeftToday: Int {
-        isReady ? policy.rewardsLeftToday() : 0
-    }
-
-    /// Whether to show the offer: ads on, consent settled, one loaded, and some left today.
-    var offersReward: Bool {
-        isReady && gateway.isRewardedReady && rewardsLeftToday > 0
-    }
-
-    /// Lifetime count of watched opt-in ads. Keys the payment in the ledger, so the same
-    /// watch cannot be paid twice.
+    /// Lifetime count of watched opt-in ads on this device. Keys the payment in the ledger,
+    /// beside `Device.id`, so the same watch cannot be paid twice.
     var rewardsWatched: Int { policy.rewardsWatched }
 
+    enum RewardOutcome {
+        /// Watched to the end, so it is owed.
+        case watched
+        /// Shown, but closed before the end.
+        case closedEarly
+        /// Nothing came to show, which the player is told rather than left tapping.
+        case unavailable
+    }
+
     /// Shows the opt-in ad and says whether it earned payment. The caller decides the
-    /// amount: the shop pays `reward`, the end of a game pays the game's earnings again.
-    func watchRewarded() async -> Bool {
-        guard offersReward else { return false }
-        guard await gateway.showRewarded() else { return false }
+    /// amount: the shop pays `reward`, the end of a game its earnings again or `reward`,
+    /// whichever is more.
+    func watchRewarded() async -> RewardOutcome {
+        guard isReady else { return .unavailable }
+        guard await rewardHasLoaded() else { return .unavailable }
+        guard await gateway.showRewarded() else { return .closedEarly }
         policy.watchedReward()
-        return true
+        return .watched
+    }
+
+    /// Asks for the opt-in ad if none is loaded and waits up to eight seconds for it. AdMob
+    /// usually answers in one or two; a request it has nothing for fails sooner still.
+    private func rewardHasLoaded() async -> Bool {
+        gateway.preloadRewarded()
+        for _ in 0..<32 {
+            if gateway.isRewardedReady { return true }
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+        return gateway.isRewardedReady
     }
 
     // MARK: Coup de balai
 
-    /// Removes ads for good if the passphrase is right.
+    /// Writes the passphrase down if it is right. It pays its denari (`PurseStore.grantSweepGift`)
+    /// and, while `phraseRemovesAds` says so, removes the ads for good.
     @discardableResult
     func coupDeBalai(_ phrase: String) -> Bool {
         guard Passphrase.isRight(phrase) else { return false }
         UserDefaults.standard.set(true, forKey: Self.sweptKey)
-        adsAreOn = false
-        gateway = SweptAds()
+        sweep()
         return true
     }
 
@@ -185,7 +205,13 @@ final class AdsStore {
     /// `AccountSync` has just written that down. Without this the iPad would keep showing
     /// banners until the next cold launch, which reads as the sweep not having worked.
     func sweepIfSaidElsewhere() {
-        guard adsAreOn, Self.wasSwept else { return }
+        guard !isSwept, Self.wasSwept else { return }
+        sweep()
+    }
+
+    private func sweep() {
+        isSwept = true
+        guard Self.phraseRemovesAds, adsAreOn else { return }
         adsAreOn = false
         gateway = SweptAds()
     }

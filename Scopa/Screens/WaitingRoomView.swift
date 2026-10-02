@@ -97,9 +97,12 @@ struct WaitingRoomView: View {
     }
 
     /// The four letters, and the link that saves anybody typing them. It goes when the
-    /// table fills, since a code nobody can use any more is only clutter.
+    /// table fills, since a code nobody can use any more is only clutter. A nearby table has
+    /// no code, so its host is told how the others get in instead.
     @ViewBuilder private var invitation: some View {
-        if let room = store.room, lobby?.isFull != true {
+        if store.room == nil, store.isNearbyTable, store.isHost, lobby?.isFull != true {
+            nearbyHowTo
+        } else if let room = store.room, lobby?.isFull != true {
             HStack(spacing: 14) {
                 tableCode(room)
                 Spacer(minLength: 0)
@@ -114,6 +117,30 @@ struct WaitingRoomView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Table code \(room.code.map(String.init).joined(separator: " "))")
         }
+    }
+
+    /// Hosts of a nearby table sat waiting for an invitation that never comes: nobody is
+    /// asked, the others find the table from their own phones and sit down.
+    private var nearbyHowTo: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Your table is open nearby")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.onTable)
+                Text("Nothing arrives on this phone: friends sit down from theirs, in With friends → Join a friend's table → Nearby. Both phones need the same Wi-Fi.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .glassPanel(radius: GlassRadius.control)
+        .padding(.top, 16)
     }
 
     private func tableCode(_ room: Relay.Table) -> some View {
@@ -457,12 +484,20 @@ struct ScoreStepper: View {
     var body: some View {
         HStack(spacing: 12) {
             button("minus", to: value - 1)
-            Text("\(value)")
-                .font(.display(28))
-                .foregroundStyle(Palette.onTable)
-                .frame(minWidth: 42)
-                .contentTransition(.numericText())
-                .animation(.snappy(duration: 0.2), value: value)
+            // The unit is spelled out: "Play to 11" alone left players wondering 11 what.
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Text(verbatim: "\(value)")
+                    .font(.display(28))
+                    .foregroundStyle(Palette.onTable)
+                    .frame(minWidth: 30)
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.2), value: value)
+                Text("points")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Palette.onTableSoft)
+            }
+            .fixedSize()
+            .accessibilityElement(children: .combine)
             button("plus", to: value + 1)
         }
         .padding(.horizontal, 10)

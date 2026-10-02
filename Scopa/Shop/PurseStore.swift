@@ -95,7 +95,7 @@ final class PurseStore {
         }
     }
 
-    /// What the passphrase puts in the purse, besides sweeping the ads away.
+    /// What the passphrase puts in the purse.
     static let sweepGift: Denari = 10_000
 
     /// The passphrase's denari, once. It used to unlock the whole shop; now it hands over
@@ -108,6 +108,20 @@ final class PurseStore {
             purse = try await wallet.purse()
         } catch {
             problem = "Your denari could not be saved on this device."
+        }
+    }
+
+    /// Everything on sale, for the shop's phrase. Each item is keyed on its own id, so a
+    /// second device or a second try hands nothing over twice. Nil when it could not be saved.
+    func unlockShop() async -> [ShopItem]? {
+        let missing = Cosmetics.catalogue.items.filter { Cosmetics.isInPacks($0) && !purse.owns($0) }
+        do {
+            for item in missing { purse = try await wallet.unlock(item, key: "shop/open/\(item.id.rawValue)") }
+            problem = nil
+            return missing
+        } catch {
+            problem = "The shop could not be opened on this device."
+            return nil
         }
     }
 
@@ -324,6 +338,25 @@ final class PurseStore {
         }
     }
 
+    /// Pays a turn of the daily wheel: its denari, at nothing for a pack, and the thing off
+    /// the shelves it turned up. One key per turn, which is also how a second device knows
+    /// the day is spent. The item goes in the same write as the key, so a failure loses neither.
+    /// True when this was the first time; nil when it could not be saved.
+    func awardWheel(_ amount: Denari, item: ShopItem?, key: String) async -> Bool? {
+        do {
+            let fresh = if let item {
+                try await wallet.grant(amount, note: "wheel", key: key, unlocking: item, itemKey: "\(key)/item")
+            } else {
+                try await wallet.grant(amount, note: "wheel", key: key)
+            }
+            purse = try await wallet.purse()
+            return !fresh.isEmpty
+        } catch {
+            problem = "Your prize from the wheel could not be saved."
+            return nil
+        }
+    }
+
     /// Pays a coupon's denari and whatever it hands over off the shelves. Keyed on the code,
     /// so a coupon answered twice — a retry, a lost reply asked again — pays once. True when
     /// this was the first time, which is the caller's cue to give the packs; nil when it could
@@ -343,15 +376,49 @@ final class PurseStore {
         }
     }
 
-    /// Denari for an opt-in ad. The caller's key is what makes it safe to retry: the shop
-    /// keys on which watch it was, the end of a game on the game.
-    func earnFromAd(_ amount: Denari, key: String) async {
+    /// A gift from the house, once per player: the welcome, or a release's thank-you. Keyed
+    /// on the gift, so whichever device opens it first is the one it pays. True when this was
+    /// the first time, which is the caller's cue to give the packs; nil when it could not be
+    /// saved.
+    func claim(_ gift: ReleaseGift) async -> Bool? {
         do {
-            _ = try await wallet.grant(amount, note: "ad", key: key)
+            let fresh = try await wallet.grant(gift.denari, note: gift.key, key: gift.key)
+            purse = try await wallet.purse()
+            return !fresh.isEmpty
+        } catch {
+            problem = "Your gift could not be saved."
+            return nil
+        }
+    }
+
+    /// Denari for an opt-in ad. The caller's key is what makes it safe to retry: the shop
+    /// keys on the device and which watch it was, the end of a game on the game. True only
+    /// when something was paid.
+    @discardableResult
+    func earnFromAd(_ amount: Denari, key: String) async -> Bool {
+        do {
+            let fresh = try await wallet.grant(amount, note: "ad", key: key)
             purse = try await wallet.purse()
             problem = nil
+            return !fresh.isEmpty
         } catch {
             problem = "Your denari from that ad could not be saved."
+            return false
+        }
+    }
+
+    /// Pays a campaign table won for the first time, and anything its region hands over.
+    /// Keyed on the stage, so a second device or a summary drawn twice pays once. Nil when
+    /// it was already paid, which is also the caller's word on whether a pack is still owed.
+    func awardCampaign(_ amount: Denari, items: [ShopItem] = [], key: String) async -> Denari? {
+        do {
+            let fresh = try await wallet.grant(amount, note: key, key: key)
+            for item in items { try await wallet.unlock(item, key: "\(key)/\(item.id.rawValue)") }
+            purse = try await wallet.purse()
+            return fresh.isEmpty ? nil : amount
+        } catch {
+            problem = "Your campaign reward could not be saved."
+            return nil
         }
     }
 

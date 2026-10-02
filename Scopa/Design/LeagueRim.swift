@@ -24,10 +24,6 @@ struct LeagueRim<S: InsettableShape>: View {
     /// Diamond and Maestro turn their light rather than standing still.
     private var turns: Bool { rank >= .set }
 
-    /// Set on arrival rather than in the initial value, so the turn is a change to animate
-    /// from instead of a state the view is simply born in.
-    @State private var turning = false
-
     var body: some View {
         ZStack {
             edge
@@ -39,7 +35,6 @@ struct LeagueRim<S: InsettableShape>: View {
         .shadow(color: halo, radius: 7 * weight)
         // The rim is drawn over a control, so it must not take the press.
         .allowsHitTesting(false)
-        .onAppear { turning = true }
     }
 
     /// The line itself: flat metal at the bottom of the ladder, lit metal from gold up, and
@@ -63,13 +58,18 @@ struct LeagueRim<S: InsettableShape>: View {
 
     /// A cone of the metal's own light, turning once every nine seconds. Scaled well past
     /// the frame so a corner is never left uncovered wherever the cone happens to point.
+    ///
+    /// Turned by `AmbientClock` rather than `repeatForever`: the lobby's ranked door wears
+    /// this for as long as the lobby is up, and at the display's full rate it was the one
+    /// thing keeping an idle lobby compositing.
     private var sweep: some View {
-        AngularGradient(colors: [metal.dark, metal.base, metal.light, metal.base,
-                                 metal.dark, metal.base, metal.light, metal.base, metal.dark],
-                        center: .center)
-            .scaleEffect(2.6)
-            .rotationEffect(.degrees(turning ? 360 : 0))
-            .animation(.linear(duration: 9).repeatForever(autoreverses: false), value: turning)
+        AmbientClock { time in
+            AngularGradient(colors: [metal.dark, metal.base, metal.light, metal.base,
+                                     metal.dark, metal.base, metal.light, metal.base, metal.dark],
+                            center: .center)
+                .scaleEffect(2.6)
+                .rotationEffect(.degrees(time.cycle(of: 9) * 360))
+        }
     }
 
     /// The knurled outer of a milled coin: fine ticks just inside the edge, close enough

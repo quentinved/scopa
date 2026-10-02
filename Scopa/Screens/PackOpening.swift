@@ -42,8 +42,6 @@ struct PackOpening: View {
     @State private var act: Act = .sealed
     /// How far the pack has been dragged open, 0 to 1.
     @State private var pull: CGFloat = 0
-    /// Nudges the sealed pack so it reads as something you can take hold of.
-    @State private var breathing = false
 
     /// The cards in the order they are shown, which is not the order they were drawn.
     ///
@@ -123,22 +121,7 @@ struct PackOpening: View {
     private var sealedPack: some View {
         VStack(spacing: 22) {
             Spacer(minLength: 0)
-            ZStack {
-                // One pack drawn twice and masked along its own serrated line: the body
-                // below it, which stays put, and the end above it, which comes away in
-                // your hand. Two copies rather than one view with a moving mask, because
-                // the two halves have to travel independently once it is torn.
-                packHalf(.bottom)
-                    .scaleEffect(act == .tearing ? 0.9 : 1)
-                    .opacity(act == .tearing ? 0 : 1)
-                packHalf(.top)
-                    .offset(y: act == .tearing ? -520 : -pull * 44)
-                    .rotationEffect(.degrees(act == .tearing ? -24 : Double(pull) * -5),
-                                    anchor: .bottomTrailing)
-                    .opacity(act == .tearing ? 0 : 1)
-            }
-            .scaleEffect(breathing ? 1.02 : 1)
-            .rotationEffect(.degrees(breathing ? 1.1 : -1.1))
+            AmbientClock { time in breathe(sealedHalves, at: time) }
             .animation(.spring(duration: 0.55, bounce: 0.35), value: pull)
             .animation(.easeIn(duration: 0.45), value: act)
             .gesture(tear)
@@ -149,20 +132,49 @@ struct PackOpening: View {
                 Text("Pull the top off")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Palette.onTableSoft)
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Palette.onTableSoft)
-                    .offset(y: breathing ? -4 : 2)
+                AmbientClock { time in
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Palette.onTableSoft)
+                        .offset(y: 2 - 6 * breath(at: time))
+                }
             }
             .opacity(act == .tearing ? 0 : 1)
             Spacer(minLength: 0)
         }
         .padding(30)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.9).repeatForever(autoreverses: true)) {
-                breathing = true
-            }
+    }
+
+    /// The sealed pack's nudge, so it reads as something you can take hold of: in and out
+    /// over 1.9 seconds each way on the ambient clock, and still once it is torn or under
+    /// Reduce Motion. 0 is out, 1 is in.
+    private func breath(at time: TimeInterval) -> CGFloat {
+        guard act == .sealed else { return 0 }
+        let along = time.cycle(of: 3.8) * 2
+        return CGFloat(UnitCurve.easeInOut.value(at: along <= 1 ? along : 2 - along))
+    }
+
+    private func breathe(_ pack: some View, at time: TimeInterval) -> some View {
+        let breath = breath(at: time)
+        return pack
+            .scaleEffect(1 + 0.02 * breath)
+            .rotationEffect(.degrees(-1.1 + 2.2 * breath))
+    }
+
+    private var sealedHalves: some View {
+        ZStack {
+            // One pack drawn twice and masked along its own serrated line: the body
+            // below it, which stays put, and the end above it, which comes away in
+            // your hand. Two copies rather than one view with a moving mask, because
+            // the two halves have to travel independently once it is torn.
+            packHalf(.bottom)
+                .scaleEffect(act == .tearing ? 0.9 : 1)
+                .opacity(act == .tearing ? 0 : 1)
+            packHalf(.top)
+                .offset(y: act == .tearing ? -520 : -pull * 44)
+                .rotationEffect(.degrees(act == .tearing ? -24 : Double(pull) * -5),
+                                anchor: .bottomTrailing)
+                .opacity(act == .tearing ? 0 : 1)
         }
     }
 
@@ -205,7 +217,6 @@ struct PackOpening: View {
     }
 
     private func open() {
-        breathing = false
         withAnimation(.easeIn(duration: 0.4)) { act = .tearing }
         Audio.shared.play(.deal)
         Task {
@@ -628,7 +639,7 @@ struct WonItemCard: View {
             if let felt = Cosmetics.felt(of: item.id) { FeltSwatch(felt: felt) }
         case .tapis:
             if let tapis = Tapis.allCases.first(where: { Cosmetics.item(for: $0)?.id == item.id }) {
-                TapisSwatch(tapis: tapis, felt: .riviera)
+                TapisSwatch(tapis: tapis, felt: .riviera, height: 112)
             }
         case .mark:
             if let mark = Cosmetics.mark(of: item.id) {

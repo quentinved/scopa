@@ -50,7 +50,14 @@ struct TableHero: View {
                 .padding(.trailing, 14)
                 .padding(.top, 10)
         }
-        .shadow(color: felt.shade(0.5), radius: 14, y: 8)
+        // Cast by the panel's shape behind it rather than by the whole hero, which had it
+        // blurred again every time the companion stirred. The ground is opaque, so only the
+        // outline ever showed.
+        .background {
+            RoundedRectangle(cornerRadius: GlassRadius.panel, style: .continuous)
+                .fill(felt.shade(0.5))
+                .shadow(color: felt.shade(0.5), radius: 14, y: 8)
+        }
     }
 
     private var fan: some View {

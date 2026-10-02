@@ -14,6 +14,7 @@ final class ChallengeBook {
         static let week = "challenge.week"
         static let counts = "challenge.counts"
         static let finished = "challenge.finished"
+        static let shown = "challenge.shownDone"
     }
 
     private let defaults: UserDefaults
@@ -27,11 +28,16 @@ final class ChallengeBook {
     /// The last week whose tasks were all finished, if any. The badge is drawn from this.
     private(set) var finishedWeek: String?
 
+    /// Tasks whose finish has been shown off, as "2026-W40#1", so a newly done task gets its
+    /// flourish the first time it is seen and never again.
+    private var shownDone: Set<String>
+
     init(defaults: UserDefaults = .standard, now: Date = .now) {
         self.defaults = defaults
         let week = WeeklyChallenge.week(for: now)
         self.week = week
         self.finishedWeek = defaults.string(forKey: Key.finished)
+        self.shownDone = Set(defaults.stringArray(forKey: Key.shown) ?? [])
         self.counts = Self.zeros
         readCounts()
     }
@@ -97,6 +103,30 @@ final class ChallengeBook {
 
     /// When this week ends and the next goal starts.
     var endsAt: Date? { WeeklyChallenge.end(of: week) }
+
+    // MARK: Shown off
+
+    /// Whether a task is done and its finish not yet shown off.
+    func isNewlyDone(_ slot: Int) -> Bool { isFinished(slot) && !shownDone.contains(tag(slot)) }
+
+    /// Spends the flourish on every task done so far. Only this week's are kept, so the
+    /// list never grows past the week's three.
+    func markDoneShown() {
+        let done = Set(goals.indices.filter { isFinished($0) }.map(tag))
+        guard done != shownDone else { return }
+        shownDone = done
+        defaults.set(Array(done), forKey: Key.shown)
+    }
+
+    /// The tasks newly done, spent in the same breath: whichever view asks first plays the
+    /// flourish, and every other gets nothing.
+    func spendNewlyDone() -> Set<Int> {
+        let fresh = Set(goals.indices.filter { isNewlyDone($0) })
+        if !fresh.isEmpty { markDoneShown() }
+        return fresh
+    }
+
+    private func tag(_ slot: Int) -> String { "\(week)#\(slot)" }
 
     // MARK: The badge
 
@@ -165,8 +195,16 @@ final class ChallengeBook {
     /// `-challenge 9` puts every task that far along, capped at its target, so the card, the
     /// bars and the finish can be checked without playing a week of Scopa first.
     func pretend(count: Int) {
-        counts = goals.map { min(count, $0.target) }
+        pretend(counts: goals.map { min(count, $0.target) })
+    }
+
+    /// `-challenges 12 3 40` sets each task on its own, capped at its target, and forgets
+    /// which finishes were shown off so their flourish plays again.
+    func pretend(counts wanted: [Int]) {
+        counts = goals.indices.map { min(wanted[safe: $0] ?? 0, goals[$0].target) }
+        shownDone = []
         defaults.set(counts, forKey: Key.counts)
+        defaults.removeObject(forKey: Key.shown)
         if isFinished {
             finishedWeek = week
             defaults.set(week, forKey: Key.finished)

@@ -2,15 +2,19 @@ import SwiftUI
 import ScopaCore
 import ScopaRelay
 
-/// Every way to play a friend, near or far: a table opened under a code, an invitation by
-/// name through Game Center, a table found nearby, or one phone passed round. The online
-/// door is for strangers and has no codes on it.
+/// Every way to play a friend, near or far, laid out by who does what: one of you opens a
+/// table, the others join it, by code from anywhere or over the same Wi-Fi. Or one phone
+/// passed round. The online door is for strangers and has no codes on it.
+///
+/// It used to be split by distance — anywhere, then the same room — which put "open" and
+/// "host" side by side (both "Ouvrir une table" in French) and left whoever hosted nearby
+/// waiting for an invitation that never comes: the host does not invite, the others join.
 struct FriendsSheet: View {
     let store: TableStore
     @Binding var path: [Page]
 
     @Environment(\.dismiss) private var dismiss
-    @State private var detent = PresentationDetent.medium
+    @State private var detent = PresentationDetent.large
 
     enum Page: Hashable {
         case thisPhone
@@ -24,24 +28,24 @@ struct FriendsSheet: View {
         NavigationStack(path: $path) {
             // The root wears the play sheets' own headline; the pages pushed from it keep a
             // navigation bar, which is where their back button lives.
-            SheetScaffold(title: "With friends", subtitle: "A code, a name, or one phone passed round.",
+            SheetScaffold(title: "With friends", subtitle: "One of you opens a table, the others join it.",
                           close: { dismiss() }) {
                 VStack(alignment: .leading, spacing: 12) {
-                    anywhereSection
-                    sameRoomSection
+                    openSection
+                    joinSection
+                    phoneSection
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
                 .animation(.spring(duration: 0.35, bounce: 0.15), value: store.isBrowsing)
                 .animation(.easeInOut(duration: 0.2), value: store.nearby)
+                .animation(.easeInOut(duration: 0.2), value: store.unreachedTable)
                 .animation(.easeInOut(duration: 0.2), value: store.onlineStatus)
             }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Page.self, destination: destination)
         }
         .presentationDetents([.medium, .large], selection: $detent)
-        .onAppear { if !path.isEmpty { detent = .large } }
-        .onChange(of: path) { _, path in if !path.isEmpty { detent = .large } }
     }
 
     @ViewBuilder private func destination(_ page: Page) -> some View {
@@ -56,57 +60,79 @@ struct FriendsSheet: View {
         }
     }
 
-    @ViewBuilder private var anywhereSection: some View {
-        Caption(text: "Anywhere in the world")
-        SheetChoice(symbol: "paperplane.fill", tint: Palette.terracotta,
-                    title: "Open a table", detail: "Get a code and a link to send a friend") {
-            store.openRoom()
-        }
-        NavigationLink(value: Page.joinByCode) {
-            SheetChoiceLabel(symbol: "character.cursor.ibeam", tint: Palette.gold,
-                             title: "Join with a code", detail: "Four letters, or the link they sent")
-        }
-        .buttonStyle(.plain)
-        // Game Center's own sheet: no code to agree on, but both phones need Game Center.
-        SheetChoice(symbol: "person.2.fill", tint: felt.accent,
-                    title: "Invite Game Center friends", detail: "Ask them by name; no code to send") {
-            store.inviteFriends(players: GameConfiguration.playerRange.upperBound)
+    /// The two ways to be the one others join: a code that reaches anywhere, or a table put
+    /// up over the Wi-Fi in the room. Game Center by name is the third, kept quiet.
+    @ViewBuilder private var openSection: some View {
+        Caption(text: "Open a table")
+        TilePair {
+            Button { store.openRoom() } label: {
+                FriendsTile(symbol: "paperplane.fill", tint: Palette.terracotta,
+                            title: "With a code", detail: "Friends join from anywhere")
+            }
+        } trailing: {
+            Button { store.host() } label: {
+                FriendsTile(symbol: "antenna.radiowaves.left.and.right", tint: Palette.steel,
+                            title: "Nearby", detail: "Same Wi-Fi, no code to send")
+            }
         }
         if let status = store.onlineStatus {
             OnlineProgressLine(store: store, status: status, waiting: "Waiting for your friend")
                 .transition(.opacity)
         }
-        SheetNote("Opening a table gives you four letters and a link. Send it however you like — the table waits until they arrive, however long that takes, and nobody has to sign in to anything. Inviting by name instead needs Game Center on both phones.")
+        // Game Center's own sheet: no code to agree on, but both phones need Game Center.
+        Button {
+            store.inviteFriends(players: GameConfiguration.playerRange.upperBound)
+        } label: {
+            Label("Or invite Game Center friends by name", systemImage: "person.2.fill")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Palette.onTableSoft)
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
-    @ViewBuilder private var sameRoomSection: some View {
-        Caption(text: "In the same room")
+    /// The same two ways, from the other side: the code they were sent, or the table they
+    /// put up nearby.
+    @ViewBuilder private var joinSection: some View {
+        Caption(text: "Join a friend's table")
             .padding(.top, 10)
-        SheetChoice(symbol: "antenna.radiowaves.left.and.right", tint: Palette.steel,
-                    title: "Host a table", detail: "Open one here; friends nearby join it") {
-            store.host()
-        }
-        SheetChoice(symbol: "magnifyingglass", tint: Palette.gold,
-                    title: "Join a table", detail: "Find one a friend has opened nearby",
-                    isSelected: store.isBrowsing) {
-            if store.isBrowsing { store.stopBrowsing() } else { store.browse(); detent = .large }
+        TilePair {
+            NavigationLink(value: Page.joinByCode) {
+                FriendsTile(symbol: "character.cursor.ibeam", tint: Palette.gold,
+                            title: "With a code", detail: "The four letters they got")
+            }
+        } trailing: {
+            Button {
+                if store.isBrowsing { store.stopBrowsing() } else { store.browse() }
+            } label: {
+                FriendsTile(symbol: "magnifyingglass", tint: Palette.steel,
+                            title: "Nearby", detail: store.isBrowsing ? "Looking. Tap to stop" : "When they chose Nearby",
+                            isSelected: store.isBrowsing)
+            }
         }
         if store.isBrowsing {
             nearby
-                .padding(.leading, 4)
                 .transition(.opacity.combined(with: .move(edge: .top)))
         }
+    }
+
+    @ViewBuilder private var phoneSection: some View {
+        Caption(text: "On this phone")
+            .padding(.top, 10)
         NavigationLink(value: Page.thisPhone) {
             SheetChoiceLabel(symbol: "iphone.gen3", tint: felt.accent,
                              title: "Pass the phone", detail: "Friends and bots take turns on this one")
         }
         .buttonStyle(.plain)
-        SheetNote("Nearby tables need both phones on the same Wi-Fi, or Bluetooth on.")
-            .padding(.top, 4)
     }
 
     private var nearby: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if let table = store.unreachedTable {
+                UnreachedTableNote(table: table)
+                    .transition(.opacity)
+            }
             if store.nearby.isEmpty {
                 HStack(spacing: 10) {
                     ProgressView().tint(Palette.onTableSoft)
@@ -115,6 +141,7 @@ struct FriendsSheet: View {
                         .foregroundStyle(Palette.onTableSoft)
                 }
                 .padding(.vertical, 4)
+                SheetNote("Your friend opens a table with Nearby first. Both phones need to be on the same Wi-Fi.")
             } else {
                 ForEach(store.nearby) { table in
                     Button { store.join(table) } label: {
@@ -127,6 +154,78 @@ struct FriendsSheet: View {
                 .animation(.easeInOut(duration: 0.2), value: store.joining)
             }
         }
+        .padding(.leading, 4)
+    }
+}
+
+/// Two tiles side by side at the height of the taller one, so a pair whose lines wrap
+/// differently still reads as a pair.
+private struct TilePair<Leading: View, Trailing: View>: View {
+    @ViewBuilder var leading: Leading
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: 12) {
+            leading
+            trailing
+        }
+        .buttonStyle(.plain)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Half a row: one way in, a symbol over its name and what it means.
+private struct FriendsTile: View {
+    let symbol: String
+    let tint: Color
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    var isSelected = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SymbolCoin(symbol: symbol, tint: tint, size: 34)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(isSelected ? Palette.cream : Palette.onTable)
+                Text(detail)
+                    .font(.system(size: 13))
+                    .foregroundStyle(isSelected ? Palette.cream.opacity(0.85) : Palette.onTableSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(14)
+        .glassPanel(radius: GlassRadius.control,
+                    tint: isSelected ? Palette.terracotta.opacity(0.75) : nil, interactive: true)
+        .contentShape(.rect(cornerRadius: GlassRadius.control))
+    }
+}
+
+/// Said where the tap was, after a nearby table failed to answer. The usual cause is the
+/// two phones on different networks, which a code gets round.
+private struct UnreachedTableNote: View {
+    let table: NearbyTable
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(table.hostName)'s table did not answer")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.onTable)
+                Text("Nearby tables need both phones on the same Wi-Fi. On another network or on mobile data, ask \(table.hostName) to open a table with a code instead.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .glassPanel(radius: GlassRadius.control, tint: Palette.terracotta.opacity(0.25))
     }
 }
 

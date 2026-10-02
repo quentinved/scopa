@@ -9,15 +9,16 @@ import SwiftUI
 /// waiting it is gold and says so, with none it is quiet glass with how far the deck has
 /// been collected. Both are one line, so the lobby does not jump when a game finishes.
 ///
-/// The red count is on `unannounced` rather than on `waiting`: it is there to say *this is
+/// The red count is on `albumNews` rather than on `waiting`: it is there to say *this is
 /// new*, and once the album has been opened the packs are still there but the news is not.
+/// Only card packs count: the shop's own wait in the shop, and its chip says so.
 struct AlbumDoor: View {
     let book: AlbumBook
     let action: () -> Void
 
     @Environment(\.lift) private var lift
 
-    private var waiting: Int { book.waiting }
+    private var waiting: Int { book.waiting(on: .album) }
 
     var body: some View {
         Button(action: action) {
@@ -64,8 +65,8 @@ struct AlbumDoor: View {
     /// The unread count. Red rather than gold: gold is the tile, and a badge the same
     /// colour as what it sits on is not a badge.
     @ViewBuilder private var badge: some View {
-        if book.unannounced > 0 {
-            Text(verbatim: "\(book.unannounced)")
+        if book.albumNews > 0 {
+            Text(verbatim: "\(book.albumNews)")
                 .font(.system(size: 10 * lift, weight: .heavy))
                 .monospacedDigit()
                 .foregroundStyle(Palette.cream)

@@ -186,6 +186,14 @@ enum Ladder {
         }
     }
 
+    /// The share of ranked games won, as the reader writes a percentage: "62 %" in French.
+    /// Nil before a first game, where nought out of nought is no rate at all.
+    static func winRate(wins: Int, games: Int, locale: Locale) -> String? {
+        guard games > 0 else { return nil }
+        let rate = Double(wins) / Double(games)
+        return rate.formatted(.percent.precision(.fractionLength(0)).locale(locale))
+    }
+
     private struct HousePost: Encodable {
         let gameID: String
         let won: Bool

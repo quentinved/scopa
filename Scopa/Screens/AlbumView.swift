@@ -95,35 +95,10 @@ struct AlbumView: View {
 
     // MARK: What is waiting
 
-    /// The earned packs, at the top and impossible to miss. Absent rather than greyed out
-    /// when there are none: a disabled button for a thing you cannot do yet is furniture.
-    @ViewBuilder private var waiting: some View {
-        if book.waiting > 0 {
-            Button { openEarned() } label: {
-                HStack(spacing: 16) {
-                    PackArt(tier: book.nextTier, width: 52)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("^[\(book.waiting) pack](inflect: true) waiting")
-                            .font(.display(24))
-                            .foregroundStyle(Palette.ink)
-                        Text(book.nextTier == .mazzetto
-                             ? "Three cards, whatever the deck gives you"
-                             : "\(book.nextTier.title) first · a level reward")
-                            .font(.system(size: 12.5, weight: .medium))
-                            .foregroundStyle(Palette.ink.opacity(0.72))
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Palette.ink.opacity(0.7))
-                }
-                .padding(16)
-                .background {
-                    RoundedRectangle(cornerRadius: GlassRadius.panel).fill(Palette.goldSheen)
-                }
-            }
-            .buttonStyle(.plain)
-        }
+    /// The card packs, at the top and impossible to miss. The shop's own packs wait in the
+    /// shop, where that shelf is sold.
+    private var waiting: some View {
+        WaitingPacks(book: book, shelf: .album) { openEarned() }
     }
 
     // MARK: How far along

@@ -34,7 +34,7 @@ protocol AdsGateway: AnyObject {
 
     // MARK: The one they choose
 
-    /// Whether an opt-in ad is loaded right now. The offer is only shown when it is.
+    /// Whether an opt-in ad is loaded right now, so a tap can show it at once.
     var isRewardedReady: Bool { get }
 
     /// Warms the next opt-in ad.

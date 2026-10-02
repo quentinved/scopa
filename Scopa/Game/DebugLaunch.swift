@@ -45,6 +45,16 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-verdict end` opens that sheet scrolled to its foot, where the runs and the house are.
+    static var verdictOpensAtEnd: Bool {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-verdict").flatMap { arguments[safe: $0 + 1] } == "end"
+        #else
+        false
+        #endif
+    }
+
     /// `-cardSheet` opens the deck sheet instead of the game.
     static var showsCardSheet: Bool {
         #if DEBUG
@@ -125,6 +135,16 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-reviewAsk` lays the "Enjoying Scopa?" card over the lobby, whatever `ReviewPrompt`
+    /// would say.
+    static var asksReview: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-reviewAsk")
+        #else
+        false
+        #endif
+    }
+
     /// `-settings` opens the settings sheet.
     static var showsSettings: Bool {
         #if DEBUG
@@ -161,11 +181,23 @@ enum DebugLaunch {
         #endif
     }
 
-    /// `-searching` opens the Online sheet with a ranked search part-way through it, so the
-    /// line that runs out can be looked at without Game Center and without waiting for it.
+    /// `-searching` (or `-rankedSearch`) opens the Online sheet with a ranked search part-way
+    /// through it and the house on offer, without Game Center and without waiting for it.
     static var showsRankedSearch: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-searching")
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("-searching") || arguments.contains("-rankedSearch")
+        #else
+        false
+        #endif
+    }
+
+    /// `-rankedSearch over`: the same search, run out with nobody found.
+    static var rankedSearchIsOver: Bool {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-rankedSearch") else { return false }
+        return arguments[safe: index + 1] == "over"
         #else
         false
         #endif
@@ -241,9 +273,19 @@ enum DebugLaunch {
     /// `-shop` opens the shop straight away.
     static var showsShop: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-shop") || promoCode != nil
+        ProcessInfo.processInfo.arguments.contains("-shop") || promoCode != nil || shelf != nil
         #else
         false
+        #endif
+    }
+
+    /// `-shelf tapis` opens the shop scrolled to that shelf, so it can be photographed.
+    static var shelf: String? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-shelf").flatMap { arguments[safe: $0 + 1] }
+        #else
+        nil
         #endif
     }
 
@@ -283,14 +325,14 @@ enum DebugLaunch {
         #endif
     }
 
-    /// `-tapis merletto` lays that cloth on the table without buying it, so a weave can be
+    /// `-tapis velluto` lays that cloth on the table without buying it, so a cloth can be
     /// judged at the size it is actually drawn at rather than in a swatch.
     static var tapis: Tapis? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.firstIndex(of: "-tapis")
             .flatMap { arguments[safe: $0 + 1] }
-            .flatMap(Tapis.init(rawValue:))
+            .flatMap(Tapis.init(named:))
         #else
         nil
         #endif
@@ -476,6 +518,38 @@ enum DebugLaunch {
         #endif
     }
 
+    /// How `-updateGift` shows the parcel.
+    enum UpdateGift { case update, welcome, opened }
+
+    /// `-updateGift` puts the parcel up over the lobby, as after an update; `-updateGift
+    /// welcome` as on a first launch, and `-updateGift opened` already open. It pays only
+    /// what the ledger has not paid before.
+    static var updateGift: UpdateGift? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-updateGift") else { return nil }
+        switch arguments[safe: index + 1] {
+        case "welcome": return .welcome
+        case "opened": return .opened
+        default: return .update
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-whatsNew` turns the pages of this version's news over the lobby; `-whatsNew 3`
+    /// opens on the fourth.
+    static var whatsNewPage: Int? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-whatsNew") else { return nil }
+        return Int(arguments[safe: index + 1] ?? "") ?? 0
+        #else
+        return nil
+        #endif
+    }
+
     /// `-landscape` and `-portrait` turn the window on arrival. `simctl` cannot rotate a
     /// simulator, so this is how a layout on its side is screenshotted with nobody sitting
     /// in front of the Simulator app.
@@ -531,20 +605,23 @@ enum DebugLaunch {
         if let index = arguments.firstIndex(of: "-level"), let total = Int(arguments[safe: index + 1] ?? "") {
             Experience.pretend(total: total)
         }
-        // `-collected 18 -packs 2` plants an album part way through, with packs waiting, and
-        // `-volume napoli` has every volume before that one full and the cards in that one.
-        let collected = arguments.firstIndex(of: "-collected").flatMap { Int(arguments[safe: $0 + 1] ?? "") }
-        let volume = arguments.firstIndex(of: "-volume").flatMap { Volume(rawValue: arguments[safe: $0 + 1] ?? "") }
-        let packs = arguments.firstIndex(of: "-packs").flatMap { Int(arguments[safe: $0 + 1] ?? "") }
-        if collected != nil || packs != nil || volume != nil {
-            store.albumBook.pretend(packs: packs ?? 0, found: collected ?? 0, in: volume ?? .riviera)
-        }
+        plantAlbum(store.albumBook, with: arguments)
         // `-mark coins` wears a mark without earning it first.
         if let index = arguments.firstIndex(of: "-mark"),
            let mark = arguments[safe: index + 1].flatMap(SeatMark.init(rawValue:)) {
             store.seatMark = mark
         }
         if let count = challengeCount { store.challenges.pretend(count: count) }
+        // `-challenges 12 3 40` sets each task on its own, so a week part done can be seen.
+        if let index = arguments.firstIndex(of: "-challenges") {
+            let counts = arguments.dropFirst(index + 1).prefix(WeeklyChallenge.tasksPerWeek).compactMap { Int($0) }
+            store.challenges.pretend(counts: counts)
+        }
+        // `-savedGame` puts a dealt quick game behind the lobby's resume door, on no disk;
+        // `-savedGame none` shows the lobby as if nothing were saved.
+        if let index = arguments.firstIndex(of: "-savedGame") {
+            store.pretendSavedGame(none: arguments[safe: index + 1] == "none")
+        }
         if showsWeekWon { store.pretendChallengeFinished() }
         // `-tieRules` turns the house rule on for the pages that set a table.
         if arguments.contains("-tieRules") { store.pretendTieRules() }
@@ -557,6 +634,23 @@ enum DebugLaunch {
         if let index = arguments.firstIndex(of: "-solo"),
            let format = arguments[safe: index + 1].flatMap(RankedSolo.init(rawValue:)) {
             store.rankedSolo = format
+        }
+    }
+
+    /// `-collected 18 -packs 2` plants an album part way through, with packs waiting, and
+    /// `-volume napoli` has every volume before that one full and the cards in that one.
+    /// `-giftPacks forziere,reliquia` leaves those gifts waiting too, each on its own shelf:
+    /// the shop's in the shop, the cards in the album.
+    @MainActor
+    private static func plantAlbum(_ book: AlbumBook, with arguments: [String]) {
+        let collected = arguments.firstIndex(of: "-collected").flatMap { Int(arguments[safe: $0 + 1] ?? "") }
+        let volume = arguments.firstIndex(of: "-volume").flatMap { Volume(rawValue: arguments[safe: $0 + 1] ?? "") }
+        let packs = arguments.firstIndex(of: "-packs").flatMap { Int(arguments[safe: $0 + 1] ?? "") }
+        if collected != nil || packs != nil || volume != nil {
+            book.pretend(packs: packs ?? 0, found: collected ?? 0, in: volume ?? .riviera)
+        }
+        if let list = arguments.firstIndex(of: "-giftPacks").flatMap({ arguments[safe: $0 + 1] }) {
+            book.pretend(gifts: list.split(separator: ",").compactMap { PackTier(rawValue: String($0)) })
         }
     }
 

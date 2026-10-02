@@ -47,6 +47,15 @@ public final class MultipeerSession: NSObject, GameTransport, TableAdvertising, 
     private var discovered: [MCPeerID: NearbyTable] = [:]
     private var hostPeer: MCPeerID?
     private var pendingJoin: CheckedContinuation<Void, Error>?
+    /// Which join `pendingJoin` belongs to, so a watchdog left over from an earlier one
+    /// cannot fail the next.
+    private var pendingAttempt: UUID?
+    /// A host whose join was given up on. Its invitation may still land, and a connection
+    /// nobody is waiting for would leave this phone at that table unseated.
+    private var abandonedHost: MCPeerID?
+
+    /// How long the host has to answer an invitation.
+    private static let inviteTimeout: TimeInterval = 20
 
     public init(localPlayer: Player) {
         self.localPlayer = localPlayer
@@ -175,14 +184,54 @@ public final class MultipeerSession: NSObject, GameTransport, TableAdvertising, 
             throw TransportError.peerNotFound
         }
 
-        Self.log.info("Inviting \(peer.displayName, privacy: .public) to \(table.hostName, privacy: .public)'s table, 20 s timeout")
+        Self.log.info("Inviting \(peer.displayName, privacy: .public) to \(table.hostName, privacy: .public)'s table, \(Int(Self.inviteTimeout)) s timeout")
+        let attempt = UUID()
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             lock.withLock {
                 pendingJoin?.resume(throwing: TransportError.joinFailed)
                 pendingJoin = continuation
+                pendingAttempt = attempt
                 hostPeer = peer
+                if abandonedHost == peer { abandonedHost = nil }
             }
-            browser.invitePeer(peer, to: session, withContext: localPlayer.id.rawValue.data(using: .utf8), timeout: 20)
+            browser.invitePeer(peer, to: session, withContext: localPlayer.id.rawValue.data(using: .utf8),
+                               timeout: Self.inviteTimeout)
+            // The session should report `.notConnected` once the invitation runs out, but one
+            // that never reached the host can go unanswered for good, which was a guest
+            // "asking for a seat" for ever with one phone on Wi-Fi and the other on 5G.
+            DispatchQueue.global().asyncAfter(deadline: .now() + Self.inviteTimeout + 5) { [weak self] in
+                self?.giveUp(on: attempt)
+            }
+        }
+    }
+
+    /// Fails the join and lets go of the host, so a connection that turns up late is dropped
+    /// rather than taken for a seat.
+    private func giveUp(on attempt: UUID) {
+        let given = lock.withLock { () -> (CheckedContinuation<Void, Error>, MCPeerID?)? in
+            guard pendingAttempt == attempt, let continuation = pendingJoin.take() else { return nil }
+            let peer = hostPeer.take()
+            abandonedHost = peer
+            return (continuation, peer)
+        }
+        guard let (continuation, peer) = given else { return }
+        Self.log.error("Join gave up: the host never answered the invitation")
+        if let peer { session.cancelConnectPeer(peer) }
+        continuation.resume(throwing: TransportError.joinFailed)
+    }
+
+    /// A host given up on has connected after all. With nothing else on the session it is
+    /// disconnected outright; otherwise only that peer is let go, so a join under way survives.
+    private func drop(abandoned peer: MCPeerID) {
+        let alone = lock.withLock { () -> Bool in
+            abandonedHost = nil
+            return hostPeer == nil
+        }
+        Self.log.info("Dropping \(peer.displayName, privacy: .public): its join was given up on")
+        if alone, session.connectedPeers.allSatisfy({ $0 == peer }) {
+            session.disconnect()
+        } else {
+            session.cancelConnectPeer(peer)
         }
     }
 
@@ -211,13 +260,15 @@ extension MultipeerSession: MCSessionDelegate {
         Self.log.info("\(peerID.displayName, privacy: .public) is now \(Self.name(of: state), privacy: .public); \(session.connectedPeers.count) connected")
         switch state {
         case .connected:
-            if lock.withLock({ hostPeer == peerID }) { settleJoin(.success(())) }
+            let (isHost, isAbandoned) = lock.withLock { (hostPeer == peerID, abandonedHost == peerID) }
+            if isHost { settleJoin(.success(())) } else if isAbandoned { drop(abandoned: peerID) }
         case .notConnected:
             let (player, wasHost) = lock.withLock { () -> (PlayerID?, Bool) in
                 let player = playersByPeer.removeValue(forKey: peerID)
                 if let player { peersByPlayer.removeValue(forKey: player) }
                 let wasHost = hostPeer == peerID
                 if wasHost { hostPeer = nil }
+                if abandonedHost == peerID { abandonedHost = nil }
                 return (player, wasHost)
             }
             // Only the table we are trying to reach can fail our join. Any other peer

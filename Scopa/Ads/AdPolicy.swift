@@ -29,12 +29,11 @@ struct AdPolicy {
     /// Hard ceiling per day, whatever the other rules allow.
     static let dailyCap = 4
 
-    /// What one opt-in ad pays, set just under a game's winnings (roughly thirty-five
-    /// denari) so that watching ads never beats playing.
-    static let reward: Denari = 30
-
-    /// Opt-in ads per day. Three pays ninety denari against a three hundred denari deck.
-    static let rewardsPerDay = 3
+    /// What one opt-in ad pays at least: a hundred, about three games' winnings, so a
+    /// video is worth the half minute it takes. A game paid out again for an ad pays its
+    /// own winnings when they are bigger. There is no daily allowance: the player asks for
+    /// every one, and AdMob's own frequency cap is the place for a ceiling if one is wanted.
+    static let reward: Denari = 100
 
     // MARK: What has happened so far
 
@@ -42,7 +41,6 @@ struct AdPolicy {
     private(set) var rewardsWatched: Int
     private var gamesSinceLast: Int
     private var shownToday: Int
-    private var rewardsToday: Int
     private var day: Int
     private var last: Date?
 
@@ -54,7 +52,6 @@ struct AdPolicy {
         rewardsWatched = defaults.integer(forKey: Key.rewardsWatched)
         gamesSinceLast = defaults.integer(forKey: Key.gamesSinceLast)
         shownToday = defaults.integer(forKey: Key.shownToday)
-        rewardsToday = defaults.integer(forKey: Key.rewardsToday)
         day = defaults.integer(forKey: Key.day)
         last = defaults.object(forKey: Key.last) as? Date
         rollOver(to: now)
@@ -95,41 +92,29 @@ struct AdPolicy {
 
     // MARK: The one they choose
 
-    /// How many opt-in ads are left today. Non-mutating on purpose: the shop asks on every
-    /// redraw, so the day roll-over is not written here.
-    func rewardsLeftToday(now: Date = .now) -> Int {
-        let used = Self.ordinal(of: now) == day ? rewardsToday : 0
-        return max(0, Self.rewardsPerDay - used)
-    }
-
     /// One opt-in ad was watched through. The lifetime count keys the payment in the
     /// ledger, so the same watch cannot be paid twice.
     ///
     /// It also stamps `last`, so the quiet period keeps a full screen ad from following
     /// straight after the video.
     mutating func watchedReward(now: Date = .now) {
-        rollOver(to: now)
-        rewardsToday += 1
         rewardsWatched += 1
         last = now
-        defaults.set(rewardsToday, forKey: Key.rewardsToday)
         defaults.set(rewardsWatched, forKey: Key.rewardsWatched)
         defaults.set(now, forKey: Key.last)
     }
 
     // MARK: The day
 
-    /// Daily allowances refill at local midnight rather than twenty-four hours after the
-    /// last ad, so an evening player gets the same allowance every evening.
+    /// The interruption allowance refills at local midnight rather than twenty-four hours
+    /// after the last ad, so an evening player gets the same allowance every evening.
     private mutating func rollOver(to now: Date) {
         let today = Self.ordinal(of: now)
         guard today != day else { return }
         day = today
         shownToday = 0
-        rewardsToday = 0
         defaults.set(day, forKey: Key.day)
         defaults.set(0, forKey: Key.shownToday)
-        defaults.set(0, forKey: Key.rewardsToday)
     }
 
     private static func ordinal(of date: Date) -> Int {
@@ -140,7 +125,6 @@ struct AdPolicy {
         static let gamesFinished = "ads.gamesFinished"
         static let gamesSinceLast = "ads.gamesSinceLast"
         static let shownToday = "ads.shownToday"
-        static let rewardsToday = "ads.rewardsToday"
         static let rewardsWatched = "ads.rewardsWatched"
         static let day = "ads.day"
         static let last = "ads.lastInterstitial"

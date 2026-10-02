@@ -13,6 +13,7 @@ struct Sigillo: View {
 
     @State private var start = Date.now
     @State private var isDone = false
+    @Environment(\.flourishFrameGap) private var frameGap
 
     private static let length: TimeInterval = 2.0
     /// When the seal lands, as a share of the whole.
@@ -23,7 +24,7 @@ struct Sigillo: View {
     private static let waxDeep = Color(red: 0.431, green: 0.106, blue: 0.086)
 
     var body: some View {
-        TimelineView(.animation(paused: isDone)) { timeline in
+        TimelineView(.animation(minimumInterval: frameGap, paused: isDone)) { timeline in
             let phase = CGFloat(min(timeline.date.timeIntervalSince(start) / Self.length, 1))
             Canvas { context, size in
                 paint(&context, size: size, phase: phase)

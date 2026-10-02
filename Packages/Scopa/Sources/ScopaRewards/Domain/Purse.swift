@@ -9,6 +9,9 @@ public struct Purse: Hashable, Sendable {
     public let entries: [LedgerEntry]
     public let balance: Denari
     public let owned: Set<ShopItem.ID>
+    /// Every dedupe key already spent, so an entry is never applied twice. Folded once here,
+    /// since views ask it on every redraw.
+    public let keys: Set<String>
 
     public init(entries: [LedgerEntry] = []) {
         self.entries = entries
@@ -20,6 +23,7 @@ public struct Purse: Hashable, Sendable {
         }
         self.balance = balance
         self.owned = owned
+        self.keys = Set(entries.map(\.key))
     }
 
     public func owns(_ item: ShopItem) -> Bool { owned.contains(item.id) }
@@ -28,9 +32,6 @@ public struct Purse: Hashable, Sendable {
 
     /// Newest first, for a history screen.
     public var history: [LedgerEntry] { entries.reversed() }
-
-    /// Every dedupe key already spent, so an entry is never applied twice.
-    public var keys: Set<String> { Set(entries.map(\.key)) }
 
     /// When the last game was settled, whatever its outcome. This is what makes the
     /// first-game-of-the-day bonus a question the ledger answers rather than a date the app

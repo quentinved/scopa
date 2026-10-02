@@ -26,6 +26,8 @@ struct WeeklyCard: View {
     /// Set a beat after the card lands, so the laurel is caught arriving rather than found
     /// already there.
     @State private var landed = false
+    /// Tasks finished since the card was last seen, given their flourish once.
+    @State private var fresh: Set<Int> = []
 
     private var goals: [WeeklyChallenge.Goal] { book.goals }
 
@@ -59,6 +61,7 @@ struct WeeklyCard: View {
             guard book.isFinished else { return }
             withAnimation(.spring(duration: 0.5, bounce: 0.3)) { landed = true }
         }
+        .task(id: book.tasksDone) { fresh = book.spendNewlyDone() }
     }
 
     /// Half the goals row: the task in hand is the title here, since at this size a caption
@@ -119,7 +122,7 @@ struct WeeklyCard: View {
         } else {
             // Centred in the foot, so it lines up with the deal's small print rather than
             // hanging under it.
-            TaskBars(book: book)
+            TaskBars(book: book, fresh: fresh)
                 .frame(maxHeight: .infinity, alignment: .center)
         }
     }
@@ -170,28 +173,33 @@ struct WeeklyCard: View {
     }
 
     /// One task: its symbol, what it asks, and its count over a bar of its own. A done task
-    /// trades its symbol for a tick, so the ones left are the ones that stand out.
+    /// trades its symbol for a seal, its count for "Done" and its bar for a gold ribbon, so
+    /// a full bar is never mistaken for a nearly full one.
     private func goalRow(_ slot: Int) -> some View {
         let goal = goals[slot]
         let done = book.isFinished(slot)
         return HStack(spacing: 12 * lift) {
-            Image(systemName: done ? "checkmark.circle.fill" : goal.symbol)
+            Image(systemName: done ? "checkmark.seal.fill" : goal.symbol)
                 .font(.system(size: 16 * lift, weight: .semibold))
-                .foregroundStyle(Palette.goldLight)
+                .foregroundStyle(done ? AnyShapeStyle(Palette.goldSheen) : AnyShapeStyle(Palette.goldLight))
                 .frame(width: 26 * lift)
             VStack(alignment: .leading, spacing: 5 * lift) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(goal.title)
                         .font(.system(size: 14 * lift, weight: .semibold))
-                        .foregroundStyle(done ? Palette.onTableSoft : Palette.onTable)
+                        .foregroundStyle(Palette.onTable)
                     Spacer(minLength: 6 * lift)
-                    Text(verbatim: "\(book.counts[slot])/\(goal.target)")
-                        .font(.system(size: 13 * lift, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundStyle(done ? AnyShapeStyle(Palette.goldSheen) : AnyShapeStyle(Palette.onTable))
-                        .contentTransition(.numericText())
+                    if done {
+                        DoneTag()
+                    } else {
+                        Text(verbatim: "\(book.counts[slot])/\(goal.target)")
+                            .font(.system(size: 13 * lift, weight: .bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Palette.onTable)
+                            .contentTransition(.numericText())
+                    }
                 }
-                ProgressBar(progress: book.progress(slot), height: 4)
+                TaskBar(progress: book.progress(slot), done: done, flourish: fresh.contains(slot), height: 4)
             }
         }
     }
@@ -227,13 +235,114 @@ struct WeeklyCard: View {
 struct TaskBars: View {
     @Environment(\.lift) private var lift
     let book: ChallengeBook
+    var fresh: Set<Int> = []
 
     var body: some View {
         HStack(spacing: 4 * lift) {
             ForEach(book.goals.indices, id: \.self) { slot in
-                ProgressBar(progress: book.progress(slot))
+                TaskBar(progress: book.progress(slot), done: book.isFinished(slot),
+                        flourish: fresh.contains(slot))
             }
         }
+    }
+}
+
+/// One task's bar: how far along while it is open, a sealed gold ribbon once it is done.
+struct TaskBar: View {
+    let progress: Double
+    let done: Bool
+    var flourish = false
+    var height: CGFloat = 6
+
+    var body: some View {
+        if done {
+            DoneRibbon(height: height, flourish: flourish)
+        } else {
+            ProgressBar(progress: progress, height: height)
+        }
+    }
+}
+
+/// A finished task's bar: solid gold, a shade taller than the open ones, with a struck seal
+/// at its end. A full bar on its own read as one that was nearly full.
+///
+/// The first time a finish is seen a light runs along the ribbon once and the seal is
+/// struck; nothing moves after that, since the lobby keeps no forever animations.
+struct DoneRibbon: View {
+    @Environment(\.lift) private var lift
+    var height: CGFloat = 6
+    var flourish = false
+
+    @State private var sweep: CGFloat = -0.6
+    @State private var struck = true
+
+    private var ribbon: CGFloat { (height + 2) * lift }
+    private var seal: CGFloat { max(height * 2.2, 13) * lift }
+
+    var body: some View {
+        Capsule()
+            .fill(Palette.goldSheen)
+            .overlay { shine }
+            .clipShape(.capsule)
+            .overlay { Capsule().strokeBorder(Palette.goldLight.opacity(0.7), lineWidth: 0.5) }
+            .frame(height: ribbon)
+            .padding(.trailing, seal * 0.35)
+            .overlay(alignment: .trailing) { DoneSeal(size: seal).scaleEffect(struck ? 1 : 0.2) }
+            .frame(height: seal)
+            .shadow(color: Palette.gold.opacity(0.45), radius: 3)
+            .task(id: flourish) { await strike() }
+            .sensoryFeedback(trigger: struck) { old, new in !old && new ? Haptic.step : nil }
+    }
+
+    /// A band of light, parked off the end until the flourish runs it across once.
+    private var shine: some View {
+        GeometryReader { proxy in
+            LinearGradient(colors: [.clear, Palette.cream.opacity(0.9), .clear],
+                           startPoint: .leading, endPoint: .trailing)
+                .frame(width: proxy.size.width * 0.5)
+                .offset(x: sweep * proxy.size.width)
+        }
+    }
+
+    private func strike() async {
+        guard flourish else { return }
+        struck = false
+        try? await Task.sleep(for: .milliseconds(450))
+        withAnimation(.easeInOut(duration: 0.9)) { sweep = 1.1 }
+        try? await Task.sleep(for: .milliseconds(550))
+        withAnimation(.spring(duration: 0.45, bounce: 0.55)) { struck = true }
+    }
+}
+
+/// The seal at the end of a finished task's ribbon: a gold disc with a tick struck in ink.
+struct DoneSeal: View {
+    let size: CGFloat
+
+    var body: some View {
+        Image(systemName: "checkmark")
+            .font(.system(size: size * 0.52, weight: .black))
+            .foregroundStyle(Palette.ink)
+            .frame(width: size, height: size)
+            .background { Circle().fill(Palette.goldSheen) }
+            .overlay { Circle().strokeBorder(Palette.goldDeep, lineWidth: max(size * 0.07, 1)) }
+    }
+}
+
+/// "Done", in place of a finished task's count: "5/5" read too much like "4/5".
+struct DoneTag: View {
+    @Environment(\.lift) private var lift
+    var size: CGFloat = 11
+
+    var body: some View {
+        Text("Done")
+            .textCase(.uppercase)
+            .font(.system(size: size * lift, weight: .heavy))
+            .tracking(1)
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 8 * lift)
+            .padding(.vertical, 3 * lift)
+            .background { Capsule().fill(Palette.goldSheen) }
+            .fixedSize()
     }
 }
 

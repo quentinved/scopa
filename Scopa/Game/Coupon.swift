@@ -105,6 +105,7 @@ enum PromoCode {
     }
 
     static func use(_ code: String, purse: PurseStore, book: AlbumBook) async -> Answer {
+        if Passphrase.opensShop(code) { return await openShop(purse: purse) }
         switch await Coupon.redeem(code) {
         case .reward(let reward), .alreadyRedeemed(let reward?): return await pay(reward, purse: purse, book: book)
         case .alreadyRedeemed(nil): return .refused("You have already used this code.")
@@ -115,6 +116,15 @@ enum PromoCode {
         case .unreachable: return .refused("The code could not be checked. Try again in a moment.")
         case .unknown: return await useFriendCode(code, purse: purse, book: book)
         }
+    }
+
+    /// The shop's phrase: checked on the phone, so it works offline and signed out.
+    private static func openShop(purse: PurseStore) async -> Answer {
+        guard let items = await purse.unlockShop() else {
+            return .refused("The shop could not be opened on this device.")
+        }
+        guard !items.isEmpty else { return .refused("You already own everything in the shop.") }
+        return .received(Receipt(denari: .zero, tiers: [], items: items))
     }
 
     /// The purse decides whether this is news: a coupon it has already paid, on this device or

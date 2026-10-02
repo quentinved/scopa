@@ -202,6 +202,19 @@ private func settebelloRound(to side: Int, sides: Int = 2) -> GameEvent {
         #expect(purse.balance == 100)
     }
 
+    @Test func aGrantWithAnItemLandsInOneWriteAndOnlyOnce() async throws {
+        let wallet = Wallet(store: MemoryLedgerStore())
+        let first = try await wallet.grant(0, note: "wheel", key: "wheel/d", unlocking: felt, itemKey: "wheel/d/item")
+        #expect(first.count == 2)
+
+        let deck = ShopItem(id: "deck.antica", kind: .cardTheme, title: "Antica", detail: "", price: 350)
+        let again = try await wallet.grant(0, note: "wheel", key: "wheel/d", unlocking: deck, itemKey: "wheel/d/item")
+        let purse = try await wallet.purse()
+        #expect(again.isEmpty)
+        #expect(purse.owns(felt) && !purse.owns(deck))
+        #expect(purse.keys == ["wheel/d", "wheel/d/item"])
+    }
+
     @Test func whatWasAlreadyInUseIsHandedOverFree() async throws {
         let wallet = Wallet(store: MemoryLedgerStore())
         let purse = try await wallet.grandfather(felt)

@@ -175,6 +175,13 @@ struct FlourishView: View {
     ]
 }
 
+extension EnvironmentValues {
+    /// The shortest gap between a flourish's frames. Nil is the display's own rate, which
+    /// the table's sweep gets; a swatch looping in the shop asks for thirty a second, since
+    /// five of them playing on and on at the full rate were most of what the shop cost.
+    @Entry var flourishFrameGap: TimeInterval? = nil
+}
+
 /// The three flourishes made of motes, painted on one clock.
 private struct Motes: View {
     enum Kind { case paper, spark, coin }
@@ -184,9 +191,10 @@ private struct Motes: View {
 
     @State private var start = Date.now
     @State private var isDone = false
+    @Environment(\.flourishFrameGap) private var frameGap
 
     var body: some View {
-        TimelineView(.animation(paused: isDone)) { timeline in
+        TimelineView(.animation(minimumInterval: frameGap, paused: isDone)) { timeline in
             let age = CGFloat(timeline.date.timeIntervalSince(start))
             Canvas { context, size in
                 guard age < FlourishView.length else { return }
@@ -445,9 +453,10 @@ private struct Aureola: View {
     /// How many rings leave, and how far apart they leave.
     private static let rings = 3
     private static let ringStagger: CGFloat = 0.1
+    @Environment(\.flourishFrameGap) private var frameGap
 
     var body: some View {
-        TimelineView(.animation(paused: isDone)) { timeline in
+        TimelineView(.animation(minimumInterval: frameGap, paused: isDone)) { timeline in
             let phase = CGFloat(min(timeline.date.timeIntervalSince(start) / Self.length, 1))
             Canvas { context, size in
                 paint(&context, size: size, phase: phase)

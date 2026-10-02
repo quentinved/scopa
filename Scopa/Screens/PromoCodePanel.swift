@@ -177,7 +177,10 @@ private struct PromoReceipt: View {
                 line { DenariMark(size: 28) } label: { Text("\(receipt.denari.coins) denari are in your purse.") }
             }
             ForEach(Array(receipt.tiers.enumerated()), id: \.offset) { _, tier in
-                line { PackArt(tier: tier, width: 22) } label: { Text("A \(tier.title) pack is waiting in the album") }
+                line { PackArt(tier: tier, width: 22) } label: {
+                    Text(tier.shelf == .shop ? "A \(tier.title) pack is waiting in the shop"
+                                             : "A \(tier.title) pack is waiting in the album")
+                }
             }
             ForEach(receipt.items) { item in
                 line { SymbolCoin(symbol: "sparkles", tint: Rarities.tint(item.grade), size: 28) } label: {

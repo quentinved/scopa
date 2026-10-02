@@ -16,6 +16,8 @@ struct WeeklySheet: View {
     /// Set a beat after the sheet lands, so the ring is caught filling rather than found
     /// already full.
     @State private var landed = false
+    /// Tasks finished since the week was last looked at, given their flourish once.
+    @State private var fresh: Set<Int> = []
 
     private var book: ChallengeBook { store.challenges }
     private var goals: [WeeklyChallenge.Goal] { book.goals }
@@ -47,6 +49,7 @@ struct WeeklySheet: View {
             try? await Task.sleep(for: .milliseconds(120))
             withAnimation(.spring(duration: 0.8, bounce: 0.15)) { landed = true }
         }
+        .task(id: book.tasksDone) { fresh = book.spendNewlyDone() }
     }
 
     private var subtitle: LocalizedStringKey {
@@ -124,7 +127,7 @@ struct WeeklySheet: View {
         let goal = goals[slot]
         let done = book.isFinished(slot)
         return HStack(alignment: .top, spacing: 14) {
-            Image(systemName: done ? "checkmark.circle.fill" : goal.symbol)
+            Image(systemName: done ? "checkmark.seal.fill" : goal.symbol)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(done ? AnyShapeStyle(Palette.goldSheen) : AnyShapeStyle(Palette.goldLight))
                 .frame(width: 28)
@@ -136,18 +139,28 @@ struct WeeklySheet: View {
                         .foregroundStyle(Palette.onTable)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
-                    Text(verbatim: "\(book.counts[slot])/\(goal.target)")
-                        .font(.system(size: 15, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundStyle(done ? AnyShapeStyle(Palette.goldSheen) : AnyShapeStyle(Palette.onTable))
-                        .contentTransition(.numericText())
+                    if done {
+                        DoneTag(size: 11.5)
+                    } else {
+                        Text(verbatim: "\(book.counts[slot])/\(goal.target)")
+                            .font(.system(size: 15, weight: .bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Palette.onTable)
+                            .contentTransition(.numericText())
+                    }
                 }
                 Text(goal.detail)
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.onTableSoft)
                     .fixedSize(horizontal: false, vertical: true)
-                ProgressBar(progress: landed ? book.progress(slot) : 0)
-                    .padding(.top, 2)
+                if done {
+                    // Waits for the sheet to land, as the open bars do, so it is struck in view.
+                    DoneRibbon(height: 7, flourish: fresh.contains(slot) && landed)
+                        .padding(.top, 2)
+                } else {
+                    ProgressBar(progress: landed ? book.progress(slot) : 0)
+                        .padding(.top, 2)
+                }
                 HStack(spacing: 5) {
                     DenariMark(size: 12)
                     Text(done ? "Paid \(goal.denari.coins)" : "Pays \(goal.denari.coins)")

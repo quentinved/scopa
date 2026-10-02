@@ -1,5 +1,4 @@
 import SwiftUI
-import StoreKit
 import ScopaCore
 import ScopaRewards
 
@@ -11,7 +10,6 @@ struct TableScreen: View {
 
     @State private var selection = HandSelection()
     @Environment(\.locale) private var locale
-    @Environment(\.requestReview) private var requestReview
     @State private var showsScopa = false
     /// The seven of coins, taken. Never shown at the same time as a sweep: a scopa that
     /// happens to take it keeps the floor.
@@ -92,6 +90,8 @@ struct TableScreen: View {
     /// would refuse a second payment anyway.
     @State private var isDoubling = false
     @State private var doubled = false
+    /// The last tap on the doubling found no video to show.
+    @State private var noVideo = false
     /// Asked before leaving a table with a stake on it, because the stake stays behind.
     @State private var confirmsLeave = false
     /// The seat the phone is being handed to, on a table shared between people. While it
@@ -564,6 +564,7 @@ struct TableScreen: View {
         earnings = []
         doubled = false
         isDoubling = false
+        noVideo = false
         gainedExperience = nil
         earnedPack = false
     }
@@ -902,7 +903,7 @@ struct TableScreen: View {
             HiddenHand(count: opponent.cardsInHand, width: width)
             if pet != .nessuno {
                 CompanionView(companion: pet, size: width,
-                              mood: companionMood(ofSeat: opponent.seat, in: view))
+                              mood: companionMood(ofSeat: opponent.seat, in: view), calm: true)
             }
         }
     }
@@ -1670,7 +1671,7 @@ struct TableScreen: View {
     /// comes from the store: the phase only carries the winner.
     private func finalSummary(winner: Int, in view: PlayerView) -> some View {
         RoundSummary(score: store.lastRoundScore, view: view, showsAction: true,
-                     caption: String(localized: "Game over", locale: locale),
+                     caption: store.campaignStage?.place ?? String(localized: "Game over", locale: locale),
                      title: winnerHeadline(winner, in: view),
                      isFinal: true, totalsTold: $summaryToldIt,
                      earnings: earnings, doubling: doubling, experience: gainedExperience,
@@ -1679,7 +1680,8 @@ struct TableScreen: View {
                      footnote: summaryFootnote,
                      verdict: rankedMove(won: winner == view.mySide),
                      awaitingLadder: store.isAwaitingLadder,
-                     again: playAgainIfAllowed) {
+                     again: playAgainIfAllowed,
+                     leaveTitle: store.campaignStage == nil ? "Back to the lobby" : "Back to the map") {
             Task {
                 // Losing a stake is enough for one game: the pacing rules take that ending
                 // off the table rather than charging for it twice.
@@ -1693,16 +1695,18 @@ struct TableScreen: View {
         // nothing, so it must not wipe the lines the first one put up.
         .task(id: store.finishedTally?.gameID) {
             guard let tally = store.finishedTally else { return }
+            // Read before the first await: leaving the table meanwhile clears it.
+            let stage = store.campaignStage
             if store.isRanked { store.reportRanked(winnerSeat: winner) }
             var paid = await settle(tally, won: winner == view.mySide, players: view.configuration.seatCount)
             paid += await settleChallenge(tally, won: winner == view.mySide)
             Achievements.record(tally, won: winner == view.mySide, streak: store.dailyStreak)
             paid += await recordProgress(tally)
+            paid += await CampaignPayout.settle(tally, at: stage, in: view, store: store, purse: purse,
+                                                locale: locale)
             if !paid.isEmpty { withAnimation(.spring(duration: 0.45, bounce: 0.2)) { earnings = paid } }
-            // A win is the moment a rating is kindest, once the payout has landed.
-            guard ReviewPrompt.shouldAsk(after: tally.gameID, won: winner == view.mySide),
-                  (try? await Task.sleep(for: .seconds(2))) != nil else { return }
-            requestReview()
+            // Counted for the rating ask, which the lobby makes on the way back in.
+            ReviewPrompt.count(tally.gameID, won: winner == view.mySide)
         }
         .onChange(of: summaryToldIt && !pendingToasts.isEmpty) { _, ready in if ready { deliverToasts() } }
     }
@@ -1830,7 +1834,7 @@ struct TableScreen: View {
         // The change the Worker sends is the one it *applied*, floor and ceiling included,
         // so the rating before the game is exactly the rating after it less the change.
         return RankedVerdict.Move(before: rank.rating - change, after: rank.rating, won: won,
-                                  streak: rank.streak ?? 0)
+                                  streak: rank.streak ?? 0, isHouse: store.ladderTable == .house)
     }
 
     /// What this ranked table pays, over the deal that opens it.
@@ -1851,7 +1855,8 @@ struct TableScreen: View {
         stakesTold = true
         withAnimation(.spring(duration: 0.4, bounce: 0.28)) { stakes = odds }
         Audio.shared.play(.notice, gain: 0.7)
-        try? await Task.sleep(for: .seconds(3.6))
+        // Long enough to read the run and the house's count as well as the two numbers.
+        try? await Task.sleep(for: .seconds(4.6))
         // Cleared whether or not the wait was cut short: a banner left up is worse than
         // one cut off.
         withAnimation(.easeOut(duration: 0.35)) { stakes = nil }
@@ -1864,30 +1869,41 @@ struct TableScreen: View {
         // The other side, not the other seats: `opponents` holds your partner too at a duo,
         // and averaging them in would price the game against your own friend's league.
         let facing = view.opponents.filter { view.configuration.side(ofSeat: $0.seat) != view.mySide }
+        var odds: RankedStakes.Odds
         switch kind {
         case .people:
             // Only the real chairs across the table, because only they are rated. The house
             // wears a rosette so its seat does not give itself away (see `houseRank`), and
             // counting one in would promise points for beating a machine.
-            let theirs = facing.filter { !$0.player.isBot }.compactMap { store.rank(of: $0.player)?.rating }
-            return RankedStakes.odds(mine: mine.rating, theirs: theirs, streak: mine.streak ?? 0)
+            let rated = facing.filter { !$0.player.isBot }.compactMap { store.rank(of: $0.player) }
+            odds = RankedStakes.odds(mine: mine.rating, theirs: rated.map(\.rating), streak: mine.streak ?? 0)
+            odds.theirRecord = rated.count == 1 ? RankedStakes.Record(rated[0]) : nil
         case .house:
-            let across = facing.compactMap { store.rank(of: $0.player)?.rating }.first
-            return RankedStakes.houseOdds(mine: mine.rating, theirs: across,
-                                          counting: mine.house?.isCounting ?? true,
+            let across = facing.compactMap { store.rank(of: $0.player) }.first
+            odds = RankedStakes.houseOdds(mine: mine.rating, theirs: across?.rating,
+                                          counting: mine.house?.isCounting ?? true, streak: mine.streak ?? 0,
                                           win: mine.house?.win ?? Ranking.houseWin,
                                           loss: mine.house?.loss ?? Ranking.houseLoss)
+            odds.housePlayed = mine.house?.playedToday
+            odds.housePerDay = mine.house?.perDay ?? Ranking.houseGamesPerDay
+            odds.theirRecord = facing.count == 1 ? across.flatMap { RankedStakes.Record($0) } : nil
         }
+        odds.myRecord = RankedStakes.Record(mine)
+        return odds
     }
 
     /// The one ad anybody asks for, on the last summary: watch it and the game pays out
-    /// again. Only a game that paid something, only once, and never a wager.
+    /// again, or the ad's own `reward` if the game paid less. Only a game that paid
+    /// something, only once, and never a wager.
     private var doubling: Doubling? {
-        // A level's reward is not the game's, so an ad does not pay it a second time.
-        let total = earnings.filter { !$0.id.hasPrefix("level.") }.reduce(Denari.zero) { $0 + $1.value }
-        guard !doubled, store.stake == nil, total.isCredit, ads.offersReward,
+        // Only what the game itself earned. A level, a task, a streak or a campaign prize is
+        // paid once, so an ad does not pay it a second time.
+        let total = earnings.filter { Earning(rawValue: $0.id) != nil }.reduce(Denari.zero) { $0 + $1.value }
+        guard !doubled, store.stake == nil, total.isCredit, ads.isReady,
               let gameID = store.finishedTally?.gameID else { return nil }
-        return Doubling(amount: total, isWatching: isDoubling) { double(total, gameID: gameID) }
+        let amount = max(total, ads.reward)
+        return Doubling(amount: amount, repeatsGame: amount == total, isWatching: isDoubling,
+                        noVideo: noVideo) { double(amount, gameID: gameID) }
     }
 
     /// Today's deal, paid: the deal itself, and the mark on the run if this one reached it.
@@ -2008,12 +2024,18 @@ struct TableScreen: View {
     private func double(_ amount: Denari, gameID: UUID) {
         guard !isDoubling else { return }
         isDoubling = true
+        noVideo = false
         Task {
             defer { isDoubling = false }
             // Paid on the network's word that it was watched to the end, and keyed on the
             // game, so the same game can never be doubled twice however the taps land.
-            guard await ads.watchRewarded() else { return }
-            await purse.earnFromAd(amount, key: "double/\(gameID.uuidString)")
+            switch await ads.watchRewarded() {
+            case .watched: break
+            case .unavailable: noVideo = true; return
+            case .closedEarly: return
+            }
+            // A save that failed shows through the purse's problem, not as a payout.
+            guard await purse.earnFromAd(amount, key: "double/\(gameID.uuidString)") else { return }
             withAnimation(.spring(duration: 0.45, bounce: 0.2)) {
                 earnings.append(PayoutLine(id: "double", title: String(localized: "Watched an ad", locale: locale), value: amount))
                 doubled = true

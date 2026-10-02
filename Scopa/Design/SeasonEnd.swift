@@ -74,10 +74,18 @@ struct SeasonCard: View {
                 .font(.display(44))
                 .foregroundStyle(Palette.onTable)
                 .padding(.bottom, 6)
-            Text("\(finish.wins) wins · \(finish.games) games")
+            recordLine
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Palette.onTableSoft)
                 .padding(.bottom, 22)
+        }
+    }
+
+    @ViewBuilder private var recordLine: some View {
+        if let rate = Ladder.winRate(wins: finish.wins, games: finish.games, locale: locale) {
+            Text("\(finish.wins) wins · \(finish.games) games · \(rate) win rate")
+        } else {
+            Text("\(finish.wins) wins · \(finish.games) games")
         }
     }
 

@@ -61,13 +61,19 @@ struct SummaryPayout: View {
         .padding(.leading, 23)
     }
 
+    private func offerTitle(_ doubling: Doubling) -> LocalizedStringKey {
+        if doubling.noVideo { return "No video right now. Tap to try again" }
+        return doubling.repeatsGame ? "Watch an ad, earn it again" : "Watch a short ad for more"
+    }
+
     private func doublingButton(_ doubling: Doubling) -> some View {
         Button(action: doubling.watch) {
             HStack(spacing: 10) {
                 Image(systemName: "play.rectangle")
                     .font(.system(size: 15, weight: .semibold))
-                Text("Watch an ad, earn it again")
+                Text(offerTitle(doubling))
                     .font(.system(size: 14, weight: .semibold))
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
                 if doubling.isWatching {
                     ProgressView().tint(Palette.terracotta)
@@ -168,11 +174,15 @@ struct PayoutLine: Identifiable, Equatable {
 }
 
 /// The offer on the last summary of a game: an ad, watched to the end, for the game's
-/// earnings a second time.
+/// earnings a second time, or the ad's own reward when that is more.
 struct Doubling {
     let amount: Denari
+    /// True when `amount` is the game's earnings again, false when the ad's floor topped it up.
+    let repeatsGame: Bool
     /// The ad is up or on its way, so the row takes no second tap.
     let isWatching: Bool
+    /// The last tap found no video to show.
+    var noVideo = false
     let watch: () -> Void
 }
 

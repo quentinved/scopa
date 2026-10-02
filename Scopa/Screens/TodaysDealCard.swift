@@ -263,12 +263,16 @@ struct TodaysDealCard: View {
         var body: some View {
             if days > 0 {
                 if tight {
+                    // "3 days" rather than a bare 3, which sat next to the margin over Hugo
+                    // and read as a second score.
                     HStack(spacing: 5 * lift) {
                         flame
-                        Text(verbatim: "\(days)")
+                        Text("^[\(days) day](inflect: true)")
                             .font(.system(size: 13 * lift, weight: .bold))
                             .monospacedDigit()
                             .foregroundStyle(Palette.onTable)
+                            .lineLimit(1)
+                            .fixedSize()
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("\(days) day streak"))

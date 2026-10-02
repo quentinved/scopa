@@ -2,7 +2,7 @@ import SwiftUI
 import ScopaRewards
 
 /// Where a new player types the code the friend who brought them handed out. One code per
-/// player, paid once: a pack left waiting in the album, denari, or both.
+/// player, paid once: a pack left waiting on its own shelf, denari, or both.
 struct FriendCodePanel: View {
     let book: AlbumBook
     let purse: PurseStore
@@ -127,6 +127,9 @@ struct FriendCodePanel: View {
     private var thanksDetail: LocalizedStringKey {
         guard let paid else { return "Your friend's code is used. There is one per player." }
         switch (paid.tier, paid.denari.isCredit) {
+        case (let tier?, true) where tier.shelf == .shop:
+            return "A \(tier.title) pack is waiting in the shop, and \(paid.denari.coins) denari are in your purse."
+        case (let tier?, false) where tier.shelf == .shop: return "A \(tier.title) pack is waiting in the shop"
         case (let tier?, true): return "A \(tier.title) pack is waiting in the album, and \(paid.denari.coins) denari are in your purse."
         case (let tier?, false): return "A \(tier.title) pack is waiting in the album"
         default: return "\(paid.denari.coins) denari are in your purse."

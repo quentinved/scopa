@@ -7,6 +7,294 @@
     " " : {
       "shouldTranslate" : false
     },
+    "A %@ pack is waiting in the shop" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet %@ vous attend dans la boutique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto %@ ti aspetta nel negozio"
+          }
+        }
+      }
+    },
+    "A %@ pack is waiting in the shop, and %lld denari are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet %1$@ vous attend dans la boutique, et %2$lld deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto %1$@ ti aspetta nel negozio, e %2$lld denari sono nel tuo borsellino."
+          }
+        }
+      }
+    },
+    "A new lobby" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nouveau salon"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una nuova sala"
+          }
+        }
+      }
+    },
+    "Five seconds into a ranked search, the house offers to play you. Take the game, or keep looking while the search goes on." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après cinq secondes de recherche en classé, la maison vous propose une partie. Acceptez-la, ou continuez à chercher : la recherche se poursuit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo cinque secondi di ricerca in classificata, la casa ti propone una partita. Accettala, o continua a cercare mentre la ricerca va avanti."
+          }
+        }
+      }
+    },
+    "Nobody" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno"
+          }
+        }
+      }
+    },
+    "Nobody about? Play the house" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne ? Jouez contre la maison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno in giro? Gioca contro la casa"
+          }
+        }
+      }
+    },
+    "Open" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri"
+          }
+        }
+      }
+    },
+    "Open the card packs" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paquets de cartes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri i pacchetti di carte"
+          }
+        }
+      }
+    },
+    "Open the shop's packs" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paquets de la boutique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri i pacchetti del negozio"
+          }
+        }
+      }
+    },
+    "Ranked has the big door now, with your medal, your win rate and how far to the next division. The campaign sits just under it, and Quick game turns into Resume when a game is waiting." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le classé a désormais la grande porte, avec votre médaille, votre taux de réussite et ce qu'il reste jusqu'à la division suivante. La campagne est juste en dessous, et Partie rapide devient Reprendre quand une partie vous attend."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La classificata ora ha la porta grande, con la tua medaglia, la tua percentuale di vittorie e quanto manca alla prossima divisione. La campagna è subito sotto, e Partita veloce diventa Riprendi quando c'è una partita in sospeso."
+          }
+        }
+      }
+    },
+    "Stage %lld · %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Étape %lld · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tappa %lld · %@"
+          }
+        }
+      }
+    },
+    "The card packs wait in the album, the others in the shop" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les paquets de cartes vous attendent dans l'album, les autres dans la boutique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I pacchetti di carte ti aspettano nell'album, gli altri nel negozio"
+          }
+        }
+      }
+    },
+    "The Forziere is waiting for you in the shop." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Forziere vous attend dans la boutique."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il Forziere ti aspetta nel negozio."
+          }
+        }
+      }
+    },
+    "The shop could not be opened on this device." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La boutique n'a pas pu être ouverte sur cet appareil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile aprire il negozio su questo dispositivo."
+          }
+        }
+      }
+    },
+    "Waiting for you" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ils vous attendent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ti aspettano"
+          }
+        }
+      }
+    },
+    "Waiting for you in the shop" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ils vous attendent dans la boutique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ti aspettano nel negozio"
+          }
+        }
+      }
+    },
+    "Who leads the month in ranked, among everyone or just your friends, and how often each of them wins. Before a game, the banner shows who you face, what a win or a loss is worth, and your winning run." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui mène le mois en classé, parmi tout le monde ou seulement vos amis, et à quelle fréquence chacun gagne. Avant une partie, le bandeau montre votre adversaire, ce que rapporte une victoire ou coûte une défaite, et votre série de victoires."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi guida il mese in classificata, tra tutti o solo tra i tuoi amici, e quanto spesso vince ciascuno. Prima di una partita, il banner mostra chi affronti, quanto vale una vittoria o una sconfitta, e la tua serie di vittorie."
+          }
+        }
+      }
+    },
+    "You already own everything in the shop." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous possédez déjà tout ce qu'il y a à la boutique."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai già tutto quello che c'è nel negozio."
+          }
+        }
+      }
+    },
     "·" : {
       "shouldTranslate" : false
     },
@@ -107,7 +395,24 @@
         }
       }
     },
+    "%@ first · a gift" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ d'abord · un cadeau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima %@ · un regalo"
+          }
+        }
+      }
+    },
     "%@ first · a level reward" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -172,6 +477,22 @@
         }
       }
     },
+    "%@ is yours, and a %@ pack is waiting in the album." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ est à vous, et un paquet %2$@ vous attend dans l'album."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ è tuo, e un pacchetto %2$@ ti aspetta nell'album."
+          }
+        }
+      }
+    },
     "%@ laid it down" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -224,6 +545,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ di %@"
+          }
+        }
+      }
+    },
+    "%@ pack" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquet %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacchetto %@"
           }
         }
       }
@@ -354,6 +691,22 @@
         }
       }
     },
+    "%@ win rate" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ de réussite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ di vittorie"
+          }
+        }
+      }
+    },
     "%@ wins" : {
       "localizations" : {
         "fr" : {
@@ -366,6 +719,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vince %@"
+          }
+        }
+      }
+    },
+    "%@ won" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ gagnées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vinte"
           }
         }
       }
@@ -398,6 +767,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "TAVOLO DI %@"
+          }
+        }
+      }
+    },
+    "%@'s table did not answer" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La table de %@ n'a pas répondu"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tavolo di %@ non ha risposto"
           }
         }
       }
@@ -718,6 +1103,22 @@
         }
       }
     },
+    "%lld in a row" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de suite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld di fila"
+          }
+        }
+      }
+    },
     "%lld IN A ROW" : {
       "localizations" : {
         "fr" : {
@@ -735,6 +1136,7 @@
       }
     },
     "%lld in a row · +%lld for the run" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -773,6 +1175,7 @@
       }
     },
     "%lld left today" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -951,13 +1354,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld joueurs sur %lld"
+            "value" : "%1$lld sur %2$lld à table"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld giocatori su %lld"
+            "value" : "%1$lld su %2$lld al tavolo"
           }
         }
       }
@@ -984,6 +1387,22 @@
         }
       }
     },
+    "%lld of %lld stars" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld étoiles sur %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld stelle su %2$lld"
+          }
+        }
+      }
+    },
     "%lld of %lld tasks done" : {
       "localizations" : {
         "fr" : {
@@ -996,6 +1415,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld compiti su %lld fatti"
+          }
+        }
+      }
+    },
+    "%lld of 3 stars" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld étoiles sur 3"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld stelle su 3"
           }
         }
       }
@@ -1084,6 +1519,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld vittorie · %lld partite"
+          }
+        }
+      }
+    },
+    "%lld wins · %lld games · %@ win rate" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld victoires · %2$lld parties · %3$@ de réussite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld vittorie · %2$lld partite · %3$@ di vittorie"
           }
         }
       }
@@ -1180,6 +1631,22 @@
         }
       }
     },
+    "%lld-second turns" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tours de %lld secondes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turni da %lld secondi"
+          }
+        }
+      }
+    },
     "^[%lld card](inflect: true)" : {
       "localizations" : {
         "fr" : {
@@ -1208,6 +1675,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "^[%lld carta](inflect: true), e qualcosa dagli scaffali"
+          }
+        }
+      }
+    },
+    "^[%lld day](inflect: true)" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld jour](inflect: true)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld giorno](inflect: true)"
           }
         }
       }
@@ -1406,6 +1889,22 @@
         }
       }
     },
+    "+%lld more if you win" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld de plus si vous gagnez"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld in più se vinci"
+          }
+        }
+      }
+    },
     "1 point" : {
       "localizations" : {
         "fr" : {
@@ -1518,6 +2017,22 @@
         }
       }
     },
+    "A card with only one move is played on the first tap, not the second" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une carte qui n'a qu'un seul coup possible est jouée au premier toucher, pas au second"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una carta con una sola mossa possibile si gioca al primo tocco, non al secondo"
+          }
+        }
+      }
+    },
     "A category nobody wins outright scores nothing, and a tie counts as nobody. First past the target — eleven, unless the host says otherwise — wins, and a dead heat plays one more round." : {
       "localizations" : {
         "fr" : {
@@ -1566,22 +2081,6 @@
         }
       }
     },
-    "A code, a name, or one phone passed round." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un code, un nom, ou un téléphone qui passe de main en main."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un codice, un nome, o un telefono che passa di mano in mano."
-          }
-        }
-      }
-    },
     "A coin comes over, and the coins are a point." : {
       "localizations" : {
         "fr" : {
@@ -1610,6 +2109,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un denaro è andato con lei."
+          }
+        }
+      }
+    },
+    "A few lines on what would make the table better go straight to the person who makes Scopa." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelques lignes sur ce qui rendrait la table meilleure arrivent directement à la personne qui fait Scopa."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due righe su cosa renderebbe migliore il tavolo arrivano dritte alla persona che fa Scopa."
+          }
+        }
+      }
+    },
+    "A few packs to start your album and dress your table. Thank you for sitting down with us." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelques paquets pour commencer votre album et habiller votre table. Merci de vous asseoir avec nous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualche pacchetto per cominciare l'album e vestire il tuo tavolo. Grazie di sederti con noi."
+          }
+        }
+      }
+    },
+    "A few stars help other players find the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelques étoiles aident d'autres joueurs à trouver la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualche stella aiuta altri giocatori a trovare il tavolo"
+          }
+        }
+      }
+    },
+    "A field ruled in gold" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un terrain tracé à l'or"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un campo tracciato in oro"
           }
         }
       }
@@ -1646,6 +2210,38 @@
         }
       }
     },
+    "A gift from the house" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un cadeau de la maison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un regalo della casa"
+          }
+        }
+      }
+    },
+    "A journey through Italy" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un voyage à travers l'Italie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un viaggio attraverso l'Italia"
+          }
+        }
+      }
+    },
     "A lithographed sheet, in full colour" : {
       "localizations" : {
         "fr" : {
@@ -1678,6 +2274,22 @@
         }
       }
     },
+    "A loss ends the run" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une défaite met fin à la série"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una sconfitta chiude la serie"
+          }
+        }
+      }
+    },
     "A mark for your seat, in the shop" : {
       "localizations" : {
         "fr" : {
@@ -1690,6 +2302,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un segno per il tuo posto, nella bottega"
+          }
+        }
+      }
+    },
+    "A new turn every day at midnight." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nouveau tour chaque jour à minuit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nuovo giro ogni giorno a mezzanotte."
           }
         }
       }
@@ -1873,6 +2501,22 @@
         }
       }
     },
+    "A short video in the shop now pays at least 100 denari, as many times a day as you like." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une courte vidéo à la boutique rapporte désormais au moins 100 denari, autant de fois par jour que vous le voulez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un breve video nel negozio ora paga almeno 100 denari, tutte le volte che vuoi al giorno."
+          }
+        }
+      }
+    },
     "A task for the week" : {
       "localizations" : {
         "fr" : {
@@ -1901,6 +2545,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un sigillo di ceralacca, impresso a ogni scopa"
+          }
+        }
+      }
+    },
+    "A wheel to spin each day" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une roue à faire tourner chaque jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una ruota da girare ogni giorno"
           }
         }
       }
@@ -1937,6 +2597,22 @@
         }
       }
     },
+    "A win counts for the ladder, up to %lld house games a day." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une victoire compte pour le classement, jusqu'à %lld parties contre la maison par jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vittoria conta per la classifica, fino a %lld partite contro la casa al giorno."
+          }
+        }
+      }
+    },
     "A woodcut: outline and hatching" : {
       "localizations" : {
         "fr" : {
@@ -1949,6 +2625,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Una xilografia: contorni e tratteggio"
+          }
+        }
+      }
+    },
+    "A WORD FROM THE HOUSE" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UN MOT DE LA MAISON"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UNA PAROLA DALLA CASA"
           }
         }
       }
@@ -2371,6 +3063,23 @@
         }
       }
     },
+    "All watched today. More tomorrow." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes regardées aujourd'hui. D'autres demain."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte guardate oggi. Altre domani."
+          }
+        }
+      }
+    },
     "Already had it" : {
       "localizations" : {
         "fr" : {
@@ -2534,22 +3243,6 @@
         }
       }
     },
-    "Anywhere in the world" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "N'importe où dans le monde"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ovunque nel mondo"
-          }
-        }
-      }
-    },
     "App icon" : {
       "localizations" : {
         "fr" : {
@@ -2566,18 +3259,18 @@
         }
       }
     },
-    "Ask them by name; no code to send" : {
+    "As often as you like" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invitez-les par leur nom, sans code à envoyer"
+            "value" : "Autant que vous voulez"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invitali per nome, senza codice da mandare"
+            "value" : "Quante volte vuoi"
           }
         }
       }
@@ -2658,6 +3351,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Torna alla lobby"
+          }
+        }
+      }
+    },
+    "Back to the map" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retour à la carte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna alla mappa"
+          }
+        }
+      }
+    },
+    "Back to the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retour à la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna al tavolo"
           }
         }
       }
@@ -3147,7 +3872,24 @@
         }
       }
     },
+    "Campaign" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Campagne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Campagna"
+          }
+        }
+      }
+    },
     "Cancel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -3404,6 +4146,22 @@
         }
       }
     },
+    "Classic primiera" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primiera classique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primiera classica"
+          }
+        }
+      }
+    },
     "Climb the leagues" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3518,6 +4276,22 @@
         }
       }
     },
+    "Coffee, noise and quick hands" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Café, vacarme et mains rapides"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caffè, chiasso e mani svelte"
+          }
+        }
+      }
+    },
     "Coins" : {
       "localizations" : {
         "fr" : {
@@ -3578,6 +4352,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Riscossione…"
+          }
+        }
+      }
+    },
+    "Come back tomorrow" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revenez demain"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna domani"
           }
         }
       }
@@ -3762,6 +4552,38 @@
         }
       }
     },
+    "Counts for the ladder: +%lld to win, −%lld to lose." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compte pour le classement : +%1$lld en cas de victoire, −%2$lld en cas de défaite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta per la classifica: +%1$lld se vinci, −%2$lld se perdi."
+          }
+        }
+      }
+    },
+    "Counts for the ladder: +%lld to win, and your league holds if you lose." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compte pour le classement : +%lld en cas de victoire, et votre ligue tient si vous perdez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta per la classifica: +%lld se vinci, e la tua lega resta se perdi."
+          }
+        }
+      }
+    },
     "Counts the deck and plays the round out before it moves" : {
       "localizations" : {
         "fr" : {
@@ -3859,6 +4681,7 @@
       }
     },
     "Deal a new table" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -3907,6 +4730,7 @@
       }
     },
     "Deal over the saved game?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -3939,6 +4763,7 @@
       }
     },
     "Deal, and lose the stake" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -3982,6 +4807,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mazzo e tavolo"
+          }
+        }
+      }
+    },
+    "Deco fans, as in a grand café" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des éventails Art déco, comme au grand café"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventagli déco, come in un gran caffè"
           }
         }
       }
@@ -4290,6 +5131,22 @@
         }
       }
     },
+    "Double tap to put it down" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez deux fois pour la reposer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca due volte per rimetterla giù"
+          }
+        }
+      }
+    },
     "Double tap to take it" : {
       "localizations" : {
         "fr" : {
@@ -4419,6 +5276,22 @@
         }
       }
     },
+    "Enjoying Scopa?" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopa vous plaît ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ti piace Scopa?"
+          }
+        }
+      }
+    },
     "Enough time to count, but the game keeps moving" : {
       "localizations" : {
         "fr" : {
@@ -4511,6 +5384,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Anche ogni lega più in basso ha i suoi premi, e sono tuoi."
+          }
+        }
+      }
+    },
+    "Every league you reach in ranked gives you its medal to wear at your seat, and from Silver up an app icon struck in that metal. Yours for good." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque ligue atteinte en classé vous donne sa médaille à porter à votre place et, à partir d'Argent, une icône d'app frappée dans ce métal. À vous pour de bon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni lega raggiunta in classificata ti dà la sua medaglia da portare al tuo posto e, dall'Argento in su, un'icona dell'app coniata in quel metallo. Tua per sempre."
           }
         }
       }
@@ -4643,6 +5532,22 @@
         }
       }
     },
+    "Everyone in ranked this season, highest league first." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les joueurs classés de la saison, de la meilleure ligue à la plus basse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i giocatori in classificata questa stagione, dalla lega più alta."
+          }
+        }
+      }
+    },
     "Everyone must type the same word and choose the same number." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4677,6 +5582,7 @@
       }
     },
     "Figured all the way across" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -4688,6 +5594,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Damascato da parte a parte"
+          }
+        }
+      }
+    },
+    "Fill Riviera and the album goes on: Napoli, Pergamena and Notturna, the same forty cards in another deck each, and each with a prize of its own." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remplissez Riviera et l'album continue : Napoli, Pergamena et Notturna, les mêmes quarante cartes dans un autre jeu à chaque fois, et chacun avec son propre prix."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completa Riviera e l'album continua: Napoli, Pergamena e Notturna, le stesse quaranta carte ogni volta in un altro mazzo, e ognuno con il suo premio."
           }
         }
       }
@@ -4736,22 +5658,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trova amici su Game Center"
-          }
-        }
-      }
-    },
-    "Find one a friend has opened nearby" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rejoindre celle d'un ami à proximité"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trova quello che un amico ha aperto nelle vicinanze"
           }
         }
       }
@@ -4949,6 +5855,22 @@
         }
       }
     },
+    "for all three stars" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pour les trois étoiles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "per tutte e tre le stelle"
+          }
+        }
+      }
+    },
     "For denari" : {
       "localizations" : {
         "fr" : {
@@ -5009,6 +5931,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Per le partite della sera"
+          }
+        }
+      }
+    },
+    "for the first win" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pour la première victoire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "per la prima vittoria"
           }
         }
       }
@@ -5142,6 +6080,38 @@
         }
       }
     },
+    "Found %lld times" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvée %lld fois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trovata %lld volte"
+          }
+        }
+      }
+    },
+    "Four at the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À quatre"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In quattro al tavolo"
+          }
+        }
+      }
+    },
     "Four cards go face up on the table, three into every hand." : {
       "localizations" : {
         "fr" : {
@@ -5186,22 +6156,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quattro semi italiani, da uno a dieci. Niente jolly, niente matte."
-          }
-        }
-      }
-    },
-    "Four letters, or the link they sent" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quatre lettres, ou le lien qu'on vous a envoyé"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quattro lettere, o il link che ti hanno mandato"
           }
         }
       }
@@ -5320,6 +6274,38 @@
         }
       }
     },
+    "Four volumes of the album" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quatre volumes à l'album"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quattro volumi dell'album"
+          }
+        }
+      }
+    },
+    "Fresh felts and weaves in the shop, to dress the table the way you like it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De nouveaux feutres et tissages à la boutique, pour habiller la table à votre goût."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovi panni e trame nel negozio, per vestire il tavolo come piace a te."
+          }
+        }
+      }
+    },
     "Friend" : {
       "localizations" : {
         "fr" : {
@@ -5416,6 +6402,22 @@
         }
       }
     },
+    "Friends join from anywhere" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos amis la rejoignent d'où ils veulent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli amici si uniscono da ovunque"
+          }
+        }
+      }
+    },
     "From %lld points" : {
       "localizations" : {
         "fr" : {
@@ -5444,6 +6446,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Da %1$lld punti · ne mancano %2$lld"
+          }
+        }
+      }
+    },
+    "From the house, or from the friend who brought you. Each code counts once per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De la maison, ou de l'ami qui vous a fait venir. Chaque code ne compte qu'une fois par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalla casa, o dall'amico che ti ha portato qui. Ogni codice vale una volta per giocatore."
           }
         }
       }
@@ -5594,22 +6612,6 @@
         }
       }
     },
-    "Get a code and a link to send a friend" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recevez un code et un lien à envoyer à un ami"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ottieni un codice e un link da mandare a un amico"
-          }
-        }
-      }
-    },
     "Gold" : {
       "localizations" : {
         "fr" : {
@@ -5686,6 +6688,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Golfo"
+          }
+        }
+      }
+    },
+    "Gran premio: %lld denari and a %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran premio : %lld deniers et un %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran premio: %lld denari e un %@"
           }
         }
       }
@@ -5802,6 +6820,38 @@
         }
       }
     },
+    "Have a code?" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez un code ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai un codice?"
+          }
+        }
+      }
+    },
+    "Heads-up" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En tête-à-tête"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uno contro uno"
+          }
+        }
+      }
+    },
     "Hear it" : {
       "localizations" : {
         "fr" : {
@@ -5867,18 +6917,18 @@
         }
       }
     },
-    "Host a table" : {
+    "House game %lld of %lld that count today" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrir une table"
+            "value" : "Partie contre la maison %lld sur %lld qui comptent aujourd'hui"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri un tavolo"
+            "value" : "Partita contro il banco %lld su %lld che contano oggi"
           }
         }
       }
@@ -5927,6 +6977,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Come è disegnato il mazzo"
+          }
+        }
+      }
+    },
+    "How the table is dressed" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'habillage de la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come si veste il tavolo"
           }
         }
       }
@@ -6092,6 +7158,23 @@
         }
       }
     },
+    "I love it" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'adore"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mi piace molto"
+          }
+        }
+      }
+    },
     "I told you so." : {
       "localizations" : {
         "fr" : {
@@ -6104,6 +7187,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Te l'ho detto."
+          }
+        }
+      }
+    },
+    "If nobody turns up within a few seconds, you can play the house instead, in the same seats. Duo is you and a friend against two of the house, rated together. Only real players are rated, and a league reached is yours for the season. A game against the house counts ten times a day; a game against somebody real always counts." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si personne ne se présente au bout de quelques secondes, vous pouvez jouer contre la maison à la place, aux mêmes places. En duo, vous et un ami affrontez deux joueurs de la maison, avec un classement commun. Seuls les vrais joueurs sont classés, et une ligue atteinte vous reste acquise pour la saison. Les parties contre la maison comptent dix fois par jour au maximum ; contre un vrai joueur, elles comptent toujours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se entro qualche secondo non arriva nessuno, puoi giocare contro la casa, negli stessi posti. In duo tu e un amico giocate contro due del banco, valutati insieme. Solo i giocatori reali sono valutati, e una lega raggiunta è tua per la stagione. Una partita contro il banco conta dieci volte al giorno; una partita contro qualcuno di reale conta sempre."
+          }
+        }
+      }
+    },
+    "If nobody turns up, the house can take the chair." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si personne ne se présente, la maison peut prendre la place."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se non arriva nessuno, la casa può prendere il posto."
           }
         }
       }
@@ -6141,18 +7256,18 @@
         }
       }
     },
-    "In the same room" : {
+    "In teams, with %@" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dans la même pièce"
+            "value" : "En équipe, avec %@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nella stessa stanza"
+            "value" : "A squadre, con %@"
           }
         }
       }
@@ -6266,22 +7381,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invita un amico di Game Center"
-          }
-        }
-      }
-    },
-    "Invite Game Center friends" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inviter des amis Game Center"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invita amici Game Center"
           }
         }
       }
@@ -6462,6 +7561,22 @@
         }
       }
     },
+    "Join a friend's table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejoindre la table d'un ami"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unisciti al tavolo di un amico"
+          }
+        }
+      }
+    },
     "Join a table" : {
       "localizations" : {
         "fr" : {
@@ -6495,6 +7610,7 @@
       }
     },
     "Join with a code" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -6575,6 +7691,22 @@
         }
       }
     },
+    "Keep looking" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuer à chercher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continua a cercare"
+          }
+        }
+      }
+    },
     "Keep playing" : {
       "localizations" : {
         "fr" : {
@@ -6591,18 +7723,18 @@
         }
       }
     },
-    "Know the words? Say them and the ads are swept off the table for good." : {
+    "Know the words? Say them and %@ denari land in your purse." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous connaissez la formule ? Entrez-la et les publicités sont balayées de la table pour de bon."
+            "value" : "Vous connaissez la formule ? Entrez-la et %@ deniers tombent dans votre bourse."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conosci le parole? Dille e la pubblicità è spazzata via dal tavolo per sempre."
+            "value" : "Conosci le parole? Dille e %@ denari finiscono nel tuo borsellino."
           }
         }
       }
@@ -6651,6 +7783,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "calata sul tavolo"
+          }
+        }
+      }
+    },
+    "Lamplight on the canals" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lanternes sur les canaux"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lanterne sui canali"
           }
         }
       }
@@ -6715,6 +7863,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ultimo giorno"
+          }
+        }
+      }
+    },
+    "Later" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus tard"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più tardi"
           }
         }
       }
@@ -6927,6 +8091,22 @@
         }
       }
     },
+    "Lemon terraces and harbour cafés" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terrasses de citronniers et cafés du port"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terrazze di limoni e caffè sul porto"
+          }
+        }
+      }
+    },
     "Lessons" : {
       "localizations" : {
         "fr" : {
@@ -7051,6 +8231,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pari, quindi Hugo"
+          }
+        }
+      }
+    },
+    "Linen, hemmed by hand" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du lin, ourlé à la main"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lino, orlato a mano"
           }
         }
       }
@@ -7202,6 +8398,22 @@
         }
       }
     },
+    "Looking. Tap to stop" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recherche… Touchez pour arrêter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerco… Tocca per fermare"
+          }
+        }
+      }
+    },
     "Looking…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7215,6 +8427,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cerco…"
+          }
+        }
+      }
+    },
+    "Lose" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Défaite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sconfitta"
+          }
+        }
+      }
+    },
+    "Lovely" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magnifique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Splendido"
           }
         }
       }
@@ -7381,6 +8625,22 @@
         }
       }
     },
+    "More for a video" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus pour une vidéo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di più per un video"
+          }
+        }
+      }
+    },
     "Most cards" : {
       "localizations" : {
         "fr" : {
@@ -7478,18 +8738,34 @@
         }
       }
     },
-    "Nearby · %lld of %lld seated" : {
+    "Nearby" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "À proximité · %lld joueurs sur %lld"
+            "value" : "À proximité"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nelle vicinanze · %lld giocatori su %lld"
+            "value" : "Nelle vicinanze"
+          }
+        }
+      }
+    },
+    "Nearby · %lld of %lld seated" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À proximité · %1$lld sur %2$lld à table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nelle vicinanze · %1$lld su %2$lld al tavolo"
           }
         }
       }
@@ -7511,18 +8787,18 @@
         }
       }
     },
-    "Nearby tables need both phones on the same Wi-Fi, or Bluetooth on." : {
+    "Nearby tables need both phones on the same Wi-Fi. On another network or on mobile data, ask %@ to open a table with a code instead." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pour les tables à proximité, les deux téléphones doivent être sur le même Wi-Fi, ou avoir le Bluetooth activé."
+            "value" : "Les tables à proximité demandent que les deux téléphones soient sur le même Wi-Fi. Sur un autre réseau ou en données mobiles, demandez plutôt à %@ d'ouvrir une table avec un code."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I tavoli vicini richiedono i due telefoni sulla stessa rete Wi-Fi, o il Bluetooth acceso."
+            "value" : "I tavoli nelle vicinanze richiedono entrambi i telefoni sulla stessa rete Wi-Fi. Su un'altra rete o con i dati mobili, chiedi invece a %@ di aprire un tavolo con un codice."
           }
         }
       }
@@ -7593,6 +8869,38 @@
         }
       }
     },
+    "New cloths for the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De nouveaux tapis pour la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovi panni per il tavolo"
+          }
+        }
+      }
+    },
+    "New in %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau dans la %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità della %@"
+          }
+        }
+      }
+    },
     "New in the album" : {
       "localizations" : {
         "fr" : {
@@ -7637,6 +8945,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avanti"
+          }
+        }
+      }
+    },
+    "Next turn in %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prochain tour dans %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prossimo giro tra %@"
           }
         }
       }
@@ -7706,6 +9030,38 @@
         }
       }
     },
+    "No house games left on the ladder today, so this one would be just for fun." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de parties contre la maison au classement aujourd'hui : celle-ci serait juste pour le plaisir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oggi niente più partite contro la casa in classifica: questa sarebbe solo per divertimento."
+          }
+        }
+      }
+    },
+    "No house games left to count today, so this one is for fun" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de parties contre la maison qui comptent aujourd'hui : celle-ci est pour le plaisir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oggi le partite contro il banco che contano sono finite: questa è per divertimento"
+          }
+        }
+      }
+    },
     "No house games left today" : {
       "localizations" : {
         "fr" : {
@@ -7738,7 +9094,40 @@
         }
       }
     },
+    "No video right now. Tap to try again" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas de publicité pour l'instant. Touchez pour réessayer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna pubblicità adesso. Tocca per riprovare"
+          }
+        }
+      }
+    },
+    "No video to show right now. Try again in a little while." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune publicité à montrer pour l'instant. Réessayez dans un petit moment."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna pubblicità da mostrare adesso. Riprova tra poco."
+          }
+        }
+      }
+    },
     "Nobody found in time means the house sits down instead, in the same seats. Duo is you and a friend against two of the house, rated together. Only real players are rated, and a league reached is yours for the season. A game against the house counts ten times a day; a game against somebody real always counts." : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -7750,6 +9139,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se non si trova nessuno in tempo, al suo posto si siede il banco, negli stessi posti. In duo tu e un amico giocate contro due del banco, valutati insieme. Solo i giocatori reali sono valutati, e una lega raggiunta è tua per la stagione. Una partita contro il banco conta dieci volte al giorno; una partita contro qualcuno di reale conta sempre."
+          }
+        }
+      }
+    },
+    "Nobody found this time" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne trouvé cette fois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno trovato questa volta"
           }
         }
       }
@@ -7814,6 +9219,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Questa settimana non ha segnato nessuno"
+          }
+        }
+      }
+    },
+    "Nobody is free to play just now" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne n'est libre pour l'instant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno è libero in questo momento"
           }
         }
       }
@@ -7980,6 +9401,22 @@
         }
       }
     },
+    "Not found yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas encore trouvée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ancora trovata"
+          }
+        }
+      }
+    },
     "Not now" : {
       "localizations" : {
         "fr" : {
@@ -7992,6 +9429,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non ora"
+          }
+        }
+      }
+    },
+    "Not really" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas vraiment"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non molto"
           }
         }
       }
@@ -8041,6 +9495,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Niente"
+          }
+        }
+      }
+    },
+    "Nothing arrives on this phone: friends sit down from theirs, in With friends → Join a friend's table → Nearby. Both phones need the same Wi-Fi." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien n'arrive sur ce téléphone : vos amis s'assoient depuis le leur, dans Entre amis → Rejoindre la table d'un ami → À proximité. Les deux téléphones doivent être sur le même Wi-Fi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su questo telefono non arriva nulla: gli amici si siedono dal loro, in Con gli amici → Unisciti al tavolo di un amico → Nelle vicinanze. Entrambi i telefoni devono essere sulla stessa rete Wi-Fi."
           }
         }
       }
@@ -8382,7 +9852,6 @@
       }
     },
     "On this phone" : {
-      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -8526,6 +9995,38 @@
         }
       }
     },
+    "One free spin a day from the little wheel in the lobby: denari, a pack, something from the shop, and now and then the gran premio of 2,500." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tour gratuit par jour avec la petite roue de l'accueil : des denari, un paquet, un objet de la boutique, et de temps en temps le gran premio de 2 500."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un giro gratis al giorno con la ruotina nella sala: denari, un pacchetto, qualcosa dal negozio, e ogni tanto il gran premio da 2.500."
+          }
+        }
+      }
+    },
+    "One free turn every day." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tour gratuit chaque jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un giro gratis ogni giorno."
+          }
+        }
+      }
+    },
     "One goal, the same one for everybody." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8555,6 +10056,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Una devi calarla. La domanda è quale puoi cedere."
+          }
+        }
+      }
+    },
+    "One of you opens a table, the others join it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'un de vous ouvre une table, les autres la rejoignent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uno di voi apre un tavolo, gli altri si uniscono."
           }
         }
       }
@@ -8694,13 +10211,13 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En ligne · %lld joueurs sur %lld"
+            "value" : "En ligne · %1$lld sur %2$lld à table"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Online · %lld giocatori su %lld"
+            "value" : "Online · %1$lld su %2$lld al tavolo"
           }
         }
       }
@@ -8801,18 +10318,34 @@
         }
       }
     },
-    "Open one here; friends nearby join it" : {
+    "Open my packs" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ouvrez-en une ici ; les amis à proximité la rejoignent"
+            "value" : "Ouvrir mes paquets"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aprine uno qui; gli amici nelle vicinanze si uniscono"
+            "value" : "Apri i miei pacchetti"
+          }
+        }
+      }
+    },
+    "Open my packs now" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir mes paquets tout de suite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri subito i miei pacchetti"
           }
         }
       }
@@ -8845,22 +10378,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tavolo lasciato aperto"
-          }
-        }
-      }
-    },
-    "Opening a table gives you four letters and a link. Send it however you like — the table waits until they arrive, however long that takes, and nobody has to sign in to anything. Inviting by name instead needs Game Center on both phones." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrir une table vous donne un code de quatre lettres et un lien. Envoyez-les comme vous voulez — la table attend vos amis aussi longtemps qu'il le faut, et personne n'a besoin de compte. Inviter quelqu'un par son nom nécessite en revanche Game Center sur les deux téléphones."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aprire un tavolo ti dà quattro lettere e un link. Mandalo come preferisci — il tavolo aspetta il loro arrivo, per tutto il tempo che serve, e nessuno deve accedere a nulla. Invitare per nome richiede invece Game Center su entrambi i telefoni."
           }
         }
       }
@@ -8942,6 +10459,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Oppure carte la cui somma corrisponde: 3 + 4 fa 7."
+          }
+        }
+      }
+    },
+    "Or invite Game Center friends by name" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ou invitez des amis Game Center par leur nom"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppure invita amici Game Center per nome"
           }
         }
       }
@@ -9399,6 +10932,22 @@
         }
       }
     },
+    "Play the house" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouer contre la maison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gioca contro la casa"
+          }
+        }
+      }
+    },
     "Play to" : {
       "localizations" : {
         "fr" : {
@@ -9443,6 +10992,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gioca la smazzata di oggi e la classifica comincia con te."
+          }
+        }
+      }
+    },
+    "Play with one tap" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouer d'un simple toucher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gioca con un tocco"
           }
         }
       }
@@ -9540,6 +11105,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "E il mazzo %@ · %@, per giocarci"
+          }
+        }
+      }
+    },
+    "plus a %@ pack and %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plus un paquet %1$@ et %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "più un pacchetto %1$@ e %2$@"
+          }
+        }
+      }
+    },
+    "points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "punti"
           }
         }
       }
@@ -9720,6 +11317,22 @@
         }
       }
     },
+    "Prizes for the ladder" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des prix pour le classement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premi per la classifica"
+          }
+        }
+      }
+    },
     "PROMOTED" : {
       "localizations" : {
         "fr" : {
@@ -9800,6 +11413,38 @@
         }
       }
     },
+    "Ranked · against the house" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classée · contre la maison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classificata · contro il banco"
+          }
+        }
+      }
+    },
+    "Ranked game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partie classée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partita classificata"
+          }
+        }
+      }
+    },
     "Ranked, or anyone" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9846,6 +11491,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "File di frecce, fitte"
+          }
+        }
+      }
+    },
+    "Rate Scopa" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noter Scopa"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valuta Scopa"
+          }
+        }
+      }
+    },
+    "Rate Scopa on the App Store" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noter Scopa sur l'App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valuta Scopa sull'App Store"
           }
         }
       }
@@ -9965,6 +11642,22 @@
         }
       }
     },
+    "Region complete" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Région terminée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regione completata"
+          }
+        }
+      }
+    },
     "Regular" : {
       "localizations" : {
         "fr" : {
@@ -10046,6 +11739,7 @@
       }
     },
     "Resume that one instead" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -10141,7 +11835,40 @@
         }
       }
     },
+    "run of %lld kept" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "série de %lld gardée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "serie di %lld salva"
+          }
+        }
+      }
+    },
+    "RUN OF %lld KEPT" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SÉRIE DE %lld GARDÉE"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SERIE DI %lld SALVA"
+          }
+        }
+      }
+    },
     "Rush, over and under" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -10201,6 +11928,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stesso numero: il tuo 4 prende il 4."
+          }
+        }
+      }
+    },
+    "Same Wi-Fi, no code to send" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Même Wi-Fi, aucun code à envoyer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stessa rete Wi-Fi, nessun codice da mandare"
           }
         }
       }
@@ -10567,6 +12310,22 @@
         }
       }
     },
+    "See what's new" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir les nouveautés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri le novità"
+          }
+        }
+      }
+    },
     "Send the code" : {
       "localizations" : {
         "fr" : {
@@ -10728,6 +12487,7 @@
       }
     },
     "Sewn round the edge" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -10938,6 +12698,7 @@
       }
     },
     "Silk, shot with gold thread" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -11177,6 +12938,22 @@
         }
       }
     },
+    "Something from the shop" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un article de la boutique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualcosa dal negozio"
+          }
+        }
+      }
+    },
     "Something here takes" : {
       "localizations" : {
         "fr" : {
@@ -11189,6 +12966,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qui qualcosa prende"
+          }
+        }
+      }
+    },
+    "Something is waiting for you" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quelque chose vous attend"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'è qualcosa per te"
           }
         }
       }
@@ -11430,6 +13223,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sole"
+          }
+        }
+      }
+    },
+    "Sun, salt and long games" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soleil, sel et longues parties"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sole, sale e partite lunghe"
+          }
+        }
+      }
+    },
+    "Sweep %lld scope or more" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faire au moins %lld scope"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai almeno %lld scope"
           }
         }
       }
@@ -11819,6 +13644,22 @@
         }
       }
     },
+    "Tap a card to play it" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez une carte pour la jouer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca una carta per giocarla"
+          }
+        }
+      }
+    },
     "Tap a card, or swipe it up to play" : {
       "localizations" : {
         "fr" : {
@@ -11899,6 +13740,22 @@
         }
       }
     },
+    "Tap the parcel to open it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez le paquet pour l'ouvrir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca il pacco per aprirlo."
+          }
+        }
+      }
+    },
     "Tasks" : {
       "localizations" : {
         "fr" : {
@@ -11960,6 +13817,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Di' la parola a un amico come vuoi — un messaggio, a voce, al telefono. Chi la scrive per primo aspetta al tavolo che arrivi l'altro."
+          }
+        }
+      }
+    },
+    "Tell us what is missing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites-nous ce qui manque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dicci cosa manca"
+          }
+        }
+      }
+    },
+    "Thank you for playing Scopa. It is kind of you to keep a seat at our table, so the house has put something by for you." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merci de jouer à Scopa. C'est gentil de garder une place à notre table, alors la maison vous a mis quelque chose de côté."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie di giocare a Scopa. È gentile da parte tua tenere un posto al nostro tavolo, così la casa ha messo da parte qualcosa per te."
           }
         }
       }
@@ -12126,6 +14016,22 @@
         }
       }
     },
+    "That was a good long sitting. If the table treats you well, a few stars on the App Store help other players find it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voilà une belle séance de jeu. Si la table vous réussit, quelques étoiles sur l'App Store aident d'autres joueurs à la trouver."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È stata una bella seduta. Se il tavolo ti tratta bene, qualche stella sull'App Store aiuta altri giocatori a trovarlo."
+          }
+        }
+      }
+    },
     "The %@ is a card the primiera counts. Keep it if you can." : {
       "localizations" : {
         "fr" : {
@@ -12271,6 +14177,7 @@
       }
     },
     "The cloth on it" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -12464,6 +14371,22 @@
         }
       }
     },
+    "The four letters they got" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les quatre lettres qu'il a reçues"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le quattro lettere che ha ricevuto"
+          }
+        }
+      }
+    },
     "The Golfo card back, and this deck to play with" : {
       "localizations" : {
         "fr" : {
@@ -12481,6 +14404,7 @@
       }
     },
     "The good cloth, for company" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -12529,6 +14453,22 @@
         }
       }
     },
+    "The house neither adds to a run nor ends it" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La maison n'allonge pas votre série et ne la casse pas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il banco non allunga la tua serie e non la interrompe"
+          }
+        }
+      }
+    },
     "The house ruling, crossed fine" : {
       "localizations" : {
         "fr" : {
@@ -12562,6 +14502,7 @@
       }
     },
     "The house takes the chair if nobody is found." : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -12626,6 +14567,7 @@
       }
     },
     "The ladder has had its games from the house today" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -12853,6 +14795,22 @@
         }
       }
     },
+    "The new solo campaign: region by region, stage by stage, against players who get better as you go. Up to three stars a stage, and a prize at the end of every region." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La nouvelle campagne solo : région par région, étape par étape, face à des joueurs de plus en plus forts. Jusqu'à trois étoiles par étape, et un prix au bout de chaque région."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La nuova campagna in solitario: regione dopo regione, tappa dopo tappa, contro giocatori sempre più bravi. Fino a tre stelle per tappa, e un premio alla fine di ogni regione."
+          }
+        }
+      }
+    },
     "The number in the corner is the whole game: it is what the card takes with. The three court cards are simply 8, 9 and 10." : {
       "localizations" : {
         "fr" : {
@@ -12865,6 +14823,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il numero nell'angolo è tutto il gioco: è con quello che la carta prende. Le tre figure valgono semplicemente 8, 9 e 10."
+          }
+        }
+      }
+    },
+    "The odds" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les chances"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le probabilità"
           }
         }
       }
@@ -12977,6 +14951,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La strada"
+          }
+        }
+      }
+    },
+    "The road is yours" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La route est à vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La strada è tua"
           }
         }
       }
@@ -13224,6 +15214,22 @@
         }
       }
     },
+    "The star marks the card I would play." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'étoile marque la carte que je jouerais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La stella indica la carta che giocherei."
+          }
+        }
+      }
+    },
     "The table" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13257,34 +15263,34 @@
         }
       }
     },
-    "The table is swept. No more ads on this device — and the tables you set can share what you end level on." : {
+    "The table is swept: %@ denari are in your purse — and the tables you set can share what you end level on." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La table est balayée. Plus de publicité sur cet appareil — et aux tables que vous ouvrez, une catégorie à égalité peut rapporter un point à chacun."
+            "value" : "La table est balayée : %@ deniers sont dans votre bourse — et aux tables que vous ouvrez, une catégorie à égalité peut rapporter un point à chacun."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il tavolo è spazzato. Niente più pubblicità su questo dispositivo — e i tavoli che apri possono dividere le categorie in parità."
+            "value" : "Il tavolo è pulito: %@ denari sono nel tuo borsellino — e i tavoli che apri possono dividere le categorie in parità."
           }
         }
       }
     },
-    "The table is swept. No more ads on this device." : {
+    "The table is swept: %@ denari are in your purse." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La table est balayée. Plus de publicités sur cet appareil."
+            "value" : "La table est balayée : %@ deniers sont dans votre bourse."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il tavolo è pulito. Niente più pubblicità su questo dispositivo."
+            "value" : "Il tavolo è pulito: %@ denari sono nel tuo borsellino."
           }
         }
       }
@@ -13322,6 +15328,7 @@
       }
     },
     "The table you left is kept on this phone until it is played out." : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -13414,6 +15421,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La sfida della settimana"
+          }
+        }
+      }
+    },
+    "The wheel" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La roue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La ruota"
           }
         }
       }
@@ -13596,6 +15619,54 @@
         }
       }
     },
+    "Thirty tables across Italy. Win one to open the road to the next." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trente tables à travers l'Italie. Gagnez-en une pour ouvrir la route de la suivante."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trenta tavoli in giro per l'Italia. Vincine uno per aprire la strada al prossimo."
+          }
+        }
+      }
+    },
+    "This code has expired." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code a expiré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo codice è scaduto."
+          }
+        }
+      }
+    },
+    "This code has run out." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code est épuisé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo codice è esaurito."
+          }
+        }
+      }
+    },
     "This is where the network's ad plays.\nSweep it away with a coup de balai." : {
       "localizations" : {
         "fr" : {
@@ -13661,7 +15732,6 @@
       }
     },
     "This phone, a code, or Game Center" : {
-      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -13678,6 +15748,7 @@
       }
     },
     "This season" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -13722,6 +15793,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quelle carte non sono sul tavolo"
+          }
+        }
+      }
+    },
+    "Three at the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À trois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In tre al tavolo"
           }
         }
       }
@@ -13806,6 +15893,22 @@
         }
       }
     },
+    "Three stars at %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trois étoiles à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre stelle a %@"
+          }
+        }
+      }
+    },
     "Three tasks, the same ones for everybody." : {
       "localizations" : {
         "fr" : {
@@ -13870,6 +15973,22 @@
         }
       }
     },
+    "Tiles from a hotel by the sea" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les carreaux d'un hôtel au bord de la mer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le piastrelle di un albergo sul mare"
+          }
+        }
+      }
+    },
     "Time to play a card" : {
       "localizations" : {
         "fr" : {
@@ -13886,7 +16005,24 @@
         }
       }
     },
+    "To %lld points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En %lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ai %lld punti"
+          }
+        }
+      }
+    },
     "to lose" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -13903,6 +16039,7 @@
       }
     },
     "to win" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -14014,6 +16151,38 @@
         }
       }
     },
+    "Today's prize" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lot du jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il premio di oggi"
+          }
+        }
+      }
+    },
+    "Today's turn has been taken." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le tour du jour a déjà été joué."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il giro di oggi è già stato fatto."
+          }
+        }
+      }
+    },
     "Took %@" : {
       "localizations" : {
         "fr" : {
@@ -14094,6 +16263,22 @@
         }
       }
     },
+    "Turn it on in Settings, and a card with only one move goes down the moment you touch it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez-le dans les Réglages : une carte qui n'a qu'un coup possible se pose dès que vous la touchez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attivalo nelle Impostazioni: una carta con una sola mossa possibile va giù appena la tocchi."
+          }
+        }
+      }
+    },
     "Turn on Local Network for this app in Settings, then try again" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -14107,6 +16292,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Attiva la rete locale per questa app in Impostazioni, poi riprova"
+          }
+        }
+      }
+    },
+    "Turn the wheel" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tourner la roue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira la ruota"
           }
         }
       }
@@ -14240,6 +16441,22 @@
         }
       }
     },
+    "Type a coupon or a friend's code at the foot of the shop, and whatever it holds is yours." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez un coupon ou le code d'un ami en bas de la boutique, et ce qu'il contient est à vous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci un coupon o il codice di un amico in fondo al negozio, e quello che contiene è tuo."
+          }
+        }
+      }
+    },
     "Unranked" : {
       "localizations" : {
         "fr" : {
@@ -14316,6 +16533,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Usala"
+          }
+        }
+      }
+    },
+    "Velvet, piped with gold cord" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du velours, passepoilé de cordon d'or"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velluto, bordato di cordone d'oro"
           }
         }
       }
@@ -14411,6 +16644,22 @@
         }
       }
     },
+    "Waiting for you in the album" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ils vous attendent dans l'album"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ti aspettano nell'album"
+          }
+        }
+      }
+    },
     "Waiting for your friend" : {
       "localizations" : {
         "fr" : {
@@ -14472,6 +16721,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guarda una breve pubblicità"
+          }
+        }
+      }
+    },
+    "Watch a short ad for more" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regardez une courte publicité pour en gagner plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda una breve pubblicità per guadagnare di più"
           }
         }
       }
@@ -14622,6 +16887,22 @@
         }
       }
     },
+    "Welcome to the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bienvenue à table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benvenuto al tavolo"
+          }
+        }
+      }
+    },
     "What a sweep looks like" : {
       "localizations" : {
         "fr" : {
@@ -14650,6 +16931,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il suono di una scopa"
+          }
+        }
+      }
+    },
+    "What came with version %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce qu'apporte la version %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cosa porta la versione %@"
           }
         }
       }
@@ -14862,6 +17159,22 @@
         }
       }
     },
+    "What's new" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveautés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità"
+          }
+        }
+      }
+    },
     "Whatever chair you get" : {
       "localizations" : {
         "fr" : {
@@ -14906,6 +17219,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quando tutti hanno giocato le loro tre, se ne distribuiscono altre tre, e così via finché il mazzo è finito."
+          }
+        }
+      }
+    },
+    "When they chose Nearby" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S'il a choisi À proximité"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se ha scelto Nelle vicinanze"
+          }
+        }
+      }
+    },
+    "Where every road ends" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Là où mènent tous les chemins"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dove finiscono tutte le strade"
           }
         }
       }
@@ -15009,6 +17354,7 @@
       }
     },
     "Who has played ranked, highest first." : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -15120,6 +17466,22 @@
         }
       }
     },
+    "Win" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Victoire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vittoria"
+          }
+        }
+      }
+    },
     "Win ^[%lld cappotto](inflect: true)" : {
       "localizations" : {
         "fr" : {
@@ -15152,6 +17514,22 @@
         }
       }
     },
+    "Win by %lld points or more" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagner d'au moins %lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinci con almeno %lld punti di scarto"
+          }
+        }
+      }
+    },
     "Win the day's deal %lld times" : {
       "localizations" : {
         "fr" : {
@@ -15164,6 +17542,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vinci la smazzata del giorno %lld volte"
+          }
+        }
+      }
+    },
+    "Win the game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagner la partie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinci la partita"
           }
         }
       }
@@ -15267,6 +17661,22 @@
         }
       }
     },
+    "With a code" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec un code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con un codice"
+          }
+        }
+      }
+    },
     "With friends" : {
       "localizations" : {
         "fr" : {
@@ -15279,6 +17689,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Con gli amici"
+          }
+        }
+      }
+    },
+    "Won at %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Victoire à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vittoria a %@"
           }
         }
       }
@@ -15655,6 +18081,38 @@
         }
       }
     },
+    "You have already used a friend's code. There is one per player." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà utilisé le code d'un ami. Il n'y en a qu'un par joueur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai già usato il codice di un amico. Ce n'è uno per giocatore."
+          }
+        }
+      }
+    },
+    "You have already used this code." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà utilisé ce code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai già usato questo codice."
+          }
+        }
+      }
+    },
     "You have to take" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -15688,6 +18146,22 @@
         }
       }
     },
+    "You own everything on that shelf, so it paid in denari." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez déjà tout sur ce rayon, alors il paie en deniers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai già tutto su quello scaffale, quindi paga in denari."
+          }
+        }
+      }
+    },
     "You play as %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -15701,6 +18175,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Giochi come %@"
+          }
+        }
+      }
+    },
+    "You seem to be offline. Try again once you are connected." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous semblez hors ligne. Réessayez une fois connecté."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sembri offline. Riprova quando sei connesso."
           }
         }
       }
@@ -15932,6 +18422,22 @@
         }
       }
     },
+    "Your campaign reward could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre récompense de campagne n'a pas pu être enregistrée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile salvare la ricompensa della campagna."
+          }
+        }
+      }
+    },
     "Your challenge reward could not be saved." : {
       "localizations" : {
         "fr" : {
@@ -15944,6 +18450,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il tuo premio della sfida non è stato salvato."
+          }
+        }
+      }
+    },
+    "Your coupon could not be saved. Try the code again." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre coupon n'a pas pu être enregistré. Saisissez le code à nouveau."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile salvare il tuo coupon. Inserisci di nuovo il codice."
           }
         }
       }
@@ -16044,6 +18566,22 @@
         }
       }
     },
+    "Your friend opens a table with Nearby first. Both phones need to be on the same Wi-Fi." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre ami ouvre d'abord une table À proximité. Les deux téléphones doivent être sur le même Wi-Fi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo amico apre prima un tavolo Nelle vicinanze. Entrambi i telefoni devono essere sulla stessa rete Wi-Fi."
+          }
+        }
+      }
+    },
     "Your friend's code is used. There is one per player." : {
       "localizations" : {
         "fr" : {
@@ -16124,6 +18662,22 @@
         }
       }
     },
+    "Your gift could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre cadeau n'a pas pu être enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile salvare il tuo regalo."
+          }
+        }
+      }
+    },
     "Your initial" : {
       "localizations" : {
         "fr" : {
@@ -16141,6 +18695,7 @@
       }
     },
     "your league holds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -16184,6 +18739,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La tua lega si mantiene a %@"
+          }
+        }
+      }
+    },
+    "Your league holds if you lose" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre ligue tient même si vous perdez"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua lega resta anche se perdi"
           }
         }
       }
@@ -16365,6 +18936,22 @@
         }
       }
     },
+    "Your prize from the wheel could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre lot de la roue n'a pas pu être enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il premio della ruota non è stato salvato."
+          }
+        }
+      }
+    },
     "Your season reward could not be saved." : {
       "localizations" : {
         "fr" : {
@@ -16441,6 +19028,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il tuo tavolo"
+          }
+        }
+      }
+    },
+    "Your table is open nearby" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre table est ouverte à proximité"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo tavolo è aperto nelle vicinanze"
           }
         }
       }
@@ -16525,6 +19128,22 @@
         }
       }
     },
+    "Yours now, in the shop." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il est à vous, dans la boutique."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora è tuo, nel negozio."
+          }
+        }
+      }
+    },
     "Yours. Put it on in the shop." : {
       "localizations" : {
         "fr" : {
@@ -16537,246 +19156,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "È tuo. Mettilo nella bottega."
-          }
-        }
-      }
-    },
-    "Play with one tap" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jouer d'un simple toucher"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gioca con un tocco"
-          }
-        }
-      }
-    },
-    "A card with only one move is played on the first tap, not the second" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une carte qui n'a qu'un seul coup possible est jouée au premier toucher, pas au second"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una carta con una sola mossa possibile si gioca al primo tocco, non al secondo"
-          }
-        }
-      }
-    },
-    "Tap a card to play it" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez une carte pour la jouer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tocca una carta per giocarla"
-          }
-        }
-      }
-    },
-    "The star marks the card I would play." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'étoile marque la carte que je jouerais."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La stella indica la carta che giocherei."
-          }
-        }
-      }
-    },
-    "Double tap to put it down" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez deux fois pour la reposer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tocca due volte per rimetterla giù"
-          }
-        }
-      }
-    },
-    "Have a code?" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous avez un code ?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hai un codice?"
-          }
-        }
-      }
-    },
-    "From the house, or from the friend who brought you. Each code counts once per player." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De la maison, ou de l'ami qui vous a fait venir. Chaque code ne compte qu'une fois par joueur."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dalla casa, o dall'amico che ti ha portato qui. Ogni codice vale una volta per giocatore."
-          }
-        }
-      }
-    },
-    "You have already used this code." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous avez déjà utilisé ce code."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hai già usato questo codice."
-          }
-        }
-      }
-    },
-    "This code has expired." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce code a expiré."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo codice è scaduto."
-          }
-        }
-      }
-    },
-    "This code has run out." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce code est épuisé."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo codice è esaurito."
-          }
-        }
-      }
-    },
-    "You seem to be offline. Try again once you are connected." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous semblez hors ligne. Réessayez une fois connecté."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sembri offline. Riprova quando sei connesso."
-          }
-        }
-      }
-    },
-    "Your coupon could not be saved. Try the code again." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre coupon n'a pas pu être enregistré. Saisissez le code à nouveau."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non è stato possibile salvare il tuo coupon. Inserisci di nuovo il codice."
-          }
-        }
-      }
-    },
-    "You have already used a friend's code. There is one per player." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous avez déjà utilisé le code d'un ami. Il n'y en a qu'un par joueur."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hai già usato il codice di un amico. Ce n'è uno per giocatore."
-          }
-        }
-      }
-    },
-    "Not found yet" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas encore trouvée"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non ancora trovata"
-          }
-        }
-      }
-    },
-    "Found %lld times" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trouvée %lld fois"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trovata %lld volte"
           }
         }
       }

@@ -17,8 +17,6 @@ struct AlbumPrizes: View {
 
     @Environment(\.locale) private var locale
     @Environment(\.tableFelt) private var felt
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var breathing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -43,16 +41,20 @@ struct AlbumPrizes: View {
     private var crown: some View {
         let done = album.isComplete
         return HStack(spacing: 18) {
-            ZStack {
-                // The bloom behind the metal. Breathing, so the case reads as lit rather
-                // than printed; it is the one thing on the page that moves on its own.
-                Circle()
-                    .fill(RadialGradient(colors: [Palette.goldLight.opacity(breathing ? 0.55 : 0.32), .clear],
-                                         center: .center, startRadius: 0, endRadius: 72))
-                    .frame(width: 144, height: 144)
-                SeatBadge(name: name, tint: Palette.seat(0), size: 58, mark: .settebello, livery: livery)
-                    .saturation(done ? 1 : 0.55)
-                    .scaleEffect(breathing ? 1.03 : 1)
+            // The bloom behind the metal. Breathing, so the case reads as lit rather than
+            // printed; it is the one thing on the page that moves on its own, so it runs on
+            // the slow ambient clock rather than a `repeatForever` at the display's rate.
+            AmbientClock { time in
+                let breath = Self.breath(at: time)
+                ZStack {
+                    Circle()
+                        .fill(RadialGradient(colors: [Palette.goldLight.opacity(0.32 + 0.23 * breath), .clear],
+                                             center: .center, startRadius: 0, endRadius: 72))
+                        .frame(width: 144, height: 144)
+                    SeatBadge(name: name, tint: Palette.seat(0), size: 58, mark: .settebello, livery: livery)
+                        .saturation(done ? 1 : 0.55)
+                        .scaleEffect(1 + 0.03 * breath)
+                }
             }
             .frame(width: 104, height: 112)
             VStack(alignment: .leading, spacing: 6) {
@@ -83,11 +85,13 @@ struct AlbumPrizes: View {
                 }
         }
         .shadow(color: Palette.gold.opacity(0.25), radius: 18, y: 6)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) { breathing = true }
-        }
         .accessibilityElement(children: .combine)
+    }
+
+    /// In and out over 2.2 seconds each way, eased at both ends: 0 is out, 1 is in.
+    private static func breath(at time: TimeInterval) -> Double {
+        let along = time.cycle(of: 4.4) * 2
+        return UnitCurve.easeInOut.value(at: along <= 1 ? along : 2 - along)
     }
 
     /// Won, or how many cards stand between here and it.

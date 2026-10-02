@@ -34,7 +34,8 @@ struct SeasonBoardSheet: View {
     }
 
     var body: some View {
-        SheetScaffold(title: "This season", subtitle: "Who has played ranked, highest first.",
+        // Named as the row that opens it, so the sheet is the thing that was tapped.
+        SheetScaffold(title: "The season's ladder", subtitle: "Everyone in ranked this season, highest league first.",
                       close: { dismiss() }) {
             VStack(spacing: 0) {
                 GlassSegments(options: Who.allCases, selection: $who) { $0.title }
@@ -211,7 +212,11 @@ struct SeasonBoardSheet: View {
     }
 }
 
-/// One player's season: place, league medal, name, title and wins, and the division bar.
+/// One player's season: place, league medal and name; the league with its division bar
+/// beside it; and on the right the win rate, spelled out as wins out of games.
+///
+/// The bar used to sit under a bare "70%", where it read as a gauge of that number and the
+/// number read as some kind of accuracy. Each now sits next to the thing it measures.
 private struct SeasonRow: View {
     let place: Int
     let row: Ladder.SeasonBoard.Row
@@ -236,23 +241,41 @@ private struct SeasonRow: View {
                     .lineLimit(1)
                 grade
             }
-            Spacer(minLength: 0)
-            LeagueBar(metal: .league(row.standing.league), progress: Double(row.standing.progress) / 100,
-                      width: 52)
+            Spacer(minLength: 4)
+            record
         }
         .ladderPanel(isYou: isYou)
         .accessibilityElement(children: .combine)
     }
 
+    /// The league, and how far into its division: the bar belongs to the title it follows.
     private var grade: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 7) {
             Text(verbatim: row.standing.leagueTitle(locale: locale))
-            Text(verbatim: "·")
-            Text("^[\(row.wins) win](inflect: true)").monospacedDigit()
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Palette.onTableSoft)
+                .lineLimit(1)
+            LeagueBar(metal: .league(row.standing.league), progress: Double(row.standing.progress) / 100,
+                      width: 34)
         }
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(Palette.onTableSoft)
-        .lineLimit(1)
+    }
+
+    /// "70% won" over "28 of 40": a percentage with its word, and the count it comes from.
+    @ViewBuilder private var record: some View {
+        if let rate = Ladder.winRate(wins: row.wins, games: row.games, locale: locale) {
+            VStack(alignment: .trailing, spacing: 3) {
+                Text("\(rate) won")
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.onTable)
+                Text("\(row.wins) of \(row.games)")
+                    .font(.system(size: 11, weight: .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.onTableSoft)
+            }
+            .lineLimit(1)
+            .fixedSize()
+        }
     }
 }
 

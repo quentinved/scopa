@@ -21,6 +21,7 @@ struct SettingsSheet: View {
     private let record = Achievements.record
     private let level = Experience.level
     @State private var showsRules = false
+    @State private var showsWhatsNew = false
     @State private var showsPostbox = false
     /// Opened by the row, and by `-album` on the way in.
     @State private var showsAlbum = DebugLaunch.showsAlbum
@@ -72,6 +73,7 @@ struct SettingsSheet: View {
         // Committed on focus loss too, so leaving by a swipe keeps the name.
         .onChange(of: isTypingName) { _, typing in if !typing { commitName() } }
         .sheet(isPresented: $showsRules) { RulesView() }
+        .sheet(isPresented: $showsWhatsNew) { WhatsNewSheet() }
         .confirmationDialog("What would you like to tell us?", isPresented: $showsPostbox,
                             titleVisibility: .visible) {
             Button("Something is wrong") { write(.problem) }
@@ -91,7 +93,7 @@ struct SettingsSheet: View {
         }
     }
 
-    private var waiting: Int { store.albumBook.waiting }
+    private var waiting: Int { store.albumBook.waiting(on: .album) }
 
     /// What the row says it holds: what is waiting to be opened if anything is, and how
     /// far along the album is when nothing is.
@@ -183,10 +185,20 @@ struct SettingsSheet: View {
         SettingsGroup(caption: "Help") {
             SettingsRow(symbol: "book.pages", tint: Palette.gold, title: "How to play",
                         detail: "The deck, the takes, the scopa and the points") { showsRules = true }
+            if let release = Releases.latestNotes {
+                Rule()
+                SettingsRow(symbol: "gift.fill", tint: Palette.terracotta, title: "What's new",
+                            detail: "What came with version \(release.version)") { showsWhatsNew = true }
+            }
             Rule()
             SettingsRow(symbol: "envelope.fill", tint: Palette.terracotta, title: "Write to us",
                         detail: "A problem, or an idea for the game") {
                 showsPostbox = true
+            }
+            Rule()
+            SettingsRow(symbol: "star.fill", tint: Palette.gold, title: "Rate Scopa on the App Store",
+                        detail: "A few stars help other players find the table") {
+                openURL(ReviewPrompt.writeReviewURL)
             }
             if ads.consent.offersPrivacyChoices {
                 Rule()
@@ -575,8 +587,8 @@ private struct LookRow: View {
 
 // MARK: - Coup de balai
 
-/// A passphrase that removes the ads for good. A soft gate for friends and family,
-/// folded away until asked for.
+/// A passphrase that pays a purse of denari. A soft gate for friends and family, folded
+/// away until asked for. It used to remove the ads too; see `AdsStore.phraseRemovesAds`.
 private struct CoupDeBalai: View {
     let ads: AdsStore
     /// The same phrase also enables the house tie rule on tables this phone sets up.
@@ -589,15 +601,19 @@ private struct CoupDeBalai: View {
 
     /// The cloth in play, so the colour goes with the table.
     @Environment(\.tableFelt) private var felt
+    @Environment(\.locale) private var locale
+
+    /// What the phrase pays, grouped the way the reader writes numbers.
+    private var gift: String { PurseStore.sweepGift.coins.formatted(.number.locale(locale)) }
 
     var body: some View {
         Group {
-            if ads.adsAreOn { invitation } else { swept }
+            if ads.isSwept { swept } else { invitation }
         }
-        .animation(.spring(duration: 0.45, bounce: 0.2), value: ads.adsAreOn)
+        .animation(.spring(duration: 0.45, bounce: 0.2), value: ads.isSwept)
         .animation(.spring(duration: 0.35, bounce: 0.15), value: isOpen)
-        .sensoryFeedback(.success, trigger: ads.adsAreOn)
-        .sound(.purchase, trigger: ads.adsAreOn)
+        .sensoryFeedback(.success, trigger: ads.isSwept)
+        .sound(.purchase, trigger: ads.isSwept)
     }
 
     private var invitation: some View {
@@ -637,7 +653,7 @@ private struct CoupDeBalai: View {
     private var form: some View {
         VStack(alignment: .leading, spacing: 10) {
             Rule()
-            Text("Know the words? Say them and the ads are swept off the table for good.")
+            Text("Know the words? Say them and \(gift) denari land in your purse.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.onTableSoft)
                 .fixedSize(horizontal: false, vertical: true)
@@ -675,8 +691,8 @@ private struct CoupDeBalai: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Palette.cream)
                 Text(store.knowsTieRules
-                     ? "The table is swept. No more ads on this device — and the tables you set can share what you end level on."
-                     : "The table is swept. No more ads on this device.")
+                     ? "The table is swept: \(gift) denari are in your purse — and the tables you set can share what you end level on."
+                     : "The table is swept: \(gift) denari are in your purse.")
                     .font(.system(size: 13))
                     .foregroundStyle(Palette.cream.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)

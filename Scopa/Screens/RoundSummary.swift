@@ -39,6 +39,8 @@ struct RoundSummary: View {
     var awaitingLadder = false
     /// Deals the same table again, where this phone is allowed to. Nil for a guest.
     var again: (() -> Void)? = nil
+    /// The way out of a finished game. A campaign table goes back to its map.
+    var leaveTitle: LocalizedStringKey = "Back to the lobby"
     let action: () -> Void
 
     /// How far the telling has got. Zero is the caption and the totals before the round.
@@ -400,11 +402,11 @@ struct RoundSummary: View {
             if isFinal, let again {
                 Button("Play again", action: again)
                     .buttonStyle(FilledButtonStyle(minHeight: stage.pick(tall: 56, wide: 48)))
-                Button("Back to the lobby", action: action)
+                Button(leaveTitle, action: action)
                     .buttonStyle(FilledButtonStyle(tint: Palette.linen, foreground: Palette.ink,
                                                    minHeight: stage.pick(tall: 50, wide: 44)))
             } else {
-                Button(isFinal ? "Back to the lobby" : "Deal again", action: action)
+                Button(isFinal ? leaveTitle : "Deal again", action: action)
                     .buttonStyle(FilledButtonStyle(minHeight: stage.pick(tall: 56, wide: 48)))
             }
         }

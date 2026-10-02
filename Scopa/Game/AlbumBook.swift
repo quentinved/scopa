@@ -120,14 +120,41 @@ final class AlbumBook {
         gifts = Self.gifts(in: defaults)
     }
 
-    /// The pack the next tap opens: a gift if one is waiting, the earned pack otherwise.
-    var nextTier: PackTier { gifts.first ?? .mazzetto }
+    // MARK: The two shelves
 
-    /// A pack handed over rather than played for, left waiting in the album like an
-    /// earned one. The caller says once; the book does not know why it was given.
+    /// Every pack waiting, in the order they open: the gifts oldest first, then the earned.
+    ///
+    /// One queue for both shelves, split only when read. A shop pack is opened in the shop
+    /// and a card pack in the album, but they are kept as they always were — so a shop
+    /// pack queued by an older build simply turns up in the shop, never lost and never
+    /// twice, and the queue still travels between devices as the same two preferences.
+    /// Never more gifts than packs: a device that heard about one and not the other must
+    /// not conjure a pack.
+    private var queue: [PackTier] {
+        let given = Array(gifts.prefix(waiting))
+        return given + Array(repeating: .mazzetto, count: waiting - given.count)
+    }
+
+    /// How many packs wait on one shelf: cards in the album, the shop's own in the shop.
+    func waiting(on shelf: PackTier.Shelf) -> Int { queue.count { $0.shelf == shelf } }
+
+    /// The pack the next tap on that shelf opens, if any is waiting there.
+    func next(on shelf: PackTier.Shelf) -> PackTier? { queue.first { $0.shelf == shelf } }
+
+    /// The card pack the album's next tap opens: a gift if one is waiting, the earned pack
+    /// otherwise.
+    var nextTier: PackTier { next(on: .album) ?? .mazzetto }
+
+    /// The album's red dot. A shop pack is never news there, including one an older build
+    /// counted, so the dot is never more than the card packs it leads to.
+    var albumNews: Int { min(unannounced, waiting(on: .album)) }
+
+    /// A pack handed over rather than played for, left waiting like an earned one — a card
+    /// pack in the album, a shop pack in the shop. The caller says once; the book does not
+    /// know why it was given.
     func give(_ tier: PackTier) {
         waiting += 1
-        unannounced += 1
+        if tier.shelf == .album { unannounced += 1 }
         if tier != .mazzetto {
             gifts.append(tier)
             storeGifts()
@@ -173,18 +200,16 @@ final class AlbumBook {
         open(tier: tier, owned: owned)
     }
 
-    /// One earned pack, drawn and put into the album. Nil when none is waiting.
-    func openOne(owned: Set<ShopItem.ID> = []) -> Opening? {
-        guard waiting > 0 else { return nil }
-        let tier = nextTier
+    /// The next pack waiting on one shelf, drawn and opened. Nil when none is waiting there.
+    func openOne(on shelf: PackTier.Shelf = .album, owned: Set<ShopItem.ID> = []) -> Opening? {
+        guard let tier = next(on: shelf) else { return nil }
+        // Trimmed to the packs first, so the count and the list agree before one goes.
+        gifts = Array(gifts.prefix(waiting))
+        if let index = gifts.firstIndex(where: { $0.shelf == shelf }) { gifts.remove(at: index) }
         waiting -= 1
-        // Never more gifts than packs: the two travel as separate preferences, and a
-        // device that heard about one and not the other must not conjure a pack.
-        if !gifts.isEmpty { gifts.removeFirst() }
-        if gifts.count > waiting { gifts = Array(gifts.prefix(waiting)) }
         storeGifts()
         defaults.set(waiting, forKey: Key.waiting)
-        markSeen()
+        if shelf == .album { markSeen() }
         return open(tier: tier, owned: owned)
     }
 
@@ -326,10 +351,23 @@ final class AlbumBook {
         }
         albums[volume] = started
         store(volume)
+        // Earned packs only: gifts left over from the last run are `-giftPacks`'s to plant.
         self.waiting = packs
         self.unannounced = packs
+        self.gifts = []
+        storeGifts()
         defaults.set(packs, forKey: Key.waiting)
         defaults.set(packs, forKey: Key.announced)
+    }
+
+    /// Leaves exactly these packs waiting as gifts, each on its own shelf, beside the earned
+    /// ones already there: `-giftPacks forziere,reliquia`.
+    func pretend(gifts tiers: [PackTier]) {
+        let earned = waiting - min(gifts.count, waiting)
+        gifts = tiers.filter { $0 != .mazzetto }
+        waiting = earned + gifts.count
+        storeGifts()
+        defaults.set(waiting, forKey: Key.waiting)
     }
     #endif
 }

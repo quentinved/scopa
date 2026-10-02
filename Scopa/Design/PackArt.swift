@@ -30,8 +30,6 @@ struct PackArt: View {
     @Environment(\.cardBack) private var back
     /// What the piece drops on the cloth, so the shadow is the table's own colour.
     @Environment(\.tableFelt) private var felt
-    @State private var glint: CGFloat = -1
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var height: CGFloat { width * 1.42 }
 
@@ -56,12 +54,6 @@ struct PackArt: View {
         .padding(PackLook.hasRays(tier) ? width * 0.3 : 0)
         .frame(width: PackArt.footprint(tier, width: width).width,
                height: PackArt.footprint(tier, width: width).height)
-        .onAppear {
-            guard alive, !reduceMotion, tier != .mazzetto else { return }
-            withAnimation(.linear(duration: 2.6).delay(0.5).repeatForever(autoreverses: false)) {
-                glint = 1.6
-            }
-        }
     }
 
     // MARK: The earned pack
@@ -130,7 +122,21 @@ struct PackArt: View {
         .frame(width: width, height: height)
     }
 
+    /// Where the sheen is across the pack, -1 to 1.6 widths: half a second waiting off the
+    /// edge, then 2.6 seconds across. On the ambient clock, so both halves of a pack being
+    /// torn shine as one, and under Reduce Motion it waits off the edge for good.
+    private static func glint(at time: TimeInterval) -> CGFloat {
+        max(CGFloat(time.cycle(of: 3.1) * 3.1) - 1.5, -1)
+    }
+
     private var glintSweep: some View {
+        AmbientClock { time in
+            sheen.offset(x: Self.glint(at: time) * width * 1.5)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var sheen: some View {
         LinearGradient(stops: [
             .init(color: .clear, location: 0.0),
             .init(color: .white.opacity(0.42), location: 0.46),
@@ -139,9 +145,7 @@ struct PackArt: View {
             .init(color: .clear, location: 1.0),
         ], startPoint: .topLeading, endPoint: .bottomTrailing)
         .frame(width: width * 0.65)
-        .offset(x: glint * width * 1.5)
         .blendMode(.plusLighter)
-        .allowsHitTesting(false)
     }
 
     /// The rays behind the dear packs, the same wheel a sovereign seat mark wears.
