@@ -2,7 +2,8 @@ import Foundation
 
 // Pushes the App Store listing in Tools/StoreMetadata/copy.swift to App Store Connect:
 // categories, the name, subtitle and privacy policy on the app record, and the
-// description, keywords, promotional text and support URL on the version being prepared.
+// description, keywords, promotional text, support and marketing URLs on the version being
+// prepared.
 // Run it with Tools/push-metadata.sh.
 //
 // Idempotent, like the achievement seeder: a locale that is already there is updated, one
@@ -134,10 +135,12 @@ print("  version \(versionString): copyright set")
 
 let versionLocalizations = ASC.many(ASC.call("GET", "/v1/appStoreVersions/\(versionID)/appStoreVersionLocalizations"))
 for listing in listings {
-    // `whatsNew` is left alone: it describes a build rather than the game, so it is written
-    // in App Store Connect when the build is chosen. Apple rejects it on a first release.
+    // `whatsNew` is left alone: it describes a build rather than the game, so it is keyed
+    // by version in Tools/ReleaseNotes and pushed by Tools/push-release-notes.sh. Apple
+    // rejects it on a first release.
     let fields: [String: Any] = ["description": listing.description, "keywords": listing.keywords,
-                                 "promotionalText": listing.promotional, "supportUrl": supportURL]
+                                 "promotionalText": listing.promotional, "supportUrl": supportURL,
+                                 "marketingUrl": marketingURL]
     if let known = versionLocalizations.first(where: { ASC.attributes($0)["locale"] as? String == listing.locale }) {
         ASC.call("PATCH", "/v1/appStoreVersionLocalizations/\(ASC.id(known))", [
             "data": ["type": "appStoreVersionLocalizations", "id": ASC.id(known), "attributes": fields],
@@ -161,21 +164,24 @@ let notes = """
 No account, sign-up or demo credentials are needed. Everything opens from the lobby.
 
 Fastest way to see a full game on one device: tap Quick game on the lobby (a game against \
-a bot), or Pass the phone, which runs a whole table on a single device. The rules are in \
-Settings, and an optional coach explains every card in hand.
+a bot), open Campaign (solo stages against bots), or Pass the phone, which runs a whole \
+table on a single device. The rules are in Settings, and an optional coach explains every \
+card in hand.
 
 Game Center: signing in is optional. It is used for Ranked, for playing strangers online, \
 for inviting a Game Center friend, and to keep progress the same on a player's iPhone and \
 iPad. Quick game, Pass the phone, Nearby and a table code all work signed out. Ranked \
-never leaves a reviewer waiting: if no opponent is found, a bot (Hugo) takes the chair.
+never leaves a reviewer waiting: five seconds into a search, the player is offered a game \
+against the house (a bot), and can take it at once.
 
 Playing another person needs a second device. Nearby uses Wi-Fi and Bluetooth directly \
 between devices. A table code ("Meet at a code word" or "Join with a code") connects two \
 devices through our own relay server without any sign-in; the relay passes moves in real \
 time and keeps nothing once the table closes.
 
-Currency: denari are earned by playing, by the daily deal and, up to three times a day, \
-by choosing to watch a rewarded ad. They cannot be bought: the app contains no in-app \
+Currency: denari are earned by playing, by the daily deal, by the campaign, by one \
+free spin a day of the daily wheel (its odds are listed in the wheel's sheet), and by \
+choosing to watch a rewarded ad. They cannot be bought: the app contains no in-app \
 purchase of any kind and no real money can enter the game. Denari buy cosmetics only — \
 felts, card backs, table marks, reaction sets — and card packs for a collectible album. \
 Pack contents are random, the odds are shown before opening ("What is in a pack"), a pack \

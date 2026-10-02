@@ -54,6 +54,20 @@ xcrun simctl install "$device" "$app"
 # in front of a shot.
 xcrun simctl spawn "$device" defaults write "$bundle" playerName -string Quentin
 xcrun simctl spawn "$device" defaults write "$bundle" hasSeenRules -bool true
+# The daily nudge already answered: the deals planted below would otherwise have it asked.
+xcrun simctl spawn "$device" defaults write "$bundle" reminders.offered -bool true
+
+# A few days of the daily deal already played. A phone that has never played one gives
+# the deal the whole width with the week's card under it, and the doors fall off the
+# bottom of the lobby.
+support="$(xcrun simctl get_app_container "$device" "$bundle" data)/Library/Application Support"
+mkdir -p "$support"
+played() {
+    printf '{"day":"%s","mine":%s,"playedAt":"%sT20:30:00Z","scope":%s,"theirs":%s}' \
+        "$(date -v-"$1"d +%Y-%m-%d)" "$2" "$(date -v-"$1"d +%Y-%m-%d)" "$3" "$4"
+}
+printf '{"results":[%s,%s,%s],"version":1}\n' \
+    "$(played 3 8 1 3)" "$(played 2 6 0 5)" "$(played 1 9 2 2)" > "$support/daily.json"
 
 # The status bar Apple's own screenshots use.
 xcrun simctl status_bar "$device" override \
@@ -92,31 +106,49 @@ for locale in $languages; do
         *)     language=${locale%%-*}; region=$(echo "$locale" | tr - _) ;;
     esac
 
-    # The order they appear on the product page. $rank plants a league on the chair: a
-    # rating belongs to a real account, and a fresh simulator has none.
+    # Numbered in the order they were first shot; the product page's order is set by the
+    # frames in Tools/ScreenshotFramer/captions.swift. $rank plants a league on the chair:
+    # a rating belongs to a real account, and a fresh simulator has none.
     rank="-rank 1480 -rankGames 42"
+    # Part way down the road and through the album. The album is kept in the defaults, so
+    # every shot with the lobby in it is given the same one rather than whatever the shot
+    # before left behind.
+    road="-campaignStage 8"
+    album="-volume pergamena -collected 26 -packs 1"
     # Ten seconds: at seven the deal is not finished and the shot is of the lobby. Check
     # what landed, and shoot it again if the bot swept first and left a bare cloth.
     # -assist normal: the coach turned on by 2-coach outlives the launch, and would
     # otherwise make the next language's table shot a copy of its coach shot.
     shot 1-table   13 -noAds -quickGame -selectFirst -assist normal
     # Long enough for the bot to have played and the coach to be explaining your
-    # card rather than saying the bot is thinking.
-    shot 2-coach   14 -noAds -coach -selectFirst
+    # card rather than saying the bot is thinking. At fourteen a loaded Mac still caught
+    # Hugo with his card in his hand.
+    shot 2-coach   17 -noAds -coach -selectFirst
     # Sixteen seconds: three bots deal themselves in one after another, and under about
     # fifteen a card is still in the air over the cloth.
     shot 3-teams   16 -noAds -startTable -seats 4 -teams -bots 3 -selectFirst
-    shot 4-ranked  10 -noAds -online $rank -denari 2000
+    shot 4-ranked  10 -noAds -online $rank -denari 2000 $album
     # The shop's 2000 denari outlive it too, so the lobby is given them up front rather
     # than showing an empty purse in the first language and a full one in the rest.
-    shot 5-lobby   11 -noAds $rank -denari 2000
+    # $road walks the campaign part way, for the door that leads to it. The quick games
+    # shot above leave one saved, which would turn the quick door into a resume door.
+    shot 5-lobby   11 -noAds $rank -denari 2000 $road $album -savedGame none
     # On the phone the shop sheet covers the screen and no ad slot shows, so the drawn
     # stand-ins are safe. On an iPad the sheet floats over the lobby and the stand-in
-    # banner would show underneath, so that shot takes -noAds instead.
-    shot 6-shop    16 $shopAds -shop -denari 2000
+    # banner would show underneath, so that shot takes -noAds instead. Opened on the
+    # cloths, the shelf that changes the whole table.
+    shot 6-shop    16 $shopAds -shop -shelf tapis -denari 2000 $album
     shot 7-rules   13 -noAds -rules
     # Every way to play people you know: the store's "play with friends" frame.
-    shot 8-friends 12 -noAds $rank -denari 2000 -friends
+    shot 8-friends 12 -noAds $rank -denari 2000 $album -friends
+    # The map is a cover put up a beat after launch, and the road draws itself in; give
+    # it time to stop moving.
+    shot 9-campaign 14 -noAds $road -campaign
+    # Before the turn, so the gran premio sits at the top where the pointer is.
+    shot 10-wheel  12 -noAds $rank -denari 2000 $album -wheelReset -wheel
+    # Two volumes full and a third under way, so the shelf of books along the top shows
+    # gold, a page part filled, and the last one still locked.
+    shot 11-album  12 -noAds $rank -denari 2000 $album -album
 done
 
 terminate_quietly

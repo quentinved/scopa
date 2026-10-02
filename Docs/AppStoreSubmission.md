@@ -32,7 +32,7 @@ Run with `ASC_KEY=../key/"App Store Connect Auth Key.p8" ASC_KEY_ID=… ASC_ISSU
 | Sign-in required | No |
 | Review notes | `Tools/StoreMetadata/main.swift`, "What review needs to know" |
 
-`whatsNew` stays empty: Apple refuses it on a first version.
+`whatsNew` is not part of push-metadata: it is keyed by version in `Tools/ReleaseNotes/notes.swift` and set with `Tools/push-release-notes.sh` (`--check` prints it without calling App Store Connect). Apple refuses it on a first version.
 
 ## 2. Filled by hand in App Store Connect
 
@@ -103,7 +103,8 @@ Not collected: code-word table traffic (relayed in real time, not kept) and Near
       achievements and leaderboards** (`Tools/seed-achievements.sh` creates them). On a first
       release they are not live until they are attached to the version.
 - [ ] App icon comes from the build.
-- [ ] Marketing URL (optional): leave empty.
+- [ ] Marketing URL: https://quentinvedrenne.com, pushed by `Tools/push-metadata.sh`. AdMob
+      reads it as the developer website and crawls `/app-ads.txt` there.
 - [ ] Accessibility Nutrition Labels (optional): skip for 1.0.
 
 ### Before pressing "Add for Review"

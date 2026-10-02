@@ -134,7 +134,7 @@ The release workflows read their credentials from the `production` environment's
 
 ### Local credentials
 
-On a machine, the store tools (`push-metadata.sh`, `push-screenshots.sh`,
+On a machine, the store tools (`push-metadata.sh`, `push-release-notes.sh`, `push-screenshots.sh`,
 `seed-achievements.sh`) read the same App Store Connect key from a `.env` at the repo root,
 kept in sync with [whisper-secrets](https://whisper.quentinvedrenne.com/docs/secrets):
 

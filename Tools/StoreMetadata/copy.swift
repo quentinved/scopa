@@ -23,6 +23,11 @@ let privacyURL = "https://scopa-ladder.quentin-vedrenne.workers.dev/privacy"
 // Served by the same Worker; `SCOPA_SUPPORT_URL` still overrides it.
 let defaultSupportURL = "https://scopa-ladder.quentin-vedrenne.workers.dev/support"
 
+// AdMob reads the marketing URL as the developer website and crawls app-ads.txt at its
+// host. A workers.dev host is under a public suffix, so the file lives on the real domain:
+// public/app-ads.txt in the quentinvedrenne.fr repo.
+let marketingURL = "https://quentinvedrenne.com"
+
 let englishPromotional = "Play Scopa with friends on one phone, around a table or from anywhere. Take on real players in ranked, or learn against gentle bots with a coach at your side."
 
 let englishDescription = """
