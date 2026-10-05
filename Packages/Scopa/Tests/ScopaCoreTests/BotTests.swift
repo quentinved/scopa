@@ -140,7 +140,28 @@ private func move(_ view: PlayerView, level: BotLevel = .normal, seed: UInt64 = 
         }
         // The player played one card, and the turn came back round, so the bot played too.
         let state = await table.state
-        #expect(state.round!.hands[1].count < GameConfiguration.handSize)
+        #expect(state.round!.hands[1].count < state.configuration.handSize)
+        await table.stop()
+    }
+
+    @Test func aHeldBotWaitsUntilItIsLetGo() async throws {
+        let players = [Player(id: PlayerID(rawValue: "me"), name: "Me"),
+                       Player(id: PlayerID(rawValue: "bot"), name: "Bot")]
+        let table = HotSeatTable(configuration: try GameConfiguration(players: players),
+                                 bots: [1], pace: .zero, rng: SeededGenerator(seed: 4))
+        await table.holdBots(for: .seconds(30))
+        // The bot leads, and the deal waits on it, so the deal runs on its own.
+        Task { await table.deal() }
+        try await Task.sleep(for: .milliseconds(400))
+        var state = await table.state
+        #expect(state.round!.hands[1].count == state.configuration.handSize, "the bot played while held")
+
+        await table.releaseBots()
+        for _ in 0..<40 where state.round!.hands[1].count == state.configuration.handSize {
+            try await Task.sleep(for: .milliseconds(50))
+            state = await table.state
+        }
+        #expect(state.round!.hands[1].count < state.configuration.handSize, "the bot never played once let go")
         await table.stop()
     }
 

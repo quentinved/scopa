@@ -2,7 +2,8 @@ import SwiftUI
 import ScopaCore
 
 /// A banner over the opening deal: what kind of game this is, who is across the table, and
-/// what it pays either way.
+/// what it pays either way. Two medals, two numbers and at most one line under them: players
+/// found the fuller banner, with win rates and the house's count, too much to take in.
 ///
 /// The numbers come from `Ranking`, the same maths the Worker settles with, so what is
 /// promised here is what the ladder pays.
@@ -19,7 +20,7 @@ struct RankedStakes: View {
         let loss: Int
         /// Wins standing in a row behind this table.
         var streak: Int = 0
-        /// A table against the house, which neither lengthens a run nor ends one.
+        /// A table against the house. It is part of the run until the day's ration is spent.
         var isHouse = false
         /// House games already played today, and how many a day the ladder counts.
         var housePlayed: Int? = nil
@@ -29,7 +30,7 @@ struct RankedStakes: View {
         var theirRecord: Record? = nil
 
         /// What the run is worth of `win`, and 0 where there is no run to pay.
-        var streakBonus: Int { isHouse ? 0 : Ranking.streakBonus(after: streak) }
+        var streakBonus: Int { isSpent ? 0 : Ranking.streakBonus(after: streak) }
         /// The floor would swallow this loss.
         var isSafe: Bool { loss == 0 }
         /// The day's house games are spent, so this one is played for itself.
@@ -60,10 +61,8 @@ struct RankedStakes: View {
                 note("No house games left to count today, so this one is for fun")
             } else {
                 chips
-                if odds.isSafe { note("Your league holds if you lose") }
+                if odds.streakBonus > 0 { run } else if odds.isSafe { note("Your league holds if you lose") }
             }
-            if odds.streak > 0 { run }
-            if odds.isHouse, !odds.isSpent, let count = houseCount { note(count) }
         }
         .frame(width: 270)
         .padding(.horizontal, 18)
@@ -91,14 +90,14 @@ struct RankedStakes: View {
 
     private var sides: some View {
         HStack(alignment: .top, spacing: 10) {
-            side(odds.mine, name: String(localized: "You", locale: locale), record: odds.myRecord)
+            side(odds.mine, name: String(localized: "You", locale: locale))
             Text("vs")
                 .font(.system(size: 12, weight: .heavy))
                 .tracking(1.2)
                 .foregroundStyle(Palette.onTableSoft)
                 .padding(.top, 10)
             if let theirs = odds.theirs {
-                side(theirs, name: String(localized: "Them", locale: locale), record: odds.theirRecord)
+                side(theirs, name: String(localized: "Them", locale: locale))
             } else {
                 unrankedSide
             }
@@ -126,7 +125,7 @@ struct RankedStakes: View {
         .frame(width: 110)
     }
 
-    private func side(_ standing: Standing, name: String, record: Record?) -> some View {
+    private func side(_ standing: Standing, name: String) -> some View {
         VStack(spacing: 3) {
             LeagueMedal(league: standing.league.rawValue, size: 30)
             Text(verbatim: standing.leagueTitle(locale: locale).uppercased())
@@ -139,12 +138,6 @@ struct RankedStakes: View {
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(1.1)
                 .foregroundStyle(Palette.onTableSoft)
-            if let record, let rate = Ladder.winRate(wins: record.wins, games: record.games, locale: locale) {
-                Text("\(rate) won")
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(Palette.onTableSoft)
-            }
         }
         .frame(width: 110)
     }
@@ -158,28 +151,18 @@ struct RankedStakes: View {
         }
     }
 
-    /// The run behind this table: a flame a win, and what it means for this game. Against
-    /// the house it is kept, not played for, and the flames are banked rather than lit.
+    /// The run behind this table, in one line: a flame a win and what it adds to the win.
     private var run: some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 7) {
-                RunFlames(count: odds.streak, lit: !odds.isHouse)
-                Text("\(odds.streak) in a row")
-                    .font(.system(size: 11, weight: .heavy))
-                    .textCase(.uppercase)
-                    .tracking(1.1)
-                    .foregroundStyle(odds.isHouse ? Palette.onTableSoft : Palette.goldLight)
-                if !odds.isHouse, odds.streakBonus > 0 {
-                    Text("+\(odds.streakBonus) more if you win")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Palette.goldLight)
-                }
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            note(odds.isHouse ? LocalizedStringKey("The house neither adds to a run nor ends it")
-                              : LocalizedStringKey("A loss ends the run"))
+        HStack(spacing: 7) {
+            RunFlames(count: odds.streak, lit: true)
+            Text("\(odds.streak) in a row · +\(odds.streakBonus) for the run")
+                .font(.system(size: 11, weight: .heavy))
+                .textCase(.uppercase)
+                .tracking(1.1)
+                .foregroundStyle(Palette.goldLight)
         }
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
     }
 
     private func note(_ text: LocalizedStringKey) -> some View {
@@ -188,12 +171,6 @@ struct RankedStakes: View {
             .foregroundStyle(Palette.onTableSoft)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-    }
-
-    /// "House game 4 of 10 today": which of the day's counted games this one is.
-    private var houseCount: LocalizedStringKey? {
-        guard let played = odds.housePlayed else { return nil }
-        return "House game \(min(played + 1, odds.housePerDay)) of \(odds.housePerDay) that count today"
     }
 
     /// Opaque rather than glass: it sits over a freshly dealt cloth, and four bright cards
@@ -246,9 +223,9 @@ extension RankedStakes {
                     streak: streak)
     }
 
-    /// What a table against the house is worth: a win in full and a much smaller loss,
-    /// nothing once the day's allowance is spent, and never a run — the house is not
-    /// somebody to beat five times in a row. `streak` is the run it leaves standing.
+    /// What a table against the house is worth: a win in full with the run on top and a much
+    /// smaller loss, and nothing once the day's allowance is spent. `streak` is the run
+    /// standing behind it.
     ///
     /// `win` and `loss` are the Worker's own price where it has told us one: it is the
     /// Worker that settles the game, and a phone quoting its own copy of the rule promised
@@ -261,8 +238,8 @@ extension RankedStakes {
             return Odds(mine: standing, theirs: across, win: 0, loss: 0, streak: streak, isHouse: true)
         }
         let landed = Ranking.apply(loss, to: mine, floor: Ranking.floor(of: standing.league))
-        return Odds(mine: standing, theirs: across, win: win, loss: landed.rating - mine,
-                    streak: streak, isHouse: true)
+        return Odds(mine: standing, theirs: across, win: win + Ranking.streakBonus(after: streak),
+                    loss: landed.rating - mine, streak: streak, isHouse: true)
     }
 }
 

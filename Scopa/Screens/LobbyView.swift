@@ -18,6 +18,8 @@ struct LobbyView: View {
     @State private var showsOnline = false
     @State private var showsWager = false
     @State private var showsShop = false
+    /// The no-ads purchase, opened from its corner button.
+    @State private var showsAdFree = DebugLaunch.showsAdFree
     @State private var showsRules = false
     @State private var showsLadder = false
     @State private var showsWeekly = false
@@ -141,42 +143,58 @@ struct LobbyView: View {
         content
             .sheet(isPresented: $isEditingSettings) {
                 SettingsSheet(store: store, ads: ads, purse: purse, reminders: reminders, account: account)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsShop) {
                 ShopView(store: store, purse: purse, ads: ads)
+                    .coversBanner()
+            }
+            .sheet(isPresented: $showsAdFree) {
+                AdFreeSheet(pass: ads.pass)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsLadder) {
                 LeaderboardView(store: store)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsWeekly) {
                 WeeklySheet(store: store)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsAlbum) {
                 NavigationStack { AlbumView(store: store, purse: purse) }
+                    .coversBanner()
             }
             .sheet(isPresented: $showsWheel) {
                 DailyWheelSheet(wheel: wheel, purse: purse, book: store.albumBook,
                                 name: store.playerName, day: store.today)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsCampaign) {
                 CampaignView().environment(store)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsRules, onDismiss: handleRulesDismissed) {
                 // No coached hand over a game already under way: it would be saved over
                 // the one waiting behind the Resume tile.
                 RulesView(onFinish: store.savedGame == nil ? { startsCoached = true } : nil)
+                    .coversBanner()
             }
             .sheet(isPresented: $asksName, onDismiss: dealCoachedHandIfAsked) {
                 NameSheet(store: store)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsOnline, onDismiss: { if store.route == .lobby { store.cancelOnline() } }) {
                 OnlineSheet(store: store)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsWager) {
                 WagerSheet(store: store, purse: purse)
+                    .coversBanner()
             }
             .sheet(isPresented: $showsFriends, onDismiss: handleFriendsDismissed) {
                 FriendsSheet(store: store, path: $friendsPath)
+                    .coversBanner()
             }
     }
 
@@ -272,9 +290,14 @@ struct LobbyView: View {
         VStack(spacing: 0 * lift) {
             // The fan leans up out of the masthead's frame, so the top padding is its.
             masthead
-                // The wheel sits in the masthead's corner on a phone: the top row has no room
-                // left for it without cutting the player's name short.
-                .overlay(alignment: .topTrailing) { wheelChip }
+                // The wheel and the no-ads button sit in the masthead's corner on a phone:
+                // the top row has no room left for them without cutting the name short.
+                .overlay(alignment: .topTrailing) {
+                    VStack(spacing: 12 * lift) {
+                        wheelChip
+                        noAdsButton
+                    }
+                }
                 .padding(.top, 28 * lift * crestScale)
             goals.padding(.top, 14 * lift)
             doors.padding(.top, 10 * lift)
@@ -319,9 +342,17 @@ struct LobbyView: View {
             Spacer(minLength: 8 * lift)
             if stage.isWide { wheelChip }
             purseChip
+            if stage.isWide { noAdsButton }
             RulesButton { showsRules = true }
         }
         .padding(.top, 8 * lift)
+    }
+
+    /// The way to the no-ads purchase, until it is owned.
+    @ViewBuilder private var noAdsButton: some View {
+        if ads.adsAreOn && !ads.pass.isOwned {
+            NoAdsButton { showsAdFree = true }
+        }
     }
 
     /// The day's wheel, with a dot while today's free turn is waiting.
@@ -515,11 +546,13 @@ struct LobbyView: View {
         // Only on the way open: read as one flag, the close of a sheet would tap too.
         .sound(trigger: showsWager || showsFriends || showsOnline || showsCampaign) { _, open in open ? .tap : nil }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: store.savedGame == nil)
-        .confirmationDialog("Forget this game?", isPresented: $confirmsForget, titleVisibility: .visible) {
-            Button("Forget it, and lose the stake", role: .destructive) { forgetSavedGame() }
-            Button("Keep it", role: .cancel) {}
-        } message: {
-            Text("Your stake of \(store.savedGame?.stake?.amount.coins ?? 0) denari is on that table.")
+        .confirmation(isPresented: $confirmsForget) {
+            Confirmation(Text("Forget this game?"),
+                         message: Text("Your stake of \(store.savedGame?.stake?.amount.coins ?? 0) denari is on that table."),
+                         actions: [
+                .init(title: Text("Forget it, and lose the stake"), role: .destructive) { forgetSavedGame() },
+                .init(title: Text("Keep it"), role: .cancel),
+            ])
         }
     }
 

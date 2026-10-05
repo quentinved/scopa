@@ -280,8 +280,8 @@ enum PackLook {
         case .bottega: "Three cards, a court or better among them"
         case .velluto: "Four cards, a seven or better, and something off the shelves"
         case .reliquia: "Five cards, the best odds there are, nothing common with them"
-        case .scrigno: "Two things off the shelves, nothing common among them"
-        case .forziere: "Three things off the shelves, and nothing short of prezioso"
+        case .scrigno: "Two random things from the shelves, Rare or better"
+        case .forziere: "Three random things from the shelves, Precious or better"
         }
     }
 

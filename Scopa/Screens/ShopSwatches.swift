@@ -15,8 +15,6 @@ struct Swatch<Preview: View>: View {
     /// How this one is had when it cannot be bought, such as "7-day streak". A key rather
     /// than a string: the wording inflects on the number, which only `Text` resolves.
     var earnedBy: LocalizedStringKey? = nil
-    /// The glyph beside `earnedBy`: a flame for a streak, a book for an album.
-    var earnedGlyph = "flame.fill"
     @ViewBuilder var preview: Preview
 
     /// How rare the thing is, which is a different question from what it costs and is why
@@ -83,26 +81,43 @@ struct Swatch<Preview: View>: View {
         return Rarities.sheen(grade)
     }
 
+    /// One line that always says where the tile stands: in use, owned, earned by playing, or a price.
     @ViewBuilder private var tag: some View {
         if equipped {
-            Text("In use")
+            Label("In use", systemImage: "checkmark.circle.fill")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Palette.cream)
         } else if owned {
-            Text("Yours")
+            Label("Owned", systemImage: "checkmark")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Palette.onTableSoft)
         } else if let earnedBy {
-            HStack(spacing: 4) {
-                Image(systemName: earnedGlyph).font(.system(size: 10, weight: .semibold))
-                Text(earnedBy).font(.system(size: 11, weight: .semibold))
-            }
-            .foregroundStyle(Palette.goldLight)
+            EarnedTag(requirement: earnedBy)
         } else if let item {
             DenariLabel(amount: item.price, size: 13,
                         tint: affordable ? Palette.goldLight : Palette.onTableSoft)
                 .opacity(affordable ? 1 : 0.7)
         }
+    }
+}
+
+/// A thing that is never sold: a padlock, and what to do at the table to have it.
+struct EarnedTag: View {
+    let requirement: LocalizedStringKey
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Label("Earned", systemImage: "lock.fill")
+                .font(.system(size: 9.5, weight: .heavy))
+                .textCase(.uppercase)
+                .tracking(0.6)
+            Text(requirement)
+                .font(.system(size: 11, weight: .semibold))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+        .foregroundStyle(Palette.goldLight)
     }
 }
 

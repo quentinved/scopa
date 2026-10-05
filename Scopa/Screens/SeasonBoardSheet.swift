@@ -80,20 +80,8 @@ struct SeasonBoardSheet: View {
     }
 
     /// Game Center would not hand the friends over, and what to do about it.
-    @ViewBuilder private func trouble(_ problem: FriendsProblem) -> some View {
-        switch problem {
-        case .signedOut:
-            message(symbol: "person.crop.circle.badge.questionmark", title: "Sign in to Game Center to see your friends",
-                    detail: "Needs Game Center, which is signed in to from the iPhone's Settings.")
-        case .denied:
-            message(symbol: "lock", detail: "Scopa is not allowed to see your friends. Turn it on in the iPhone's Settings, under Game Center.",
-                    action: ("Open Settings", openSettings))
-        case .restricted:
-            message(symbol: "lock", detail: "Friend lists are turned off on this device. Screen Time settings can turn them back on.")
-        case .unavailable:
-            message(symbol: "exclamationmark.triangle", detail: "Your Game Center friends could not be loaded just now.",
-                    action: ("Try again", reload))
-        }
+    private func trouble(_ problem: FriendsProblem) -> some View {
+        FriendsTrouble(problem: problem, openSettings: openSettings, retry: reload)
     }
 
     private func rows(_ board: Ladder.SeasonBoard) -> some View {
@@ -143,31 +131,11 @@ struct SeasonBoardSheet: View {
     /// A page with nothing to rank on it: what happened, and the way on where there is one.
     private func message(symbol: String, title: LocalizedStringKey? = nil, detail: LocalizedStringKey,
                          action: (LocalizedStringKey, () -> Void)? = nil) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: symbol)
-                .font(.system(size: 34, weight: .semibold))
-                .foregroundStyle(Palette.onTableSoft)
-            if let title {
-                Text(title)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Palette.onTable)
-            }
-            Text(detail)
-                .font(.system(size: title == nil ? 15 : 13))
-                .foregroundStyle(title == nil ? Palette.onTable : Palette.onTableSoft)
-            if let action { link(action.0, action: action.1).padding(.top, 4) }
-        }
-        .multilineTextAlignment(.center)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 40)
-        .padding(.vertical, 50)
+        BoardMessage(symbol: symbol, title: title, detail: detail, action: action)
     }
 
     private func link(_ label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
-        Button(label, action: action)
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(Palette.goldLight)
+        BoardLink(label: label, action: action)
     }
 
     // MARK: Loading

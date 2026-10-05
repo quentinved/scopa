@@ -150,6 +150,7 @@ struct RegionBanner: View {
                     .foregroundStyle(Palette.onTableSoft)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
+                ruleLine
             }
             Spacer(minLength: 4)
             if isOpen { tally } else { lock }
@@ -159,6 +160,19 @@ struct RegionBanner: View {
         .glassPanel(tint: region.ground.deep.opacity(0.5))
         .opacity(isOpen ? 1 : 0.7)
         .accessibilityElement(children: .combine)
+    }
+
+    /// What the region plays: the classic game, or the house rule it brings in.
+    @ViewBuilder private var ruleLine: some View {
+        if let rule = region.rule {
+            Text("New rule · \(Text(rule.label))")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+        } else {
+            Text("Classic rules")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+        }
     }
 
     private var tally: some View {

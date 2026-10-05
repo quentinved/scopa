@@ -9,6 +9,68 @@ import Foundation
 // Never mention the passphrases, and leave the rating prompt out.
 
 let releaseNotes: [String: [String: String]] = [
+    "1.2": [
+        "en-US": """
+        Thank you for playing Scopa Bella! This one brings Italy's regional rules to the table, and music to play them to.
+
+        • House rules: play Scopone (four in two teams, ten cards each), Re bello, Napola and Asso piglia tutto. Mix them at any table with friends, or meet them one by one in the campaign, each with a short lesson the first time.
+        • A rule in every region of the campaign: the Napola in Napoli, Asso piglia tutto in Sicily, Re bello in Venice and the Scopone in Rome. Liguria stays classic, and every stage says which rules it plays.
+        • Six new songs for the table, from a slow Pomeriggio waltz to a Tarantella and the legendary Mergellina. Listen before you buy, in the shop's new Songs section.
+        • The campaign has its own leaderboard, among everyone or just your friends, and the map shows who has reached each stage, friends first.
+        • Ranked finds you an opponent faster and more reliably, and the screen before a game is simpler: two medals, and what a win or a loss is worth.
+        • The wheel shows what everyone else won today, friends first.
+        • A clearer shop, with a bar to jump between sections, a short guide to rarities and packs, and rarities named in your language.
+        • Scopa without ads: a one-time purchase in Settings that removes the banner and the ads between games. The videos that pay denari stay, for whenever you want them.
+        • Fewer notifications: one a day at most, when the wheel's free spin is back.
+        • Also: questions like "Forget this game?" now appear in the middle of the screen on every device, and a pack marks the cards that are new in your album.
+        """,
+
+        "en-GB": """
+        Thank you for playing Scopa Bella! This one brings Italy's regional rules to the table, and music to play them to.
+
+        • House rules: play Scopone (four in two teams, ten cards each), Re bello, Napola and Asso piglia tutto. Mix them at any table with friends, or meet them one by one in the campaign, each with a short lesson the first time.
+        • A rule in every region of the campaign: the Napola in Napoli, Asso piglia tutto in Sicily, Re bello in Venice and the Scopone in Rome. Liguria stays classic, and every stage says which rules it plays.
+        • Six new songs for the table, from a slow Pomeriggio waltz to a Tarantella and the legendary Mergellina. Listen before you buy, in the shop's new Songs section.
+        • The campaign has its own leaderboard, among everyone or just your friends, and the map shows who has reached each stage, friends first.
+        • Ranked finds you an opponent faster and more reliably, and the screen before a game is simpler: two medals, and what a win or a loss is worth.
+        • The wheel shows what everyone else won today, friends first.
+        • A clearer shop, with a bar to jump between sections, a short guide to rarities and packs, and rarities named in your language.
+        • Scopa without ads: a one-time purchase in Settings that removes the banner and the ads between games. The videos that pay denari stay, for whenever you want them.
+        • Fewer notifications: one a day at most, when the wheel's free spin is back.
+        • Also: questions like "Forget this game?" now appear in the centre of the screen on every device, and a pack marks the cards that are new in your album.
+        """,
+
+        "fr-FR": """
+        Merci de jouer à Scopa Bella ! Cette version apporte à la table les règles des régions d'Italie, et la musique pour les jouer.
+
+        • Règles maison : jouez au Scopone (à quatre en deux équipes, dix cartes chacun), au Re bello, à la Napola et à l'Asso piglia tutto. Mélangez-les à n'importe quelle table entre amis, ou découvrez-les une à une dans la campagne, chacune avec une courte leçon la première fois.
+        • Une règle dans chaque région de la campagne : la Napola à Naples, l'Asso piglia tutto en Sicile, le Re bello à Venise et le Scopone à Rome. La Ligurie reste classique, et chaque étape dit quelles règles elle joue.
+        • Six nouvelles chansons pour la table, de la lente valse Pomeriggio à la Tarantella et à la légendaire Mergellina. Écoutez-les avant d'acheter, dans le nouveau rayon Chansons de la boutique.
+        • La campagne a son classement, avec tout le monde ou entre amis, et la carte montre qui a atteint chaque étape, vos amis en premier.
+        • Le classé vous trouve un adversaire plus vite et plus sûrement, et l'écran avant une partie est plus simple : deux médailles, et ce que vaut une victoire ou une défaite.
+        • La roue montre ce que les autres ont gagné aujourd'hui, vos amis en premier.
+        • Une boutique plus claire, avec une barre pour passer d'un rayon à l'autre, un petit guide des raretés et des paquets, et des raretés nommées dans votre langue.
+        • Scopa sans pub : un achat unique, dans les Réglages, qui retire la bannière et les pubs entre les parties. Les vidéos qui rapportent des deniers restent, pour quand vous en voulez.
+        • Moins de notifications : une par jour au plus, quand le tour gratuit de la roue revient.
+        • Et aussi : les questions comme « Abandonner cette partie ? » s'affichent au milieu de l'écran sur tous les appareils, et un paquet signale les cartes nouvelles dans votre album.
+        """,
+
+        "it": """
+        Grazie di giocare a Scopa Bella! Questa versione porta al tavolo le regole delle regioni d'Italia, e la musica per giocarle.
+
+        • Regole della casa: gioca a Scopone (in quattro in due squadre, dieci carte a testa), Re bello, Napola e Asso piglia tutto. Mescolale a qualsiasi tavolo con gli amici, o scoprile una alla volta nella campagna, ognuna con una breve lezione la prima volta.
+        • Una regola in ogni regione della campagna: la Napola a Napoli, l'Asso piglia tutto in Sicilia, il Re bello a Venezia e lo Scopone a Roma. La Liguria resta classica, e ogni tappa dice con quali regole si gioca.
+        • Sei nuove canzoni per il tavolo, dal lento valzer Pomeriggio alla Tarantella fino alla leggendaria Mergellina. Ascoltale prima di comprarle, nel nuovo reparto Canzoni del negozio.
+        • La campagna ha la sua classifica, tra tutti o solo tra amici, e la mappa mostra chi è arrivato a ogni tappa, prima i tuoi amici.
+        • La classificata ti trova un avversario più in fretta e in modo più affidabile, e la schermata prima di una partita è più semplice: due medaglie, e quanto vale una vittoria o una sconfitta.
+        • La ruota mostra cosa hanno vinto gli altri oggi, prima i tuoi amici.
+        • Un negozio più chiaro, con una barra per saltare da un reparto all'altro, una piccola guida a rarità e pacchetti, e le rarità nella tua lingua.
+        • Scopa senza pubblicità: un acquisto unico, nelle Impostazioni, che toglie il banner e la pubblicità tra le partite. I video che pagano denari restano, per quando li vuoi tu.
+        • Meno notifiche: al massimo una al giorno, quando torna il giro gratis della ruota.
+        • E poi: domande come «Dimenticare questa partita?» compaiono al centro dello schermo su ogni dispositivo, e un pacchetto segnala le carte nuove nel tuo album.
+        """,
+    ],
+
     "1.1": [
         "en-US": """
         Thank you for playing Scopa Bella! This is a big one, and a gift is waiting for you in the game.

@@ -231,10 +231,12 @@ struct HiddenHand: View {
     var width: CGFloat
 
     var body: some View {
-        HStack(spacing: -width * 0.55) {
+        // Scopone's ten are held tighter, so a seat's fan stays the width of three.
+        let tight = count > 3
+        HStack(spacing: -width * (tight ? 0.82 : 0.55)) {
             ForEach(0..<max(count, 0), id: \.self) { index in
                 CardBack(width: width)
-                    .rotationEffect(.degrees(Double(index - count / 2) * 4))
+                    .rotationEffect(.degrees(Double(index - count / 2) * (tight ? 1.6 : 4)))
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.5).combined(with: .opacity),
                         removal: .scale(scale: 0.3).combined(with: .opacity)

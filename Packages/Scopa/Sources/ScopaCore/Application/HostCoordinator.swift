@@ -22,6 +22,8 @@ public actor HostCoordinator {
     private let bot: Bot
     /// How long a bot waits before playing, so the table can watch its move land.
     private let pace: Duration
+    /// See `holdBots(for:)`.
+    private var botsHeldUntil: ContinuousClock.Instant?
 
     public init(
         transport: any GameTransport,
@@ -60,6 +62,24 @@ public actor HostCoordinator {
         continuation.finish()
     }
 
+    /// Holds the bots back while the screen has something up the player must see first,
+    /// such as what a ranked game pays. A deadline rather than a flag, so a release that never
+    /// comes cannot stall the table for good.
+    public func holdBots(for duration: Duration) {
+        botsHeldUntil = .now + duration
+    }
+
+    public func releaseBots() {
+        botsHeldUntil = nil
+    }
+
+    /// Checked often rather than slept out, so a release lets the bot go straight away.
+    private func waitOutHold() async {
+        while pump != nil, let until = botsHeldUntil, until > .now {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+    }
+
     // MARK: Lobby
 
     /// The host's own reaction, sent to everyone including this device.
@@ -93,6 +113,14 @@ public actor HostCoordinator {
     public func setTies(_ rule: TieRule) async {
         guard session == nil else { return }
         lobby.ties = rule
+        await publishLobby()
+    }
+
+    /// Scopone is only ever played four in two teams, so asking for it pairs the table off.
+    public func setHouse(_ rules: Set<HouseRule>) async {
+        guard session == nil else { return }
+        lobby.house = rules
+        if rules.contains(.scopone), lobby.players.count == 4 { lobby.teams = true }
         await publishLobby()
     }
 
@@ -176,7 +204,7 @@ public actor HostCoordinator {
         guard lobby.canStart,
               let config = try? GameConfiguration(players: lobby.players, teams: lobby.teams, targetScore: lobby.targetScore,
                                                   turnClock: lobby.turnClock, primiera: lobby.primiera,
-                                                  ties: lobby.ties)
+                                                  ties: lobby.ties, house: lobby.house)
         else { throw HostError.cannotStart }
         advertising?.stopAdvertising()
         // A stream of its own per game: a copy of `rng` would deal a rematch the same cards,
@@ -320,6 +348,7 @@ public actor HostCoordinator {
             // not: the table has already stalled once waiting on it.
             if bots.contains(player.id) {
                 try? await Task.sleep(for: pace)
+                await waitOutHold()
                 guard await session.state == current else { return }
             }
             guard let move = bot.move(for: current.view(forSeat: seat), using: &rng),

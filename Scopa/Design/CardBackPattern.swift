@@ -30,12 +30,12 @@ enum CardBackPattern: String, CaseIterable, Identifiable {
 
     var explanation: LocalizedStringKey {
         switch self {
-        case .lattice: "The house ruling, crossed fine"
-        case .chevron: "Ranks of arrows, close set"
-        case .rosette: "The coin's own flower, repeated"
-        case .weave: "Squared off, like linen"
-        case .stars: "Small points, scattered even"
-        case .golfo: "The bay's waves, row on row"
+        case .lattice: "Fine crosshatch. Gives nothing away"
+        case .chevron: "Arrows everywhere. Very decisive"
+        case .rosette: "The coin's flower, on repeat"
+        case .weave: "Woven squares, picnic style"
+        case .stars: "A sky full of stars, face down"
+        case .golfo: "Waves rolling in across the bay"
         }
     }
 }

@@ -18,6 +18,13 @@ final class AdsStore {
 
     let consent = AdsConsent()
 
+    /// The no-ads purchase. It silences the banner and the interruption; the opt-in video
+    /// and everything it pays are untouched.
+    let pass = AdFreePass()
+
+    /// The banner and the full screen ad may run: ads are on and the pass is not owned.
+    var interrupts: Bool { adsAreOn && !pass.isOwned }
+
     /// When an ad may interrupt, and how often.
     private var policy = AdPolicy()
 
@@ -90,14 +97,14 @@ final class AdsStore {
 
     /// The banner strip shows in the lobby only, never under the table.
     func showsBanner(on route: TableStore.Route) -> Bool {
-        isReady && route == .lobby
+        isReady && interrupts && route == .lobby
     }
 
     // MARK: The interruption
 
     /// Called when a round ends, so the ad is warm by the time the game is.
     func prepareForEndOfGame() {
-        guard adsAreOn else { return }
+        guard interrupts else { return }
         gateway.preloadInterstitial()
     }
 
@@ -113,7 +120,7 @@ final class AdsStore {
     func endOfGame(_ ending: GameEnding) async {
         guard adsAreOn else { return }
         policy.finishedGame()
-        guard policy.allowsInterstitial(after: ending) else { return }
+        guard !pass.isOwned, policy.allowsInterstitial(after: ending) else { return }
         // Counted only once the network confirms it appeared, so a failed presentation
         // does not spend the day's allowance.
         if await gateway.showInterstitial() { policy.showedInterstitial() }
@@ -225,7 +232,7 @@ struct BannerSlot: View {
 
     var body: some View {
         Group {
-            if isVisible && ads.adsAreOn {
+            if isVisible && ads.interrupts {
                 ads.gateway.bannerBody()
                     // Full width even at zero height: the network needs a width to fill.
                     .frame(maxWidth: .infinity)
@@ -237,7 +244,7 @@ struct BannerSlot: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: isVisible)
-        .animation(.easeInOut(duration: 0.3), value: ads.adsAreOn)
+        .animation(.easeInOut(duration: 0.3), value: ads.interrupts)
     }
 
     /// The home indicator's inset, read from the key window. Fixed per device, so no
@@ -248,5 +255,55 @@ struct BannerSlot: View {
             .flatMap(\.windows)
             .first { $0.isKeyWindow }?
             .safeAreaInsets.bottom ?? 0
+    }
+}
+
+// MARK: - What covers the strip
+
+/// How many sheets and covers are up over the lobby. The strip comes down under any of
+/// them: hidden behind one it would go on refreshing ads nobody sees, which earns nothing,
+/// drags down what the unit is bid, and breaks AdMob's policy.
+@MainActor
+@Observable
+final class BannerCovers {
+    private var count = 0
+
+    var isCovered: Bool { count > 0 }
+
+    fileprivate func cover() { count += 1 }
+    fileprivate func uncover() { count = max(0, count - 1) }
+}
+
+extension EnvironmentValues {
+    /// Set once at the root. Optional, since a default instance would be built off the
+    /// main actor.
+    @Entry var bannerCovers: BannerCovers? = nil
+}
+
+extension View {
+    /// Marks a sheet or cover that can open over the lobby, so the banner steps aside while
+    /// it is up. Put it on the presented content, outside any navigation stack inside it.
+    func coversBanner() -> some View {
+        modifier(CoversBanner())
+    }
+}
+
+private struct CoversBanner: ViewModifier {
+    @Environment(\.bannerCovers) private var covers
+    /// Guards against an appearance being counted twice.
+    @State private var isCounted = false
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                guard !isCounted else { return }
+                isCounted = true
+                covers?.cover()
+            }
+            .onDisappear {
+                guard isCounted else { return }
+                isCounted = false
+                covers?.uncover()
+            }
     }
 }

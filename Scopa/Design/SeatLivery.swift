@@ -79,15 +79,15 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The line under the swatch in the shop.
     var explanation: LocalizedStringKey {
         switch self {
-        case .tavolo: "Whatever chair you get"
-        case .terracotta: "Fired clay"
-        case .lavanda: "Lavender"
-        case .oliva: "Olive"
-        case .mare: "Adriatic blue"
-        case .rubino: "Deep ruby"
-        case .oro: "Struck, not painted"
-        case .notte: "Steel, edged in gold"
-        case .iride: "It moves as it turns"
+        case .tavolo: "The house colours. Nothing fancy"
+        case .terracotta: "Sunbaked clay, like nonna's pots"
+        case .lavanda: "Lavender. Smells lovely, probably"
+        case .oliva: "Olive, from the good tree"
+        case .mare: "Adriatic blue. Wish you were here"
+        case .rubino: "Deep ruby. Showing off, quietly"
+        case .oro: "Real gold. Struck, not painted"
+        case .notte: "Steel edged in gold. Very mysterious"
+        case .iride: "Changes colour as it turns. Show-off"
         }
     }
 

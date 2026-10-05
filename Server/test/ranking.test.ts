@@ -75,6 +75,15 @@ test("the house pays a win in full and a loss a fifth of it", () => {
   assert.ok(HOUSE_LOSS > points(false, 0, 2));
   // And it cannot take a player below the floor of the league they have reached.
   assert.deepEqual(apply(HOUSE_LOSS, 600, 600), { rating: 600, floor: 600 });
-  // A day of the house, won out, is two and a half divisions and no more.
-  assert.equal(HOUSE_WIN * HOUSE_GAMES_PER_DAY, 250);
+  // A day of the house, won out, is about three divisions and no more, the run included.
+  let day = 0;
+  for (let streak = 0; streak < HOUSE_GAMES_PER_DAY; streak++) day += houseChange(true, streak);
+  assert.equal(day, 320);
+});
+
+test("a house win pays the run on top, and a house loss ends it", () => {
+  assert.equal(houseChange(true, 0), HOUSE_WIN);
+  assert.equal(houseChange(true, 3), HOUSE_WIN + streakBonus(3));
+  assert.equal(houseChange(false, 5), HOUSE_LOSS);
+  assert.equal(streakAfter(false, 5), 0);
 });

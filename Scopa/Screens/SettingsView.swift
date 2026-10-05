@@ -44,6 +44,7 @@ struct SettingsSheet: View {
                     soundGroup
                     lookGroup
                     gameCenterGroup
+                    if ads.adsAreOn || ads.pass.isOwned { AdFreeGroup(pass: ads.pass) }
                     helpGroup
                     if Ladder.isOn { FriendCodePanel(book: store.albumBook, purse: purse) }
                     CoupDeBalai(ads: ads, store: store)
@@ -74,10 +75,12 @@ struct SettingsSheet: View {
         .onChange(of: isTypingName) { _, typing in if !typing { commitName() } }
         .sheet(isPresented: $showsRules) { RulesView() }
         .sheet(isPresented: $showsWhatsNew) { WhatsNewSheet() }
-        .confirmationDialog("What would you like to tell us?", isPresented: $showsPostbox,
-                            titleVisibility: .visible) {
-            Button("Something is wrong") { write(.problem) }
-            Button("I have an idea") { write(.idea) }
+        .confirmation(isPresented: $showsPostbox) {
+            Confirmation(Text("What would you like to tell us?"), actions: [
+                .init(title: Text("Something is wrong"), role: .plain) { write(.problem) },
+                .init(title: Text("I have an idea"), role: .plain) { write(.idea) },
+                .init(title: Text("Not now"), role: .cancel),
+            ])
         }
     }
 
@@ -114,10 +117,10 @@ struct SettingsSheet: View {
     }
 
     private var reminderGroup: some View {
-        SettingsGroup(caption: "Today's deal",
+        SettingsGroup(caption: "The wheel",
                       footnote: reminders.isBlocked
                           ? "Notifications are off for Scopa in the iPhone's Settings."
-                          : "A nudge at the hour you usually play and a last call in the evening, on the days you have not played yet.") {
+                          : "One notification a day when the wheel's free turn is back, and none once you have taken it.") {
             ReminderRow(reminders: reminders, book: store.dailyBook)
         }
     }
@@ -486,7 +489,7 @@ private struct AudioRows: View {
     }
 }
 
-/// The switch for the daily reminder. Turning it on asks iOS for permission.
+/// The switch for the wheel's reminder. Turning it on asks iOS for permission.
 private struct ReminderRow: View {
     let reminders: Reminders
     let book: DailyDealBook

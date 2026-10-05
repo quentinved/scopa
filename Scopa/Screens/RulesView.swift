@@ -7,9 +7,12 @@ struct RulesView: View {
     /// Set by the lobby to deal a coached hand from the last page. Nil elsewhere, where
     /// the last button only closes.
     var onFinish: (() -> Void)?
+    /// The house rules of the table the book was opened from. They come first, since they
+    /// are what a player at that table is most likely to be asking about.
+    var house: Set<HouseRule> = []
 
     @Environment(\.dismiss) private var dismiss
-    @State private var chapter = Chapter.deck
+    @State private var chapter: Chapter?
 
     var body: some View {
         NavigationStack {
@@ -25,6 +28,7 @@ struct RulesView: View {
                 }
             }
         }
+        .onAppear { chapter = chapter ?? chapters.first }
         .sensoryFeedback(.selection, trigger: chapter)
         .sound(.tap, trigger: chapter)
     }
@@ -42,7 +46,7 @@ struct RulesView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollBounceBehavior(.basedOnSize)
-                .tag(chapter)
+                .tag(Optional(chapter))
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -58,6 +62,7 @@ struct RulesView: View {
 
     @ViewBuilder private func page(_ chapter: Chapter) -> some View {
         switch chapter {
+        case .house: thisTable
         case .deck: deck
         case .take: take
         case .scopa: scopa
@@ -69,7 +74,18 @@ struct RulesView: View {
 
     /// The closing offer is only a page when there is a table to deal.
     private var chapters: [Chapter] {
-        onFinish == nil ? Chapter.allCases.filter { $0 != .ready } : Chapter.allCases
+        let classic: [Chapter] = [.deck, .take, .scopa, .deal, .points] + (onFinish == nil ? [] : [.ready])
+        return house.isEmpty ? classic : [.house] + classic
+    }
+
+    private var thisTable: some View {
+        VStack(alignment: .leading, spacing: 34) {
+            Caption(text: "This table's house rules")
+            ForEach(HouseRule.allCases.filter(house.contains), id: \.self) { rule in
+                HouseRulePage(rule: rule)
+            }
+            Paragraph("Everything else is classic Scopa, on the pages that follow.")
+        }
     }
 
     private var deck: some View {
@@ -210,18 +226,20 @@ struct RulesView: View {
 
     private func advance() {
         let pages = chapters
-        guard let index = pages.firstIndex(of: chapter), index + 1 < pages.count else {
+        guard let chapter, let index = pages.firstIndex(of: chapter), index + 1 < pages.count else {
             // Called before dismiss: the caller defers the deal until the sheet is gone.
             onFinish?()
             dismiss()
             return
         }
-        withAnimation(.easeInOut(duration: 0.3)) { chapter = pages[index + 1] }
+        withAnimation(.easeInOut(duration: 0.3)) { self.chapter = pages[index + 1] }
     }
 }
 
 private enum Chapter: Int, CaseIterable, Identifiable {
     case deck, take, scopa, deal, points, ready
+    /// The house rules of the table the book was opened from.
+    case house
 
     var id: Int { rawValue }
 }
@@ -248,7 +266,7 @@ private struct MarkLine: View {
 
 // MARK: - Pieces
 
-private struct Heading: View {
+struct Heading: View {
     let title: LocalizedStringKey
     let detail: LocalizedStringKey
 
@@ -271,7 +289,7 @@ private struct Heading: View {
     }
 }
 
-private struct Paragraph: View {
+struct Paragraph: View {
     let text: LocalizedStringKey
 
     init(_ text: LocalizedStringKey) { self.text = text }
@@ -324,7 +342,7 @@ private struct Suits: View {
 
 /// A take: the card played, and what it lifts off the table. Empty `taking` shows a card
 /// that stays down.
-private struct Take: View {
+struct Take: View {
     let played: Card
     let taking: [Card]
     let note: LocalizedStringKey
@@ -386,7 +404,7 @@ private struct Deal: View {
 }
 
 /// One of the four points won at the end of a round.
-private struct Point<Mark: View>: View {
+struct Point<Mark: View>: View {
     let title: LocalizedStringKey
     let detail: LocalizedStringKey
     @ViewBuilder let mark: Mark

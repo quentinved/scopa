@@ -17,7 +17,7 @@ export const MAX_ITEMS = 10;
 export const MAX_DEVICE_LENGTH = 64;
 
 /** "felt.notte": a shelf the shop sells from, a dot, and a name. */
-const ITEM = /^(deck|skin|felt|tapis|mark|cornice|back|companion|livery|flourish|cheer|reactions)\.[A-Za-z0-9]+$/;
+const ITEM = /^(deck|skin|felt|tapis|mark|cornice|back|companion|livery|flourish|cheer|reactions|song)\.[A-Za-z0-9]+$/;
 
 export interface CouponRow {
   code: string;

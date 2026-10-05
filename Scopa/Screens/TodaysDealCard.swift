@@ -309,7 +309,7 @@ struct ReminderOffer: View {
             Image(systemName: "bell.badge")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Palette.goldLight)
-            Text("A nudge when tomorrow's deal is ready?")
+            Text("A nudge when tomorrow's wheel is ready?")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Palette.onTable)
                 .fixedSize(horizontal: false, vertical: true)

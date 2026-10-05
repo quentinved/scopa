@@ -17,6 +17,20 @@ struct CampaignView: View {
     @State private var prize: CampaignRegion?
     /// The sheet across, which the map's grounds fill.
     @State private var span: CGFloat = 0
+    /// Who else sits at each table, by stage number.
+    @State private var tables: [Int: Ladder.CampaignTable] = [:]
+    @State private var showsBoard = DebugLaunch.showsCampaignBoard
+    /// A house rule being taught, before a table that brings it in or because it was asked for.
+    @State private var lesson: Lesson?
+    /// The table to deal once its lesson has been read and the sheet is gone.
+    @State private var dealsAfterLesson: CampaignStage?
+
+    struct Lesson: Identifiable {
+        let id = UUID()
+        let rules: [HouseRule]
+        /// The table the lesson stands in front of. Nil when it is only being read.
+        var stage: CampaignStage?
+    }
 
     private var book: CampaignBook { store.campaignBook }
     /// A phone's width, centred on an iPad.
@@ -27,7 +41,7 @@ struct CampaignView: View {
     var body: some View {
         ScrollViewReader { proxy in
             SheetScaffold(title: "Campaign", subtitle: "Thirty tables across Italy. Win one to open the road to the next.",
-                          close: close, bleeds: true) {
+                          close: close, bleeds: true, accessory: AnyView(boardButton)) {
                 content(proxy)
             } bottom: {
                 card(proxy)
@@ -35,6 +49,14 @@ struct CampaignView: View {
             .overlay { prizeOverlay }
             .animation(.spring(duration: 0.45, bounce: 0.2), value: prize)
             .task { await walkBack(proxy) }
+            .task { await meetTheRoad() }
+            .sheet(isPresented: $showsBoard) { CampaignBoardSheet(store: store) }
+            .sheet(item: $lesson, onDismiss: dealAfterLesson) { lesson in
+                HouseRuleLesson(rules: lesson.rules, onFinish: lesson.stage.map { stage in
+                    { HouseRuleLessons.learn(lesson.rules); dealsAfterLesson = stage }
+                })
+            }
+            .task { showDebugLesson() }
         }
     }
 
@@ -51,7 +73,7 @@ struct CampaignView: View {
                 .background(CampaignRegion.liguria.ground.light)
             if span > 0 {
                 CampaignMap(book: book, width: width, span: span, selected: selected, moment: moment,
-                            you: badge) { tap($0, proxy) }
+                            you: badge, tables: tables) { tap($0, proxy) }
             }
         }
         .frame(maxWidth: .infinity)
@@ -86,6 +108,8 @@ struct CampaignView: View {
         if let selected {
             CampaignStageCard(stage: selected, stars: book.stars(of: selected)) {
                 withAnimation(.spring(duration: 0.35, bounce: 0.15)) { self.selected = nil }
+            } explain: { rules in
+                lesson = Lesson(rules: rules)
             } play: {
                 play(selected)
             }
@@ -95,6 +119,31 @@ struct CampaignView: View {
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .id(selected.id)
         }
+    }
+
+    /// The board, in the header beside the close button.
+    private var boardButton: some View {
+        Button {
+            Audio.shared.play(.tap)
+            showsBoard = true
+        } label: {
+            Image(systemName: "trophy.fill")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Palette.goldLight)
+                .frame(width: 34, height: 34)
+                .glass(.riviera(interactive: true), in: .circle)
+                .overlay { Circle().strokeBorder(Palette.gold.opacity(0.30), lineWidth: 1) }
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Campaign board")
+    }
+
+    /// Hands the road to the ladder in case it never heard it, and reads who sits where.
+    private func meetTheRoad() async {
+        CampaignStandings.report(book, store: store)
+        let found = await CampaignStandings.tables()
+        withAnimation(.easeOut(duration: 0.3)) { tables = found }
     }
 
     // MARK: Actions
@@ -109,7 +158,30 @@ struct CampaignView: View {
     /// High enough on screen that the card at the foot does not cover the table it is about.
     private static let overCard = UnitPoint(x: 0.5, y: 0.3)
 
+    /// A rule nobody has taught this phone yet is taught first, and the cards follow.
     private func play(_ stage: CampaignStage) {
+        let unlearned = HouseRuleLessons.unlearned(in: stage.house)
+        guard unlearned.isEmpty else {
+            lesson = Lesson(rules: unlearned, stage: stage)
+            return
+        }
+        deal(stage)
+    }
+
+    private func dealAfterLesson() {
+        guard let stage = dealsAfterLesson else { return }
+        dealsAfterLesson = nil
+        deal(stage)
+    }
+
+    /// `-houseLesson napola,scopone` opens the lesson over the map.
+    private func showDebugLesson() {
+        let rules = DebugLaunch.houseLesson
+        guard !rules.isEmpty else { return }
+        lesson = Lesson(rules: rules, stage: Campaign.stages.first)
+    }
+
+    private func deal(_ stage: CampaignStage) {
         book.showsMap = false
         dismiss()
         store.playCampaign(stage)

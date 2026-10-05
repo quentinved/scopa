@@ -63,15 +63,21 @@ public struct PlayerView: Hashable, Codable, Sendable {
     /// Which deal of this round we are on, counting from one. Derived from the stock, so
     /// nothing extra crosses the wire.
     public var handNumber: Int {
-        let perDeal = configuration.seatCount * GameConfiguration.handSize
+        let perDeal = configuration.seatCount * configuration.handSize
         guard perDeal > 0 else { return 1 }
-        let dealt = Deck.standard.count - GameConfiguration.tableSize - stockCount
+        let dealt = Deck.standard.count - configuration.tableSize - stockCount
         return max(1, Int((Double(dealt) / Double(perDeal)).rounded(.up)))
     }
 
-    /// Whether taking `captures` would sweep the table and score a scopa.
-    public func isScopa(taking captures: [Card]) -> Bool {
+    /// Whether playing `card` and taking `captures` would sweep the table and score a scopa.
+    public func isScopa(playing card: Card, taking captures: [Card]) -> Bool {
         !captures.isEmpty && captures.count == table.count && !isOnLastCard
+            && configuration.house.sweepScores(playing: card)
+    }
+
+    /// Every set of table cards `card` may take here, under this table's rules.
+    public func captureOptions(for card: Card) -> [[Card]] {
+        Rules.captureOptions(for: card, on: table, house: configuration.house)
     }
 }
 

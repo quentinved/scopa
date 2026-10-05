@@ -6,7 +6,9 @@ import ScopaCore
 /// Difficulty climbs one pip about every six tables: Liguria teaches, Napoli and Sicilia
 /// ask for the normal bot's full attention, Venezia brings in the search, Roma never lets
 /// it go. The twists are tables the engine already deals — three or four chairs, a
-/// partner, a clock, the classic primiera, a longer game.
+/// partner, a clock, the classic primiera, a longer game — and each region past Liguria
+/// teaches one house rule of its own: the napola in Napoli, asso piglia tutto in Sicilia,
+/// re bello in Venezia, and the scopone in Roma.
 extension CampaignRegion {
     typealias Plan = CampaignStage.Plan
 
@@ -25,28 +27,32 @@ extension CampaignRegion {
         Plan(id: "pozzuoli", place: "Pozzuoli", opponent: "Loïc", difficulty: 2, target: 11),
         Plan(id: "spaccanapoli", place: "Spaccanapoli", opponent: "Timothée", difficulty: 3, target: 11,
              primiera: .classic),
-        Plan(id: "posillipo", place: "Posillipo", opponent: "Laurence", difficulty: 3, target: 11, seating: .three),
+        Plan(id: "posillipo", place: "Posillipo", opponent: "Laurence", difficulty: 3, target: 11, seating: .three,
+             house: [.napola]),
         Plan(id: "sorrento", place: "Sorrento", opponent: "Camille", difficulty: 3, target: 11, seating: .teams),
-        Plan(id: "capri", place: "Capri", opponent: "Lucas", difficulty: 3, target: 16),
-        Plan(id: "vesuvio", place: "Vesuvio", opponent: "Hugo", difficulty: 4, target: 16),
+        Plan(id: "capri", place: "Capri", opponent: "Lucas", difficulty: 3, target: 16, house: [.napola]),
+        Plan(id: "vesuvio", place: "Vesuvio", opponent: "Hugo", difficulty: 4, target: 16, house: [.napola]),
     ]
 
     private static let sicilian: [Plan] = [
         Plan(id: "palermo", place: "Palermo", opponent: "Alexis", difficulty: 3, target: 11, clock: .relaxed),
-        Plan(id: "cefalu", place: "Cefalù", opponent: "Arthur", difficulty: 3, target: 16),
-        Plan(id: "taormina", place: "Taormina", opponent: "Timothée", difficulty: 4, target: 11, seating: .four),
+        Plan(id: "cefalu", place: "Cefalù", opponent: "Arthur", difficulty: 3, target: 16, house: [.assoPigliaTutto]),
+        Plan(id: "taormina", place: "Taormina", opponent: "Timothée", difficulty: 4, target: 11, seating: .four,
+             house: [.assoPigliaTutto]),
         Plan(id: "siracusa", place: "Siracusa", opponent: "Loïc", difficulty: 4, target: 11, primiera: .classic),
         Plan(id: "agrigento", place: "Agrigento", opponent: "Laurence", difficulty: 4, target: 16, seating: .teams),
-        Plan(id: "etna", place: "Etna", opponent: "Hugo", difficulty: 4, target: 21),
+        Plan(id: "etna", place: "Etna", opponent: "Hugo", difficulty: 4, target: 21, house: [.assoPigliaTutto]),
     ]
 
     private static let venetian: [Plan] = [
         Plan(id: "murano", place: "Murano", opponent: "Camille", difficulty: 4, target: 11),
-        Plan(id: "burano", place: "Burano", opponent: "Lucas", difficulty: 4, target: 11, clock: .brisk),
-        Plan(id: "rialto", place: "Rialto", opponent: "Arthur", difficulty: 4, target: 16, seating: .three),
+        Plan(id: "burano", place: "Burano", opponent: "Lucas", difficulty: 4, target: 11, clock: .brisk,
+             house: [.reBello]),
+        Plan(id: "rialto", place: "Rialto", opponent: "Arthur", difficulty: 4, target: 16, seating: .three,
+             house: [.reBello]),
         Plan(id: "sanmarco", place: "San Marco", opponent: "Alexis", difficulty: 5, target: 11),
         Plan(id: "lido", place: "Lido", opponent: "Timothée", difficulty: 5, target: 16, seating: .teams),
-        Plan(id: "canalgrande", place: "Canal Grande", opponent: "Hugo", difficulty: 5, target: 21),
+        Plan(id: "canalgrande", place: "Canal Grande", opponent: "Hugo", difficulty: 5, target: 21, house: [.reBello]),
     ]
 
     private static let roman: [Plan] = [
@@ -55,7 +61,10 @@ extension CampaignRegion {
         Plan(id: "campodefiori", place: "Campo de' Fiori", opponent: "Camille", difficulty: 5, target: 16,
              seating: .four),
         Plan(id: "pantheon", place: "Pantheon", opponent: "Arthur", difficulty: 5, target: 21, clock: .relaxed),
-        Plan(id: "colosseo", place: "Colosseo", opponent: "Lucas", difficulty: 5, target: 21, seating: .teams),
-        Plan(id: "trevi", place: "Fontana di Trevi", opponent: "Hugo", difficulty: 5, target: 21),
+        Plan(id: "colosseo", place: "Colosseo", opponent: "Lucas", difficulty: 5, target: 21, seating: .teams,
+             house: [.scopone]),
+        // The last table is the whole road's: every rule the regions taught, at once.
+        Plan(id: "trevi", place: "Fontana di Trevi", opponent: "Hugo", difficulty: 5, target: 21,
+             house: [.napola, .assoPigliaTutto, .reBello]),
     ]
 }

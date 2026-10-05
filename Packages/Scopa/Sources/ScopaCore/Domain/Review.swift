@@ -65,7 +65,7 @@ public struct MoveReview: Hashable, Sendable, Identifiable {
     public let gap: Int
     public let verdict: Verdict
 
-    public var sweeps: Bool { view.isScopa(taking: move.captures) }
+    public var sweeps: Bool { view.isScopa(playing: move.card, taking: move.captures) }
 }
 
 /// Every move of a game, judged from the seat that made it.
@@ -192,14 +192,14 @@ public enum Reviewer {
     private static func verdict(for move: Move, best: Move, gap: Int, options: [Bot.ScoredMove], view: PlayerView) -> Verdict {
         if options.count <= 1 { return .forced }
         if gap == 0 {
-            if view.isScopa(taking: move.captures) { return .scopa }
+            if view.isScopa(playing: move.card, taking: move.captures) { return .scopa }
             if (move.captures + [move.card]).contains(.settebello), !move.captures.isEmpty { return .settebello }
             return .best
         }
         if gap <= fineGap { return .fine }
 
-        let couldSweep = options.contains { view.isScopa(taking: $0.move.captures) }
-        if couldSweep, !view.isScopa(taking: move.captures) { return .missedScopa }
+        let couldSweep = options.contains { view.isScopa(playing: $0.move.card, taking: $0.move.captures) }
+        if couldSweep, !view.isScopa(playing: move.card, taking: move.captures) { return .missedScopa }
         if move.captures.isEmpty, move.card == .settebello { return .settebelloGiven }
         let couldTakeSeven = options.contains { $0.move.captures.contains(.settebello) }
         if couldTakeSeven, !move.captures.contains(.settebello) { return .settebelloMissed }

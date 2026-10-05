@@ -27,7 +27,16 @@ database_id = "e66ea23e-89e2-4849-87a1-c1533f65e70f"
 name = "ROOMS"
 class_name = "Room"
 
+# One object for the whole game: every ranked search, paired as soon as two are waiting.
+[[durable_objects.bindings]]
+name = "QUEUE"
+class_name = "RankedQueue"
+
 # SQLite-backed, which is the kind the free plan gives.
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["RankedQueue"]

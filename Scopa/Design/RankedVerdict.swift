@@ -21,15 +21,16 @@ struct RankedVerdict: View {
         let won: Bool
         /// Wins in a row including this one, as the ladder counts them now.
         var streak: Int = 0
-        /// A game against the house, which leaves the run where it stood either way.
+        /// A game against the house, part of the run unless the day's ration was spent.
         var isHouse = false
 
         var change: Int { after - before }
         /// A run worth saying out loud: the second win of one is where it starts paying.
-        var isOnARun: Bool { won && streak >= 2 && !isHouse }
-        /// A run the house game left alone, said so that a win over it is not read as the
-        /// run growing, nor a loss to it as the run lost.
-        var keepsRun: Bool { isHouse && streak > 0 }
+        var isOnARun: Bool { won && streak >= 2 && !keepsRun }
+        /// A run a house game past the ration left alone, said so that a win is not read as
+        /// the run growing, nor a loss as the run lost. Read off the result: a counted house
+        /// win always pays and a counted house loss always ends the run.
+        var keepsRun: Bool { isHouse && streak > 0 && (!won || change == 0) }
         /// A loss the floor swallowed.
         var isHeld: Bool { !won && change == 0 }
     }
@@ -222,12 +223,13 @@ struct RankedVerdict: View {
 
     /// The run, at the far end of the line under the bar: a flame a win, the newest
     /// catching as it is shown. Part of what the game paid is the run, and this says so.
-    /// After a house game the flames are banked and the words say the run was kept.
+    /// After a house game past the ration the flames are banked and the words say the run
+    /// was kept.
     private var runTag: some View {
         HStack(spacing: 5) {
-            RunFlames(count: move.streak, lit: !move.isHouse, catches: move.isOnARun)
+            RunFlames(count: move.streak, lit: !move.keepsRun, catches: move.isOnARun)
             Group {
-                if move.isHouse {
+                if move.keepsRun {
                     Text("RUN OF \(move.streak) KEPT")
                 } else {
                     Text("\(move.streak) IN A ROW")
@@ -235,7 +237,7 @@ struct RankedVerdict: View {
             }
             .font(.system(size: 10, weight: .heavy))
             .tracking(1.1)
-            .foregroundStyle(move.isHouse ? Palette.onTableSoft : Palette.goldLight)
+            .foregroundStyle(move.keepsRun ? Palette.onTableSoft : Palette.goldLight)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)

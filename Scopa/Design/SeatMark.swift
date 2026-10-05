@@ -243,10 +243,10 @@ enum SeatMark: String, CaseIterable, Identifiable {
     /// What the shop says about it, under the name.
     var explanation: LocalizedStringKey {
         switch self {
-        case .sail: "The Riviera, on your seat"
-        case .wine: "For the evening games"
-        case .dice: "Fortune, acknowledged"
-        case .espresso: "One before the last hand"
+        case .sail: "For people with a boat. Or a dream"
+        case .wine: "Evening games only. In theory"
+        case .dice: "Luck had nothing to do with it. Sure"
+        case .espresso: "One more before the last hand"
         default: requirement?.label ?? "Yours from the start"
         }
     }

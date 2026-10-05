@@ -181,6 +181,26 @@ wrangler d1 execute scopa --remote --file migrations/009-coupons.sql     # once
 The script checks tiers, ids, numbers and dates before it writes, prints what it is about to
 write, and asks. `--local` runs it against the database `wrangler dev` uses instead.
 
+### The campaign
+
+How far each player's road has reached, and who is sitting at each table of the map. Taken
+on trust like the weekly challenge: only the post is signed, and both numbers only climb.
+A face is the seat mark, livery and cornice the player wears, as the app's raw values.
+
+- `POST /v1/campaign` — `{stage, stars, mark?, livery?, cornice?, identity}`. `stage` is the
+  table reached (1–30), `stars` the total (at most three per table reached). Returns the
+  player's place, `{played, rank, percentile}`.
+- `GET /v1/campaign/board?player=` — `{top, you}`: fifty rows of `{id, name, stage, stars,
+  mark, livery, cornice}`, most stars first, then the furthest road, then who got there first.
+- `POST /v1/campaign/board/friends` — `{player, friends}`. The same, among those ids only.
+- `POST /v1/campaign/stages` — `{player?, friends?}`. `{stages: [{stage, count, faces}]}`
+  for every table somebody sits at, the reader left out: up to three faces each, friends
+  first and then the latest to arrive, and `count` for everyone there.
+
+```sh
+wrangler d1 execute scopa --remote --file migrations/010-campaign.sql   # once
+```
+
 ### Tables
 
 A table two friends meet at, kept here rather than by Game Center. One Durable Object per

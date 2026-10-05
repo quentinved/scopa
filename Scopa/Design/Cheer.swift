@@ -65,11 +65,11 @@ enum Cheer: String, CaseIterable, Codable, Sendable, Identifiable {
 
     var explanation: LocalizedStringKey {
         switch self {
-        case .casa: "The guitar answers"
-        case .campana: "The village hears about it"
-        case .festa: "The band strikes up"
-        case .fuochi: "Fireworks over the square"
-        case .oro: "Coins, everywhere"
+        case .casa: "The guitar gives you a wink"
+        case .campana: "Church bells. The whole village knows"
+        case .festa: "The band kicks in. Everybody dance"
+        case .fuochi: "Fireworks over the square. Ooh"
+        case .oro: "Coins everywhere. Jackpot"
         }
     }
 

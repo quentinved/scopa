@@ -24,6 +24,9 @@ struct TableScreen: View {
     /// Said once per table: a second round is not a second game, and the price of the
     /// game has not changed since the first deal.
     @State private var stakesTold = false
+    /// From the moment the stakes are on their way until they are put away: the cloth takes
+    /// no cards and the bots wait, so nobody plays before the game has been priced.
+    @State private var holdsForStakes = false
     /// Where each table card sits, for finding the one under a dragged card. A box rather
     /// than state: the frames move on every frame of a table animation, and writing one
     /// must not redraw the table.
@@ -212,18 +215,19 @@ struct TableScreen: View {
                 }
             }
             .overlay { stakesBanner }
+            .onChange(of: stakes == nil) { _, gone in if gone, stakesTold { holdForStakes(false) } }
             .overlay(alignment: .topTrailing) { ReactionBubbles(store: store) }
             // Mid-game is when a rule is actually in question, so the ? follows you here.
-            .sheet(isPresented: $showsRules) { RulesView() }
+            .sheet(isPresented: $showsRules) { RulesView(house: view?.configuration.house ?? []) }
             .sheet(isPresented: $showsReview) { ReviewView(store: store) }
             .onChange(of: store.review == nil) { _, missing in
                 if !missing, DebugLaunch.showsReview { showsReview = true }
             }
-            .confirmationDialog("Leave the table?", isPresented: $confirmsLeave, titleVisibility: .visible) {
-                Button(leaving?.action ?? "Leave", role: .destructive) { store.leaveTable() }
-                Button("Keep playing", role: .cancel) {}
-            } message: {
-                if let leaving { Text(leaving.cost) }
+            .confirmation(isPresented: $confirmsLeave) {
+                Confirmation(Text("Leave the table?"), message: leaving.map { Text($0.cost) }, actions: [
+                    .init(title: Text(leaving?.action ?? "Leave"), role: .destructive) { store.leaveTable() },
+                    .init(title: Text("Keep playing"), role: .cancel),
+                ])
             }
             .overlay { roundOverlay }
             .overlay { passCurtain }
@@ -244,19 +248,26 @@ struct TableScreen: View {
     }
 
     /// Placed high rather than centred: the bot is already thinking by the time this comes
-    /// up, and a banner over the middle of the cloth covers the cards being played.
+    /// up, and a banner over the middle of the cloth covers the cards being played. While it
+    /// is up the cloth is dimmed and takes no cards, and a tap anywhere puts it away.
     private var stakesBanner: some View {
         GeometryReader { proxy in
             if let stakes {
+                Color.black.opacity(0.28)
+                    .ignoresSafeArea()
+                    .contentShape(.rect)
+                    .onTapGesture { withAnimation(.easeOut(duration: 0.25)) { self.stakes = nil } }
+                    .transition(.opacity)
                 // Wrapped, so the banner keeps its own width and sits in the middle of the
                 // cloth rather than being stretched to the screen's edges.
                 ZStack { RankedStakes(odds: stakes) }
                     .frame(width: proxy.size.width)
                     .position(x: proxy.size.width / 2,
                               y: proxy.size.height * stage.pick(tall: 0.27, wide: 0.30))
+                    .allowsHitTesting(false)
             }
         }
-        .allowsHitTesting(false)
+        .allowsHitTesting(holdsForStakes || stakes != nil)
     }
 
     @ViewBuilder private var passCurtain: some View {
@@ -306,6 +317,7 @@ struct TableScreen: View {
             .task(id: deadline) { await runClock() }
             .onAppear { selection.assist = store.assist }
             .onChange(of: store.assist) { _, level in handleAssist(level) }
+            .onChange(of: view?.configuration.house, initial: true) { _, house in selection.house = house ?? [] }
     }
 
     /// The table's own housekeeping: debug hands, the ads warm-up, opponent ranks, the
@@ -517,7 +529,7 @@ struct TableScreen: View {
         // other side's moves can actually be watched.
         try? await Task.sleep(for: .milliseconds(2600))
         guard let card = view.hand.randomElement() else { return }
-        let capture = Rules.captureOptions(for: card, on: view.table).randomElement() ?? []
+        let capture = view.captureOptions(for: card).randomElement() ?? []
         store.play(card, capturing: capture)
     }
 
@@ -1847,19 +1859,27 @@ struct TableScreen: View {
         // a table against the house pays a win in full while the day's allowance lasts, and
         // nothing once it is spent. The banner says whichever it is.
         guard store.ladderTable != nil, !stakesTold, let odds = rankedOdds() else { return }
+        holdForStakes(true)
         // Behind the hand banner, which owns the first beat of a deal.
         try? await Task.sleep(for: .milliseconds(2600))
         // Marked told only once it is actually being told: this task is keyed on who is
         // sitting at the table, and a chair filling during the wait cancels it.
-        guard !Task.isCancelled, !stakesTold else { return }
+        guard !Task.isCancelled, !stakesTold else { return holdForStakes(false) }
         stakesTold = true
         withAnimation(.spring(duration: 0.4, bounce: 0.28)) { stakes = odds }
         Audio.shared.play(.notice, gain: 0.7)
-        // Long enough to read the run and the house's count as well as the two numbers.
-        try? await Task.sleep(for: .seconds(4.6))
+        // Long enough for two medals and two numbers; a tap puts it away sooner.
+        try? await Task.sleep(for: .seconds(2.8))
         // Cleared whether or not the wait was cut short: a banner left up is worse than
         // one cut off.
         withAnimation(.easeOut(duration: 0.35)) { stakes = nil }
+    }
+
+    /// Holds or lets go of the table for the stakes. The bots' hold carries a deadline past
+    /// the banner's own time, so a release lost on the way cannot leave them waiting.
+    private func holdForStakes(_ holds: Bool) {
+        holdsForStakes = holds
+        if holds { store.holdBots(for: .seconds(8)) } else { store.releaseBots() }
     }
 
     /// Both sides of a ranked table as the ladder rates them. Nil where this phone does

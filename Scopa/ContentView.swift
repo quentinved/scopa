@@ -1,5 +1,6 @@
 import SwiftUI
 import ScopaCore
+import ScopaRewards
 
 struct ContentView: View {
     @State private var store = TableStore()
@@ -9,6 +10,7 @@ struct ContentView: View {
     @State private var account = AccountSync()
     @State private var toaster = Toaster()
     @State private var friendsOnline = FriendsOnline()
+    @State private var bannerCovers = BannerCovers()
     /// The screen the whole app is being drawn in. See `Stage`.
     @State private var screenSize: CGSize = .zero
     @Environment(\.scenePhase) private var scenePhase
@@ -27,9 +29,10 @@ struct ContentView: View {
                 routes
             }
         }
-        // The banner is only shown under the lobby, never under a hand of cards.
+        // The banner is only shown under the lobby, never under a hand of cards, and
+        // never behind a sheet.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            BannerSlot(ads: ads, isVisible: ads.showsBanner(on: store.route))
+            BannerSlot(ads: ads, isVisible: ads.showsBanner(on: store.route) && !bannerCovers.isCovered)
         }
         .animation(.easeInOut(duration: 0.25), value: store.route)
         // Over every screen, under the notices, the toasts and a full screen ad, and inside
@@ -47,6 +50,7 @@ struct ContentView: View {
         .environment(\.tableFelt, store.tableFelt)
         .environment(\.tapis, store.tapis)
         .environment(toaster)
+        .environment(\.bannerCovers, bannerCovers)
         .environment(friendsOnline)
         // For screens opened without arguments, such as `CampaignView`.
         .environment(store)
@@ -88,11 +92,15 @@ struct ContentView: View {
     private func audioReactions(_ content: some View) -> some View {
         content
             // Asking for the loop already playing is a no-op.
-            .task(id: store.route) {
-                Audio.shared.music(store.route == .table ? .tavolo : .lungomare)
-            }
+            .task(id: store.route) { playRouteMusic() }
+            .onChange(of: Audio.shared.tableSong) { _, _ in playRouteMusic() }
             .task { Audio.shared.warmUp() }
             .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+    }
+
+    /// The lobby keeps its own loop; the table plays the song picked in the shop.
+    private func playRouteMusic() {
+        Audio.shared.music(store.route == .table ? Audio.shared.tableSong.track : .lungomare)
     }
 
     private func startupTasks(_ content: some View) -> some View {
@@ -102,9 +110,16 @@ struct ContentView: View {
             // still counts towards it.
             .task { Experience.seedFromWhatWasPlayed() }
             .onOpenURL { url in store.open(url) }
-            .task(id: store.dailyBook.results.count) { await reminders.refresh(store.dailyBook) }
+            .task(id: wheelSpentToday) { await refreshReminders() }
+            // A turn just taken goes up now rather than on the next launch, so it is on
+            // everyone else's strip under the wheel while it is still news.
+            .onChange(of: wheelSpentToday) { was, now in
+                if was == false, now == true { Task { await syncAccount() } }
+            }
             // Consent first, then the SDK: `ads.isReady` stays false until both are done.
             .task { await ads.start() }
+            // Settles the no-ads pass, then follows the App Store for the life of the app.
+            .task { await ads.pass.watch() }
             .task { store.listenForInvites() }
             .task { await showDebugAdIfAsked() }
             // The account waits for both: Game Center to say who this is, and the ledger to
@@ -178,17 +193,29 @@ struct ContentView: View {
     /// Merges this device with the player's other ones: the preferences, the album, the
     /// counters and the purse. Quiet on every failure — an account that could not be
     /// reached changes nothing about the game in front of the player.
+    /// Whether today's free turn of the wheel is gone, read off the ledger so a turn taken on
+    /// the other device counts. Nil until the purse has been read.
+    private var wheelSpentToday: Bool? {
+        guard purse.isReady else { return nil }
+        return purse.purse.keys.contains(DailyWheel.Ticket.free.key(on: store.today))
+    }
+
+    private func refreshReminders() async {
+        guard let spent = wheelSpentToday else { return }
+        await reminders.refresh(store.dailyBook, wheelSpentToday: spent)
+    }
+
     private func syncAccount() async {
         guard canSyncAccount else { return }
         await account.sync(store, purse: purse, ads: ads, reminders: reminders)
     }
 
-    /// Reminders are replanned on every return to the front, so a day played takes its
-    /// own nudge down. The account is merged on the way back too: the other device has had
+    /// Reminders are replanned on every return to the front, so the planned week always starts
+    /// from today. The account is merged on the way back too: the other device has had
     /// the whole time the app was away to change something.
     private func handleScenePhase(_ phase: ScenePhase) {
         if phase == .active { Audio.shared.resume() } else { Audio.shared.pause() }
-        if phase == .active { Task { await reminders.refresh(store.dailyBook) } }
+        if phase == .active { Task { await refreshReminders() } }
         if phase == .active { Task { await syncAccount() } }
         if phase == .active { Task { await friendsOnline.refreshAccess() } }
     }

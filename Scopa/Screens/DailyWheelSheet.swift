@@ -35,6 +35,8 @@ struct DailyWheelSheet: View {
     @State private var isFresh = false
     @State private var bursts = 0
     @State private var showsOdds = false
+    /// Other players' turns, once the Worker has answered.
+    @State private var strip: Ladder.WheelStrip?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -60,6 +62,10 @@ struct DailyWheelSheet: View {
             VStack(spacing: 22) {
                 stage
                 footer
+                if let strip, !strip.isEmpty {
+                    WheelStripView(strip: strip)
+                        .transition(.opacity)
+                }
                 odds
             }
             .padding(.horizontal, 20)
@@ -70,6 +76,10 @@ struct DailyWheelSheet: View {
         .sensoryFeedback(.selection, trigger: ticks)
         .sensoryFeedback(Haptic.prize, trigger: landed)
         .task { await turnForDebugging() }
+        .task {
+            let found = await WheelTurns.today()
+            withAnimation(.easeOut(duration: 0.3)) { strip = found }
+        }
     }
 
     // MARK: The wheel

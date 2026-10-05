@@ -37,6 +37,8 @@ public struct Card: Hashable, Codable, Sendable, Identifiable, CustomStringConve
 
     /// The 7 of coins, worth one point on its own.
     public static let settebello = Card(.seven, of: .coins)
+    /// The king of coins, a point of its own where re bello is played.
+    public static let reBello = Card(.king, of: .coins)
 }
 
 public extension Sequence where Element == Card {

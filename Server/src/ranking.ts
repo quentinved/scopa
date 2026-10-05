@@ -74,15 +74,17 @@ export function apply(delta: number, rating: number, floor: number): { rating: n
 // MARK: The house
 
 /// A house win pays in full and a house loss a fifth of it, so an evening alone climbs; the
-/// ration below is the brake, not the price. It neither lengthens a run nor ends one — a run
-/// is something people take off each other. See Ranking.swift.
+/// ration below is the brake, not the price. Within the ration a house game is part of the
+/// run like any other: with so few people about, a run against people only never got going.
+/// See Ranking.swift.
 export const HOUSE_WIN = 25;
 export const HOUSE_LOSS = -5;
-/// House games past this many a day pay nothing, which caps the house at +250 a day.
+/// House games past this many a day pay nothing, which caps the house at +320 a day, run included.
 export const HOUSE_GAMES_PER_DAY = 10;
 
-export function houseChange(won: boolean): number {
-  return won ? HOUSE_WIN : HOUSE_LOSS;
+/// `streak` is the run standing before this game, as for `change`.
+export function houseChange(won: boolean, streak = 0): number {
+  return won ? HOUSE_WIN + streakBonus(streak) : HOUSE_LOSS;
 }
 
 // MARK: Seasons

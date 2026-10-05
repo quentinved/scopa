@@ -409,6 +409,8 @@ final class TableStore {
         /// The search ran its length and found nobody. Nothing is being looked for, and the
         /// offer waits for an answer rather than sitting the house down unasked.
         var isOver = false
+        /// Other players in the ranked queue right now. Nil when the queue could not be reached.
+        var searching: Int?
     }
 
     private(set) var rankedSearch: RankedSearch?
@@ -557,6 +559,11 @@ final class TableStore {
         Task { await coordinator.setTies(rule) }
     }
 
+    func setHouse(_ rules: Set<HouseRule>) {
+        guard case .host(let coordinator) = backend else { return }
+        Task { await coordinator.setHouse(rules) }
+    }
+
     func setTargetScore(_ score: Int) {
         guard case .host(let coordinator) = backend else { return }
         Task { await coordinator.setTargetScore(score) }
@@ -565,7 +572,7 @@ final class TableStore {
     /// Whether this phone is setting the table, with the cards still to be dealt. The seats
     /// are the host's to arrange only until then.
     var isSettingTheTable: Bool {
-        guard case .host = backend else { return false }
+        guard case .host = backend, !isRanked || isRankedDuo else { return false }
         return isHost && route == .waiting
     }
 
@@ -743,7 +750,7 @@ final class TableStore {
             playOnThisDevice(seats: seats, teams: configuration.teams,
                              turnClock: configuration.turnClock, targetScore: configuration.targetScore,
                              primiera: configuration.primiera, ties: configuration.ties,
-                             strength: ranked ? houseStrength : nil)
+                             house: configuration.house, strength: ranked ? houseStrength : nil)
             if ranked {
                 isRanked = true
                 rankedID = again
@@ -1195,18 +1202,20 @@ final class TableStore {
         return Relay.tidy(raw)
     }
 
-    /// Sits down at a room, host or guest, as `seatOnline` does for a Game Center match. A room
-    /// never deals itself when it fills: the empty chairs are the host's to fill with bots first.
-    private func seatRoom(_ session: RelaySession) async {
+    /// Sits down at a room, host or guest, as `seatOnline` does for a Game Center match. A
+    /// friends' room never deals itself when it fills: the empty chairs are the host's to fill
+    /// with bots first. A ranked room deals as soon as both players are in, like a found match.
+    private func seatRoom(_ session: RelaySession, ranked: Bool = false) async {
         onlineStatus = .seating
         relay = session
-        hostDeals = true
-        onlineSize = nil
+        hostDeals = !ranked
+        onlineSize = ranked ? 2 : nil
         watchForProblems(session.problems)
         watchForReconnects(session)
         if session.isHost {
             isHost = true
-            let coordinator = HostCoordinator(transport: session, strength: botLevel.strength)
+            let strength = ranked ? houseStrength : botLevel.strength
+            let coordinator = HostCoordinator(transport: session, strength: strength)
             backend = .host(coordinator)
             route = .waiting
             consume(await coordinator.updates)
@@ -1220,7 +1229,7 @@ final class TableStore {
             await client.start()
             // Asked again until the host answers: their listener can come up a beat after ours,
             // and a join that lands before it is lost.
-            for _ in 0..<8 where lobby == nil {
+            for _ in 0..<(ranked ? Self.joinAttempts : 8) where lobby == nil && !Task.isCancelled {
                 try? await client.join()
                 try? await Task.sleep(for: .milliseconds(700))
             }
@@ -1280,12 +1289,20 @@ final class TableStore {
         Task {
             do {
                 let me = try await GameCenter.signIn { controller in Self.present(controller) }
-                guard !Task.isCancelled, let found = await lookForOpponent(format) else { return }
+                guard !Task.isCancelled, let found = await lookForOpponent(format, as: me) else { return }
                 let ranked = isRanked, id = rankedID
-                await seatOnline(found, as: me, players: 2)
+                switch found {
+                case .match(let match):
+                    await seatOnline(match, as: me, players: 2)
+                    rankedFormat = format
+                case .room(let pairing):
+                    await seatRankedRoom(pairing, as: me)
+                }
+                // A guest has taken the host's game id from the lobby by now; writing its own
+                // back would make the two phones report two different games.
+                guard !Task.isCancelled, !isRanked else { return }
                 isRanked = ranked
                 rankedID = id
-                rankedFormat = format
             } catch GameCenterError.notSignedIn {
                 onlineStatus = nil
                 notice = .rejected("Sign in to Game Center to play ranked")
@@ -1299,7 +1316,7 @@ final class TableStore {
     /// One run of the search, with the house offered a few seconds in. Nil when nobody was
     /// found, which leaves the offer up, or when the search was called off, which changes
     /// nothing: whoever called it off has already said what happens next.
-    private func lookForOpponent(_ format: RankedSolo) async -> GKMatch? {
+    private func lookForOpponent(_ format: RankedSolo, as me: Player) async -> RankedFind? {
         onlineStatus = .searching
         let search = RankedSearch(startedAt: .now, length: Self.rankedSearchTime)
         rankedSearch = search
@@ -1307,10 +1324,13 @@ final class TableStore {
         // the delay does not have the old one's offer land on it early.
         let offer = Task {
             try? await Task.sleep(for: .seconds(Self.houseOfferDelay))
+            while !Task.isCancelled, (rankedSearch?.searching ?? 0) > 0 {
+                try? await Task.sleep(for: .seconds(1))
+            }
             guard !Task.isCancelled, rankedSearch?.startedAt == search.startedAt else { return }
             rankedSearch?.offersHouse = true
         }
-        let found = await findRankedMatch(format)
+        let found = await findRanked(format, as: me, startedAt: search.startedAt)
         offer.cancel()
         guard !Task.isCancelled else { return nil }
         guard let found else {
@@ -1343,20 +1363,110 @@ final class TableStore {
         searchTask = searchRanked(rankedFormat)
     }
 
-    /// One queue per format, open to every league.
-    ///
-    /// The search used to try your own league's queue first and widen after a third of the
-    /// time. Each stage was a separate queue, so two phones only met if they were in the same
-    /// one at the same moment, and a phone whose league had not loaded yet searched as Bronze.
-    /// The ladder already prices a gap between leagues (see `Ranking.points`), so nothing is
-    /// lost by pairing across them.
-    ///
-    /// The format names the pool, so a phone looking for a heads-up game never lands at a
-    /// table of four it did not ask for. The pool keeps the name the widened stage had, so a
-    /// phone not yet updated still meets one that has.
-    private func findRankedMatch(_ format: RankedSolo) async -> GKMatch? {
+    /// What a ranked search came back with: a Game Center match, or a room the queue paired us at.
+    enum RankedFind {
+        case match(GKMatch)
+        case room(RankedQueue.Pairing)
+    }
+
+    /// How often a search asks the ranked queue whether it has been paired.
+    static let queuePollInterval: Duration = .milliseconds(1500)
+
+    /// The ranked queue on the Worker, or nil when the Worker is not set up.
+    private var rankedQueue: RankedQueue? { Ladder.baseURL.map(RankedQueue.init(baseURL:)) }
+
+    /// The Worker's ranked queue first: one line for every search, so two players searching at
+    /// the same time always meet, whatever their league, format or build. Game Center's
+    /// matchmaker is only the fallback for when the queue cannot be reached.
+    private func findRanked(_ format: RankedSolo, as me: Player, startedAt: Date) async -> RankedFind? {
+        let deadline = startedAt.addingTimeInterval(Self.rankedSearchTime)
+        if let queue = rankedQueue {
+            switch await waitInQueue(queue, as: dressed(me), format: format, until: deadline) {
+            case .paired(let pairing): return .room(pairing)
+            case .over: return nil
+            case .unreachable: break
+            }
+        }
+        let left = deadline.timeIntervalSinceNow
+        guard left > 1 else { return nil }
+        return await findRankedMatch(format, within: left).map(RankedFind.match)
+    }
+
+    enum QueueOutcome {
+        case paired(RankedQueue.Pairing)
+        /// The search ran out or was called off.
+        case over
+        /// The queue never answered, so the search falls back to Game Center.
+        case unreachable
+    }
+
+    /// Asks the queue every 1.5 s until it pairs this phone, the clock runs out or the search is
+    /// called off. The player is taken out of the line on the way out, unless they were paired.
+    private func waitInQueue(_ queue: RankedQueue, as me: Player, format: RankedSolo,
+                             until deadline: Date) async -> QueueOutcome {
+        var answered = false, failures = 0
+        let search = UUID().uuidString
+        while Date.now < deadline, !Task.isCancelled {
+            do {
+                let answer = try await queue.seek(as: me, format: format.queueName, search: search)
+                answered = true
+                failures = 0
+                rankedSearch?.searching = answer.searching
+                if let pairing = answer.pairing, !Task.isCancelled { return .paired(pairing) }
+            } catch {
+                failures += 1
+                Log.table.error("Ranked queue: \(String(describing: error), privacy: .public)")
+                if !answered, failures >= 2 { return .unreachable }
+            }
+            try? await Task.sleep(for: Self.queuePollInterval)
+        }
+        Task.detached { await queue.leave(as: me) }
+        return .over
+    }
+
+    /// Sits down at the room the queue paired us at. The phone that waited longer deals, in
+    /// its format; the house fills whatever chairs that format has left.
+    private func seatRankedRoom(_ pairing: RankedQueue.Pairing, as me: Player) async {
+        guard let rooms, let format = RankedSolo(queueName: pairing.format) else { return }
+        Log.table.info("Ranked queue paired us with \(pairing.opponent, privacy: .public) at \(pairing.code, privacy: .public)")
+        rankedFormat = format
+        fillsTo = format.seatCount
+        onlineStatus = .seating
+        let session = rooms.session(code: pairing.code, as: dressed(me))
+        do {
+            try await session.connect()
+        } catch {
+            onlineStatus = nil
+            notice = .rejected("Could not find a ranked game")
+            return
+        }
+        guard !Task.isCancelled else { session.disconnect(); return }
+        watchForNoShow(session)
+        await seatRoom(session, ranked: true)
+    }
+
+    /// How long a paired table may sit undealt before the search starts again.
+    static let noShowPatience: Duration = .seconds(20)
+
+    /// The opponent the queue named never sat down, most likely because they took the house a
+    /// moment before the pairing. Rather than a waiting room that never fills, say so.
+    private func watchForNoShow(_ session: RelaySession) {
+        Task { [weak self] in
+            try? await Task.sleep(for: Self.noShowPatience)
+            guard let self, self.relay === session, self.view == nil else { return }
+            Log.table.error("Ranked opponent never arrived")
+            self.reset()
+            self.route = .lobby
+            self.notice = .rejected("Your opponent left before the deal. Try ranked again.")
+        }
+    }
+
+    /// Game Center's matchmaker, one pool per format and open to every league. Phones on
+    /// different builds (TestFlight, App Store, Xcode) never meet here, which is why the
+    /// Worker's queue comes first.
+    private func findRankedMatch(_ format: RankedSolo, within seconds: TimeInterval) async -> GKMatch? {
         let found = try? await GameCenter.findMatch(players: 2, pool: "\u{1}\(format.pool)/any",
-                                                    within: Self.rankedSearchTime)
+                                                    within: seconds)
         guard !Task.isCancelled else { found.map(GameCenter.leave); return nil }
         return found
     }
@@ -1736,7 +1846,8 @@ final class TableStore {
     /// `strength` overrides how hard the bots think, for a table that is not the player's to
     /// set: the coached first game and a ranked table both pass one.
     func playOnThisDevice(seats: [LocalSeat], teams: Bool, turnClock: TurnClock = .default, targetScore: Int = 11,
-                          primiera: PrimieraRule = .default, ties: TieRule = .default, strength: BotStrength? = nil) {
+                          primiera: PrimieraRule = .default, ties: TieRule = .default,
+                          house: Set<HouseRule> = [], strength: BotStrength? = nil) {
         reset()
         isHost = true
         let (players, bots) = LocalSeat.table(seats)
@@ -1745,7 +1856,7 @@ final class TableStore {
         let config: GameConfiguration
         do {
             config = try GameConfiguration(players: players, teams: teams, targetScore: targetScore,
-                                           turnClock: turnClock, primiera: primiera, ties: ties)
+                                           turnClock: turnClock, primiera: primiera, ties: ties, house: house)
         } catch {
             notice = .rejected(message(for: error))
             return
@@ -1771,7 +1882,8 @@ final class TableStore {
     /// Not saved for later: walking out is a game not played, and the map is one tap away.
     func playCampaign(_ stage: CampaignStage) {
         playOnThisDevice(seats: stage.seats(you: playerName), teams: stage.teams, turnClock: stage.clock,
-                         targetScore: stage.target, primiera: stage.primiera, strength: stage.strength)
+                         targetScore: stage.target, primiera: stage.primiera, house: stage.house,
+                         strength: stage.strength)
         if route == .table { campaignStage = stage }
     }
 
@@ -2000,6 +2112,28 @@ final class TableStore {
         }
     }
 
+    /// Keeps the bots from playing while the screen shows something first. Released by
+    /// `releaseBots`, or by the deadline if that never comes. Tables with no bots ignore it.
+    func holdBots(for duration: Duration) {
+        Task {
+            switch backend {
+            case .host(let coordinator): await coordinator.holdBots(for: duration)
+            case .hotSeat(let table): await table.holdBots(for: duration)
+            case .guest, .none: break
+            }
+        }
+    }
+
+    func releaseBots() {
+        Task {
+            switch backend {
+            case .host(let coordinator): await coordinator.releaseBots()
+            case .hotSeat(let table): await table.releaseBots()
+            case .guest, .none: break
+            }
+        }
+    }
+
     func dealNextRound() {
         Task {
             switch backend {
@@ -2154,7 +2288,7 @@ final class TableStore {
         // one game with four reports rather than four games with one.
         if isRanked, !isHost, let id = lobby.gameID.flatMap(UUID.init(uuidString:)) { rankedID = id }
         // An online table has nothing to set: the moment everyone is seated, the host deals.
-        guard isHost, !hostDeals, let onlineSize, lobby.players.count >= onlineSize,
+        guard isHost, !hostDeals, let onlineSize, lobby.players.filter({ !$0.isBot }).count >= onlineSize,
               case .host(let coordinator) = backend else { return }
         self.onlineSize = nil
         dealOnlineTable(through: coordinator)
@@ -2367,6 +2501,7 @@ final class TableStore {
         switch error {
         case .playerCount: "A table seats two to four players"
         case .teamsRequireFourPlayers: "Teams need four players"
+        case .scoponeRequiresTeams: "Scopone is played four, in two teams"
         case .invalidTargetScore: "Pick a score to play to"
         }
     }

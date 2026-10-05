@@ -81,6 +81,7 @@ struct PackOpening: View {
         .onTapGesture(perform: advance)
         .sensoryFeedback(trigger: act) { _, act in feedback(for: act) }
         .statusBarHidden()
+        .task { jump() }
     }
 
     // MARK: The room
@@ -268,6 +269,12 @@ struct PackOpening: View {
                                 .shadow(color: Palette.goldLight.opacity(0.9), radius: 10)
                         }
                     }
+                    .overlay(alignment: .topTrailing) {
+                        if found.isNew {
+                            NewStamp(sound: found.card == .settebello ? .play : .purchase)
+                                .offset(x: 20, y: -14)
+                        }
+                    }
                     .rotation3DEffect(.degrees(reduceMotion ? 0 : 8), axis: (x: 1, y: -0.4, z: 0))
             }
             .frame(height: 330)
@@ -282,11 +289,9 @@ struct PackOpening: View {
     @ViewBuilder private func foundTag(_ found: Album.Found) -> some View {
         switch found {
         case .new:
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles").font(.system(size: 13, weight: .bold))
-                Text("New in the album").font(.system(size: 15, weight: .heavy))
-            }
-            .foregroundStyle(Palette.goldLight)
+            Text("New in the album")
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundStyle(Palette.goldLight)
         case .spare(_, let paid):
             HStack(spacing: 6) {
                 Text("Already had it").font(.system(size: 14, weight: .semibold))
@@ -308,7 +313,11 @@ struct PackOpening: View {
                             tint: Rarities.tint(won.item?.grade ?? .comune), size: 330)
                 Group {
                     if let item = won.item {
+                        // The shelves only hand over what you do not own, so it is always new.
                         WonItemCard(item: item, name: name)
+                            .overlay(alignment: .topTrailing) {
+                                NewStamp(sound: .purchase).offset(x: 12, y: -14)
+                            }
                     } else {
                         insteadCard(won.denari)
                     }
@@ -415,15 +424,10 @@ struct PackOpening: View {
                 ForEach(Array(running.enumerated()), id: \.offset) { _, found in
                     VStack(spacing: 5) {
                         CardView(card: found.card, width: 52)
-                            .overlay(alignment: .topTrailing) {
-                                if found.isNew {
-                                    Image(systemName: "sparkles")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(Palette.ink)
-                                        .padding(3)
-                                        .background { Circle().fill(Palette.goldSheen) }
-                                        .offset(x: 4, y: -4)
-                                }
+                            // Centred on the top edge rather than hung off a corner:
+                            // "NOUVEAU" is as wide as the card and covered the next one.
+                            .overlay(alignment: .top) {
+                                if found.isNew { NewTag(size: 7).offset(y: -7) }
                             }
                         RarityTag(found.card.rarity, locale: locale, size: 8)
                     }
@@ -433,6 +437,7 @@ struct PackOpening: View {
                 if let item = won.item {
                     HStack(spacing: 10) {
                         RarityTag(item.grade, size: 9, filled: true)
+                        NewTag(size: 9)
                         Text(verbatim: item.title)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(Palette.onTable)
@@ -551,42 +556,113 @@ struct PackOpening: View {
         }
     }
 
-    /// The sound a card makes as it lands. The seven of coins has had its own since the
-    /// first game shipped, and this is the other place it is worth hearing.
+    /// The sound a thing makes as it lands. Something new only lands here: the till waits
+    /// for its stamp. The seven of coins has had its own since the first game shipped, and
+    /// this is the other place it is worth hearing.
     private func say(at place: Int) {
         guard place < steps else { return }
-        guard place < running.count else {
-            Audio.shared.play(.purchase)
-            return
-        }
-        let found = running[place]
-        if found.card == .settebello, found.isNew {
+        if place < running.count, running[place].card == .settebello, running[place].isNew {
             Audio.shared.play(.settebello)
-        } else if found.isNew {
-            Audio.shared.play(.purchase)
+        } else if isNew(at: place) {
+            Audio.shared.play(.play)
         } else {
-            Audio.shared.play(.denaro)
+            Audio.shared.play(place < running.count ? .denaro : .purchase)
         }
     }
 
-    /// What the phone does at each beat. The tear is the one thing here somebody does with
-    /// their hand, so it is the only heavy one; a prize gets the success pattern and an
-    /// ordinary card gets the same soft tap a card gets at the table.
+    /// What the phone does at each beat. Everything lands with the soft tap a card gets at
+    /// the table; something new gets its thump from the stamp, and the denari a dear pack
+    /// paid instead, which has no stamp, gets the success pattern.
     private func feedback(for act: Act) -> SensoryFeedback? {
         switch act {
         case .sealed: nil
         case .tearing: Haptic.tear
-        case .turning(let place): isPrize(at: place) ? Haptic.prize : Haptic.turn
+        case .turning(let place):
+            place >= running.count && !isNew(at: place) ? Haptic.prize : Haptic.turn
         case .counted: nil
         }
     }
 
-    /// Whether the thing turned over at this place is worth more than a tap: a card new to
-    /// the album and better than a numeral, or anything at all off the shelves.
-    private func isPrize(at place: Int) -> Bool {
-        guard place < running.count else { return true }
-        let found = running[place]
-        return found.isNew && found.card.rarity > .plain
+    /// Whether the thing at this place was not yours before: a card missing from the album,
+    /// or anything off the shelves, which only hand over what you do not own.
+    private func isNew(at place: Int) -> Bool {
+        guard place < running.count else { return opening.won[place - running.count].item != nil }
+        return running[place].isNew
+    }
+
+    /// `-packStep`: starts the opening part way through, already turned over.
+    private func jump() {
+        guard let step = DebugLaunch.packStep else { return }
+        guard step != "done" else { return act = .counted }
+        let place = switch step {
+        case "new": running.firstIndex(where: \.isNew)
+        case "spare": running.firstIndex { !$0.isNew }
+        default: Int(step)
+        }
+        guard let place, place < steps else { return }
+        act = .turning(place: place)
+        say(at: place)
+    }
+}
+
+/// The word NEW, in the house voice: heavy, tracked, on a terracotta capsule.
+///
+/// The same tag on the card as it turns over and on the haul at the end, so the reveal and
+/// the recap say it the same way.
+struct NewTag: View {
+    var size: CGFloat = 17
+
+    var body: some View {
+        Text("NEW")
+            .font(.system(size: size, weight: .heavy))
+            .tracking(size * 0.1)
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(Palette.cream)
+            .padding(.horizontal, size * 0.72)
+            .padding(.vertical, size * 0.3)
+            .background { Capsule().fill(Palette.terracotta) }
+            .overlay { Capsule().strokeBorder(Palette.cream.opacity(0.9), lineWidth: max(size * 0.1, 1)) }
+    }
+}
+
+/// NEW put down on something the moment it turns over and turns out to be missing until
+/// now. It drops from above the card, lands with a thump and the till, and throws off a
+/// ring where it hit: the one beat of an opening about what you did not have.
+private struct NewStamp: View {
+    /// What it sounds like as it lands.
+    var sound: Sound
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.tableFelt) private var felt
+    @State private var landed = false
+    @State private var rung = false
+
+    var body: some View {
+        NewTag()
+            .background {
+                Capsule()
+                    .strokeBorder(Palette.cream, lineWidth: 2)
+                    .scaleEffect(rung ? 1.9 : 1)
+                    .opacity(rung ? 0 : 0.85)
+            }
+            .shadow(color: felt.shade(0.45), radius: 6, y: 3)
+            .scaleEffect(landed || reduceMotion ? 1 : 2.6)
+            .rotationEffect(.degrees(landed || reduceMotion ? -9 : -26))
+            .opacity(landed ? 1 : 0)
+            .sensoryFeedback(Haptic.stamp, trigger: landed)
+            .task { await land() }
+    }
+
+    /// Waits for the card to arrive, then comes down on it. Cancelled with the card, so
+    /// tapping through a pack does not leave stamps landing on nothing.
+    private func land() async {
+        try? await Task.sleep(for: .milliseconds(reduceMotion ? 120 : 340))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(duration: 0.3, bounce: 0.45)) { landed = true }
+        Audio.shared.play(sound)
+        guard !reduceMotion else { return }
+        withAnimation(.easeOut(duration: 0.55).delay(0.06)) { rung = true }
     }
 }
 
@@ -669,6 +745,10 @@ struct WonItemCard: View {
             }
         case .cheer:
             Image(systemName: Cosmetics.cheer(of: item.id)?.symbol ?? "speaker.wave.2.fill")
+                .font(.system(size: 66, weight: .semibold))
+                .foregroundStyle(Rarities.tint(item.grade))
+        case .song:
+            Image(systemName: "music.note")
                 .font(.system(size: 66, weight: .semibold))
                 .foregroundStyle(Rarities.tint(item.grade))
         case .reactions:

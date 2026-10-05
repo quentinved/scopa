@@ -1,5 +1,10 @@
 public enum ScoreCategory: String, CaseIterable, Codable, Sendable, Hashable {
     case cards, coins, settebello, primiera
+    /// House rules: only scored on a table that plays them.
+    case reBello, napola
+
+    /// The four points every table plays for. Taking all of them is a cappotto.
+    public static let classic: [ScoreCategory] = [.cards, .coins, .settebello, .primiera]
 }
 
 /// Points earned in one round, with the side that won each category (nil on a tie).
@@ -79,9 +84,17 @@ public enum Scoring {
             .sorted { primieraValue($0.rank) > primieraValue($1.rank) }
     }
 
+    /// The napola in a pile: ace, two and three of coins, and how far the coins run on from
+    /// them. Zero without all three.
+    public static func napola(of cards: [Card]) -> Int {
+        let coins = Set(cards.lazy.filter { $0.suit == .coins }.map(\.rank))
+        let run = Rank.allCases.prefix { coins.contains($0) }.count
+        return run >= 3 ? run : 0
+    }
+
     /// Scores a round. Defaults to the rulebook; a table passes its own rules.
     public static func score(captures: [[Card]], scope: [Int], primiera rule: PrimieraRule = .classic,
-                             ties: TieRule = .classic) -> RoundScore {
+                             ties: TieRule = .classic, house: Set<HouseRule> = []) -> RoundScore {
         var sheet = Sheet(points: scope, ties: ties)
         sheet.award(.cards, captures.map(\.count))
         sheet.award(.coins, captures.map { $0.count { $0.suit == .coins } })
@@ -96,6 +109,9 @@ public enum Scoring {
             sheet.award(.primiera, sevens.map(\.count))
             primieraCards = sevens
         }
+        // Only on a table that plays them, so a classic round's score reads as it always did.
+        if house.contains(.reBello) { sheet.award(.reBello, captures.map { $0.contains(.reBello) ? 1 : 0 }) }
+        if house.contains(.napola) { sheet.add(.napola, captures.map(napola)) }
         return RoundScore(points: sheet.points, categoryWinners: sheet.winners, scope: scope,
                           tallies: sheet.tallies, primieraCards: primieraCards, categoryPoints: sheet.awarded)
     }
@@ -121,6 +137,15 @@ public enum Scoring {
                 }
             }
             awarded[category] = take
+        }
+
+        /// A category that pays its tally straight out rather than a point to the leader.
+        /// Only one pile can hold the ace of coins, so at most one side scores a napola.
+        mutating func add(_ category: ScoreCategory, _ values: [Int]) {
+            for side in values.indices { points[side] += values[side] }
+            winners[category] = Scoring.uniqueMax(values)
+            tallies[category] = values
+            awarded[category] = values
         }
     }
 

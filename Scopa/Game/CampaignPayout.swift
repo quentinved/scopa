@@ -18,6 +18,7 @@ enum CampaignPayout {
         let earned = stage.stars(won: tally.outcome == .won, margin: margin(of: tally.side, in: view),
                                  scope: tally.scope)
         guard store.campaignBook.record(stage, stars: earned, game: tally.gameID) != nil else { return [] }
+        if earned > 0 { CampaignStandings.report(store.campaignBook, store: store) }
         var paid: [PayoutLine] = []
         for stage in Campaign.stages {
             paid += await payOwed(stage, store: store, purse: purse, locale: locale)

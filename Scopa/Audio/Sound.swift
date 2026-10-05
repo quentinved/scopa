@@ -123,17 +123,28 @@ enum Sound: String, CaseIterable {
     }
 }
 
-/// The two loops, both in A minor so anything the game plays over them fits.
+/// The loops, all in A minor or its relative major so anything the game plays over them fits.
 enum Track: String, CaseIterable {
     /// The lobby: a full band, with a tune.
     case lungomare = "music_lungomare"
     /// The table: no melody and a slower count, so it stays behind the thinking.
     case tavolo = "music_tavolo"
+    // The songs the shop sells for the table. See `Song`.
+    case pomeriggio = "music_pomeriggio"
+    case piazza = "music_piazza"
+    case barcarola = "music_barcarola"
+    case serenata = "music_serenata"
+    case tarantella = "music_tarantella"
+    case mergellina = "music_mergellina"
 
+    /// Set against the table bed's loudness, so changing song does not change the room.
     var level: Float {
         switch self {
         case .lungomare: 0.5
         case .tavolo: 0.3
+        case .pomeriggio, .serenata, .mergellina: 0.29
+        case .piazza, .barcarola: 0.27
+        case .tarantella: 0.34
         }
     }
 }

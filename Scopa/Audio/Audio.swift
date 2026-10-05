@@ -23,9 +23,18 @@ final class Audio {
     var isMusicOn: Bool {
         didSet {
             UserDefaults.standard.set(isMusicOn, forKey: Self.musicKey)
-            if isMusicOn { resume(wanted) } else { silenceMusic() }
+            refresh()
         }
     }
+
+    /// The song picked in the shop for the table. The lobby keeps its own loop.
+    var tableSong: Song {
+        didSet { UserDefaults.standard.set(tableSong.rawValue, forKey: Song.stored) }
+    }
+
+    /// A song being tried in the shop. It plays over whatever the screen asked for, even with
+    /// the music switched off, until it is stopped.
+    private(set) var auditioning: Track?
 
     /// Whether sound effects play: the cards, the coins and the interface.
     var areSoundsOn: Bool {
@@ -45,6 +54,8 @@ final class Audio {
     @ObservationIgnored private let felt = AVAudioMixerNode()
     /// Two decks, so a loop can be faded out under the one replacing it.
     @ObservationIgnored private var decks: [AVAudioPlayerNode] = []
+    /// Whether the live deck holds a shop preview, so leaving it cuts instead of fading.
+    @ObservationIgnored private var liveIsAudition = false
     @ObservationIgnored private var live = 0
     /// Mono and stereo voices are separate pools: a player node plays only the format
     /// it was connected with.
@@ -74,6 +85,7 @@ final class Audio {
         // Both default to on for a player who has never touched them.
         isMusicOn = defaults.object(forKey: Self.musicKey) as? Bool ?? true
         areSoundsOn = defaults.object(forKey: Self.soundsKey) as? Bool ?? true
+        tableSong = Self.storedSong(in: defaults)
         build()
         watchForInterruptions()
     }
@@ -85,6 +97,11 @@ final class Audio {
         let defaults = UserDefaults.standard
         isMusicOn = defaults.object(forKey: Self.musicKey) as? Bool ?? true
         areSoundsOn = defaults.object(forKey: Self.soundsKey) as? Bool ?? true
+        tableSong = Self.storedSong(in: defaults)
+    }
+
+    private static func storedSong(in defaults: UserDefaults) -> Song {
+        defaults.string(forKey: Song.stored).flatMap(Song.init(rawValue:)) ?? .tavolo
     }
 
     // MARK: The desk
@@ -245,14 +262,27 @@ final class Audio {
     func music(_ track: Track?) {
         guard wanted != track else { return }
         wanted = track
-        resume(track)
+        refresh()
     }
 
-    private func resume(_ track: Track?) {
-        guard let track, isMusicOn, !away else { return silenceMusic() }
+    /// Plays a song from the shop in place of the loop, or `nil` to go back to the loop.
+    func audition(_ track: Track?) {
+        guard auditioning != track else { return }
+        auditioning = track
+        refresh()
+    }
+
+    /// What the decks should be playing: a song being tried, else the screen's loop if music is on.
+    private var target: Track? {
+        auditioning ?? (isMusicOn ? wanted : nil)
+    }
+
+    private func refresh() {
+        guard let track = target, !away else { return silenceMusic() }
         guard sounding != track else { return }
-        // Another app is already playing, so only the sound effects go over it.
-        guard !AVAudioSession.sharedInstance().isOtherAudioPlaying else { return }
+        // Another app is already playing, so only the sound effects go over it. A song tried
+        // on purpose in the shop is the exception.
+        guard auditioning != nil || !AVAudioSession.sharedInstance().isOtherAudioPlaying else { return }
         // Claimed here rather than in `begin`, which first awaits a twenty-second file.
         // Two screens asking inside that wait would otherwise start the loop twice.
         sounding = track
@@ -260,11 +290,11 @@ final class Audio {
     }
 
     private func begin(_ track: Track) async {
-        guard let buffer = await load(track.rawValue), wanted == track else {
+        guard let buffer = await load(track.rawValue), target == track else {
             return giveUp(on: track)
         }
         await wake()
-        guard running, wanted == track, decks.count == 2 else { return giveUp(on: track) }
+        guard running, target == track, decks.count == 2 else { return giveUp(on: track) }
         let leaving = decks[live]
         live = (live + 1) % decks.count
         let arriving = decks[live]
@@ -273,9 +303,13 @@ final class Audio {
         loop(buffer, on: arriving)
         arriving.play()
         fading?.cancel()
+        // A shop preview cuts rather than crossfades, so two songs are never heard together.
+        let cut = auditioning != nil || liveIsAudition
+        liveIsAudition = auditioning != nil
+        if cut { leaving.stop() }
         fading = Task {
-            async let up: Void = ramp(arriving, to: track.level, over: 1.4)
-            async let down: Void = ramp(leaving, to: 0, over: 1.4)
+            async let up: Void = ramp(arriving, to: track.level, over: cut ? 0.2 : 1.4)
+            async let down: Void = ramp(leaving, to: 0, over: cut ? 0 : 1.4)
             _ = await (up, down)
             guard !Task.isCancelled else { return }
             leaving.stop()
@@ -301,6 +335,7 @@ final class Audio {
     private func silenceMusic() {
         fading?.cancel()
         sounding = nil
+        liveIsAudition = false
         let decks = self.decks
         fading = Task {
             await withTaskGroup { group in
@@ -357,7 +392,7 @@ final class Audio {
     /// The app came back to the foreground.
     func resume() {
         away = false
-        resume(wanted)
+        refresh()
     }
 
     private func watchForInterruptions() {

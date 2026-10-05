@@ -23,11 +23,14 @@ public struct HandSelection: Hashable, Sendable {
     public private(set) var chosen: Set<Card>
     /// How much help to give. Changing it mid-round only affects the next pick.
     public var assist: AssistLevel
+    /// The table's house rules, which decide what a card may take.
+    public var house: Set<HouseRule>
 
-    public init(assist: AssistLevel = .default) {
+    public init(assist: AssistLevel = .default, house: Set<HouseRule> = []) {
         card = nil
         chosen = []
         self.assist = assist
+        self.house = house
     }
 
     public var isEmpty: Bool { card == nil }
@@ -41,7 +44,7 @@ public struct HandSelection: Hashable, Sendable {
     public mutating func select(_ card: Card, on table: [Card]) {
         guard self.card != card else { clear(); return }
         self.card = card
-        let options = Rules.captureOptions(for: card, on: table)
+        let options = Rules.captureOptions(for: card, on: table, house: house)
         chosen = assist.fillsSingleCapture && options.count == 1 ? Set(options[0]) : []
     }
 
@@ -66,7 +69,7 @@ public struct HandSelection: Hashable, Sendable {
     /// take is a choice nobody has made yet, so there the tap puts the card back down.
     public mutating func tapInHand(_ handCard: Card, in view: PlayerView) -> HandTap {
         guard card == handCard, view.isMyTurn else { return .select }
-        let options = Rules.captureOptions(for: handCard, on: view.table)
+        let options = view.captureOptions(for: handCard)
         guard options.count <= 1 else { return .select }
         // Above normal the first tap already filled this in; at normal it is empty until
         // now. Anything else picked is a take the player is still building, and a tap on
@@ -124,7 +127,7 @@ public struct HandSelection: Hashable, Sendable {
         guard let card, view.table.contains(tableCard) else { return nil }
         var attempt = self
         if !attempt.chosen.contains(tableCard) { attempt.toggle(tableCard, on: view.table) }
-        let options = Rules.captureOptions(for: card, on: view.table)
+        let options = view.captureOptions(for: card)
         guard options.contains(where: { Set($0) == attempt.chosen }) else { return nil }
         return attempt
     }
@@ -149,13 +152,13 @@ public struct HandSelection: Hashable, Sendable {
     /// Table cards to outline. Empty above beginner, so nothing is given away.
     public func capturable(on table: [Card]) -> Set<Card> {
         guard assist.highlightsCaptures, let card else { return [] }
-        return Set(Rules.captureOptions(for: card, on: table).joined())
+        return Set(Rules.captureOptions(for: card, on: table, house: house).joined())
     }
 
     public func action(in view: PlayerView) -> Action? {
         guard let card else { return nil }
         let taken = chosen.sorted { ($0.rank, $0.suit.rawValue) < ($1.rank, $1.suit.rawValue) }
-        let options = Rules.captureOptions(for: card, on: view.table)
+        let options = view.captureOptions(for: card)
 
         // Only a beginner is stopped from laying a card that has to take. Above that the
         // player is allowed the mistake and hears about it from the rules, which is safe
@@ -167,10 +170,10 @@ public struct HandSelection: Hashable, Sendable {
 
         // Above beginner, whatever is picked is sent and the rules answer.
         guard assist.checksBeforeSending else {
-            return .take(cards: taken, sweeps: view.isScopa(taking: taken))
+            return .take(cards: taken, sweeps: view.isScopa(playing: card, taking: taken))
         }
         guard options.contains(where: { Set($0) == chosen }) else { return .notAllowed }
-        return .take(cards: taken, sweeps: view.isScopa(taking: taken))
+        return .take(cards: taken, sweeps: view.isScopa(playing: card, taking: taken))
     }
 
     /// The move to send, or nil while the choice is unfinished or illegal.

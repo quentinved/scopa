@@ -9,12 +9,15 @@ import { privacyPage } from "./privacy.ts";
 import { supportPage } from "./support.ts";
 import { invitePage, siteAssociation } from "./invite.ts";
 import { cursor, invalidLedger, invalidProfile, LedgerPost, MAX_LEDGER_PAGE } from "./profile.ts";
-import { isCode, makeCode, normaliseCode, Room } from "./room.ts";
+import { isCode, normaliseCode, openTable, Room } from "./room.ts";
+import { RankedQueue } from "./queue.ts";
 import { BEAT_SECONDS, fingerprint, friendSet, invalidFriends, WINDOW_SECONDS } from "./presence.ts";
 import { FriendCodeRow, giftOf, normaliseFriendCode } from "./friendcodes.ts";
 import { deviceOf, normaliseCoupon, redeemCoupon } from "./coupons.ts";
+import { campaignBoard, friendsCampaignBoard, invalidLookup, invalidProgress, progressOf, recordProgress, stageFaces } from "./campaign.ts";
+import { wheelStrip } from "./wheel.ts";
 
-export { Room };
+export { RankedQueue, Room };
 
 export interface Env {
   DB: D1Database;
@@ -22,6 +25,8 @@ export interface Env {
   MAX_SIGNATURE_AGE_SECONDS: string;
   /// One Durable Object per open table. See room.ts.
   ROOMS: DurableObjectNamespace;
+  /// The single ranked queue. See queue.ts.
+  QUEUE: DurableObjectNamespace;
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -56,6 +61,9 @@ const routes: Route[] = [
   { method: "GET", path: /^\/v1\/weekly\/([^/]+)$/, handle: ({ url, env, params: [week] }) => getWeekly(week, url.searchParams.get("player"), env) },
   { method: "POST", path: /^\/v1\/ranked\/claim$/, handle: ({ request, env }) => claimSeason(request, env) },
   { method: "POST", path: /^\/v1\/ranked\/house$/, handle: ({ request, env }) => postHouseGame(request, env) },
+  // Unsigned like rooms: the queue only seats players, and the result is signed later.
+  { method: "POST", path: /^\/v1\/ranked\/queue$/, handle: ({ request, env }) => rankedQueue(request, "seek", env) },
+  { method: "POST", path: /^\/v1\/ranked\/queue\/leave$/, handle: ({ request, env }) => rankedQueue(request, "leave", env) },
   { method: "POST", path: /^\/v1\/ranked$/, handle: ({ request, env }) => postRanked(request, env) },
   { method: "GET", path: /^\/v1\/ranked\/board$/, handle: ({ url, env }) => getRankedBoard(url.searchParams.get("player"), env) },
   { method: "POST", path: /^\/v1\/ranked\/board\/friends$/, handle: ({ request, env }) => postFriendsBoard(request, env) },
@@ -67,6 +75,13 @@ const routes: Route[] = [
   { method: "POST", path: /^\/v1\/presence\/leave$/, handle: ({ request, env }) => leavePresence(request, env) },
   { method: "POST", path: /^\/v1\/codes\/redeem$/, handle: ({ request, env }) => redeemFriendCode(request, env) },
   { method: "POST", path: /^\/v1\/coupons\/redeem$/, handle: ({ request, env }) => postCoupon(request, env) },
+  // The campaign's board. Only the progress post is signed, like the other boards.
+  { method: "POST", path: /^\/v1\/campaign$/, handle: ({ request, env }) => postCampaign(request, env) },
+  { method: "GET", path: /^\/v1\/campaign\/board$/, handle: ({ url, env }) => getCampaignBoard(url.searchParams.get("player"), env) },
+  { method: "POST", path: /^\/v1\/campaign\/board\/friends$/, handle: ({ request, env }) => postCampaignFriends(request, env) },
+  { method: "POST", path: /^\/v1\/campaign\/stages$/, handle: ({ request, env }) => postCampaignStages(request, env) },
+  // The wheel as everyone else turned it, read off the ledger. Unsigned like the boards.
+  { method: "POST", path: /^\/v1\/wheel\/today$/, handle: ({ request, env }) => postWheelToday(request, env) },
   { method: "GET", path: /^\/v1\/health$/, handle: () => json({ ok: true }) },
   // Tables are not signed: they work for players who never signed in to Game Center.
   { method: "POST", path: /^\/v1\/rooms$/, handle: ({ request, url, env }) => openRoom(request, url, env) },
@@ -255,10 +270,51 @@ async function postCoupon(request: Request, env: Env): Promise<Response> {
   return json(answer.body, answer.status);
 }
 
-// MARK: - Tables
+// MARK: - The campaign
 
-/// Retries on a clash. Codes are four letters of a 32-letter alphabet, so it is rare.
-const CODE_ATTEMPTS = 5;
+/// A player's road: the table reached and the stars won, with the face the map draws them by.
+async function postCampaign(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { identity?: Identity } | null;
+  const problem = invalidProgress(body) ?? (body?.identity?.gamePlayerID ? null : "no identity");
+  if (problem) return json({ error: problem }, 400);
+  const identity = body!.identity!;
+  await verifyIdentity(identity, verifyOptions(env));
+  await upsertPlayer(env, identity.gamePlayerID, displayName(identity), new Date().toISOString()).run();
+  return json(await recordProgress(env.DB, identity.gamePlayerID, progressOf(body)));
+}
+
+async function getCampaignBoard(playerID: string | null, env: Env): Promise<Response> {
+  if (playerID != null && invalidFriends([playerID])) return json({ error: "bad player" }, 400);
+  return json(await campaignBoard(env.DB, playerID));
+}
+
+/// The ids come from the phone, as on the season's friends board.
+async function postCampaignFriends(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { player?: string; friends: string[] } | null;
+  const problem = invalidLookup(body, true);
+  if (problem) return json({ error: problem }, 400);
+  return json(await friendsCampaignBoard(env.DB, body!.player ?? null, body!.friends));
+}
+
+/// Who sits at each table of the map, friends first. `friends` may be left out.
+async function postCampaignStages(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { player?: string; friends?: string[] } | null;
+  const problem = invalidLookup(body, false);
+  if (problem) return json({ error: problem }, 400);
+  return json({ stages: await stageFaces(env.DB, body!.player ?? null, body!.friends ?? []) });
+}
+
+// MARK: - The wheel
+
+/// The last day's turns, friends first. `friends` may be left out, like the map's faces.
+async function postWheelToday(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { player?: string; friends?: string[] } | null;
+  const problem = invalidLookup(body, false);
+  if (problem) return json({ error: problem }, 400);
+  return json(await wheelStrip(env.DB, body!.player ?? null, body!.friends ?? []));
+}
+
+// MARK: - Tables
 
 interface OpenRoom {
   /// The host's player id as the app knows it, not a Game Center id.
@@ -273,18 +329,15 @@ async function openRoom(request: Request, url: URL, env: Env): Promise<Response>
   const name = (body?.name ?? "").trim();
   if (!host || host.length > 100) return json({ error: "bad host" }, 400);
   if (!name) return json({ error: "no name" }, 400);
-  for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
-    const code = makeCode();
-    const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-    const opened = await stub.fetch("https://room/open", {
-      method: "POST",
-      body: JSON.stringify({ code, host, hostName: name, capacity: body.capacity }),
-    });
-    if (opened.ok) return json({ code, link: `${url.origin}/j/${code}` });
-    // 409 means the code is taken. Anything else is a real failure.
-    if (opened.status !== 409) return opened;
-  }
-  return json({ error: "could not open a table" }, 503);
+  const code = await openTable(env.ROOMS, host, name, body.capacity);
+  if (!code) return json({ error: "could not open a table" }, 503);
+  return json({ code, link: `${url.origin}/j/${code}` });
+}
+
+/// Every ranked search goes to the one queue. See queue.ts.
+function rankedQueue(request: Request, leaf: string, env: Env): Promise<Response> {
+  const stub = env.QUEUE.get(env.QUEUE.idFromName("ranked"));
+  return stub.fetch(`https://queue/${leaf}`, { method: "POST", body: request.body });
 }
 
 /// The join screen's status check and the socket the game runs over.
@@ -517,7 +570,8 @@ interface HousePost {
 }
 
 /// A ranked game against the house, reported by one phone and taken on trust: HOUSE_WIN
-/// for a win, HOUSE_LOSS for a loss, and only the first HOUSE_GAMES_PER_DAY of a day count.
+/// and the run for a win, HOUSE_LOSS for a loss, and only the first HOUSE_GAMES_PER_DAY of
+/// a day count.
 async function postHouseGame(request: Request, env: Env): Promise<Response> {
   const body = (await request.json()) as HousePost;
   if (!GAME_ID.test(body.gameID ?? "")) return json({ error: "bad game id" }, 400);
@@ -547,12 +601,12 @@ async function applyHouseGame(body: HousePost, playerID: string, now: Date, env:
   await rollover(playerID, env);
   const counted = await houseGamesOn(day, playerID, env);
   const { rating, floor, streak } = await currentRating(playerID, env);
-  // Past the day's allowance the game still counts as played but moves nothing.
-  const delta = counted >= HOUSE_GAMES_PER_DAY ? 0 : houseChange(body.won);
+  // Past the day's allowance the game still counts as played but moves nothing, the run included.
+  const spent = counted >= HOUSE_GAMES_PER_DAY;
+  const delta = spent ? 0 : houseChange(body.won, streak);
   const next = apply(delta, rating, floor);
   await env.DB.batch([
-    // The run is written back as it was: the house cannot build one or break one.
-    upsertRating(env, playerID, next, body.won, stamp, seasonOf(now), streak),
+    upsertRating(env, playerID, next, body.won, stamp, seasonOf(now), spent ? streak : streakAfter(body.won, streak)),
     env.DB.prepare(
       `INSERT INTO house_games (player_id, day, count) VALUES (?1, ?2, 1)
        ON CONFLICT(player_id, day) DO UPDATE SET count = count + 1`,

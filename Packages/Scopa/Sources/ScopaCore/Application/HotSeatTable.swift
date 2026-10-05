@@ -32,6 +32,8 @@ public actor HotSeatTable {
     private var shownSeat: Int
     private var isThinking = false
     private var isStopped = false
+    /// See `holdBots(for:)`.
+    private var botsHeldUntil: ContinuousClock.Instant?
 
     public init(
         configuration: GameConfiguration,
@@ -139,6 +141,17 @@ public actor HotSeatTable {
         continuation.finish()
     }
 
+    /// Holds the bots back while the screen has something up the player must see first,
+    /// such as what a ranked game pays. A deadline rather than a flag, so a release that never
+    /// comes cannot stall the table for good.
+    public func holdBots(for duration: Duration) {
+        botsHeldUntil = .now + duration
+    }
+
+    public func releaseBots() {
+        botsHeldUntil = nil
+    }
+
     // MARK: Bots
 
     /// Plays every bot seat in turn until the cards come back round to a person, or the
@@ -153,11 +166,19 @@ public actor HotSeatTable {
             let wait = handIsLanding ? dealPace : (lastMoveTook ? pace : quickPace)
             handIsLanding = false
             try? await Task.sleep(for: wait)
+            await waitOutHold()
             guard !isStopped, await seatWaitingOnABot() == waiting else { return }
             guard let move = bot.move(for: await session.state.view(forSeat: waiting), using: &rng),
                   let events = try? await session.play(move)
             else { return }
             await publish(events)
+        }
+    }
+
+    /// Checked often rather than slept out, so a release lets the bot go straight away.
+    private func waitOutHold() async {
+        while !isStopped, let until = botsHeldUntil, until > .now {
+            try? await Task.sleep(for: .milliseconds(100))
         }
     }
 

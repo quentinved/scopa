@@ -108,13 +108,15 @@ public struct Lobby: Hashable, Codable, Sendable {
     public var targetScore: Int
     public var primiera: PrimieraRule
     public var ties: TieRule
+    /// Regional rules on top of the classic game, set by the host.
+    public var house: Set<HouseRule>
     /// The name this game goes by on the ladder. Set by the host, read by every guest, so
     /// every phone at a ranked table reports the same game rather than four of its own.
     public var gameID: String?
 
     public init(host: Player, players: [Player]? = nil, teams: Bool = false, turnClock: TurnClock = .default,
                 targetScore: Int = 11, primiera: PrimieraRule = .default, ties: TieRule = .default,
-                gameID: String? = nil) {
+                house: Set<HouseRule> = [], gameID: String? = nil) {
         self.host = host
         self.players = players ?? [host]
         self.teams = teams
@@ -122,11 +124,12 @@ public struct Lobby: Hashable, Codable, Sendable {
         self.targetScore = targetScore
         self.primiera = primiera
         self.ties = ties
+        self.house = house
         self.gameID = gameID
     }
 
     private enum CodingKeys: String, CodingKey {
-        case host, players, teams, turnClock, targetScore, primiera, ties, gameID
+        case host, players, teams, turnClock, targetScore, primiera, ties, house, gameID
     }
 
     /// By hand, so a lobby from a build that had no primiera or tie rule still decodes.
@@ -139,11 +142,16 @@ public struct Lobby: Hashable, Codable, Sendable {
         targetScore = try container.decodeIfPresent(Int.self, forKey: .targetScore) ?? 11
         primiera = try container.decodeIfPresent(PrimieraRule.self, forKey: .primiera) ?? .default
         ties = try container.decodeIfPresent(TieRule.self, forKey: .ties) ?? .default
+        let names = try container.decodeIfPresent([String].self, forKey: .house) ?? []
+        house = Set(names.compactMap(HouseRule.init(rawValue:)))
         gameID = try container.decodeIfPresent(String.self, forKey: .gameID)
     }
 
     public var isFull: Bool { players.count >= GameConfiguration.playerRange.upperBound }
-    public var canStart: Bool { GameConfiguration.playerRange.contains(players.count) && (!teams || players.count == 4) }
+    public var canStart: Bool {
+        GameConfiguration.playerRange.contains(players.count) && (!teams || players.count == 4)
+            && (!house.contains(.scopone) || teams)
+    }
 }
 
 public enum Recipient: Hashable, Sendable {

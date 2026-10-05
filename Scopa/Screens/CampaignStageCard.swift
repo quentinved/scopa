@@ -8,6 +8,8 @@ struct CampaignStageCard: View {
     let stage: CampaignStage
     let stars: Int
     let close: () -> Void
+    /// Opens the lesson for these rules.
+    let explain: ([HouseRule]) -> Void
     let play: () -> Void
 
     @Environment(\.locale) private var locale
@@ -16,6 +18,7 @@ struct CampaignStageCard: View {
         VStack(alignment: .leading, spacing: 14) {
             header
             facts
+            houseRules
             goals
             reward
             Button(action: play) {
@@ -71,6 +74,37 @@ struct CampaignStageCard: View {
             chip { Text(seatingTitle) }
             if let seconds = stage.clock.seconds { chip { Label("\(seconds)-second turns", systemImage: "timer") } }
             if stage.primiera == .classic { chip { Text("Classic primiera") } }
+        }
+    }
+
+    /// Every table says which rules it plays, so nobody sits down to a surprise: classic,
+    /// or each house rule spelled out with its lesson a tap away.
+    private var houseRules: some View {
+        let rules = HouseRule.allCases.filter(stage.house.contains)
+        return VStack(alignment: .leading, spacing: 8) {
+            Caption(text: "Rules at this table")
+            if rules.isEmpty {
+                Text("Classic Scopa, nothing added")
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(Palette.onTable)
+            }
+            ForEach(rules, id: \.self) { rule in
+                HStack(alignment: .top, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(rule.label)
+                            .font(.system(size: 13.5, weight: .semibold))
+                            .foregroundStyle(Palette.goldLight)
+                        Text(rule.explanation)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Palette.onTableSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 4)
+                    Button("How it works") { explain([rule]) }
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(Palette.terracotta)
+                }
+            }
         }
     }
 

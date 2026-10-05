@@ -139,9 +139,19 @@ private struct SearchCountdown: View {
             }
             // The line is the sentence drawn; VoiceOver reads the sentence.
             .accessibilityHidden(true)
-            Text("If nobody turns up, the house can take the chair.")
+            Text(note)
                 .font(.system(size: 11))
                 .foregroundStyle(Palette.onTableSoft)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Who else is in the ranked queue, when the queue could be asked.
+    private var note: LocalizedStringKey {
+        switch search.searching {
+        case nil: "If nobody turns up, the house can take the chair."
+        case 0?: "Nobody else is searching yet. Anyone who taps Ranked now is paired with you."
+        default: "Another player is searching. Pairing you now."
         }
     }
 
@@ -199,6 +209,8 @@ struct SheetScaffold<Content: View, Bottom: View>: View {
     /// things laid on the table: it runs edge to edge and under the header, and the cloth
     /// wears no border, which would frame it like a picture.
     var bleeds = false
+    /// A small button in the header beside the close button, where the sheet has one.
+    var accessory: AnyView? = nil
     @ViewBuilder var content: Content
     /// Pinned under the scroll: the sheet's own action, where it has one.
     @ViewBuilder var bottom: Bottom
@@ -272,6 +284,7 @@ struct SheetScaffold<Content: View, Bottom: View>: View {
                     .font(.display(30))
                     .foregroundStyle(Palette.onTable)
                 Spacer(minLength: 0)
+                if let accessory { accessory }
                 if let close { closeButton(close) }
             }
             if let subtitle {

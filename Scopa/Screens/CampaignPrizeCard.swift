@@ -73,7 +73,7 @@ private struct CampaignCover: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .fullScreenCover(isPresented: $book.showsMap) { CampaignView() }
+            .fullScreenCover(isPresented: $book.showsMap) { CampaignView().coversBanner() }
             .task {
                 // A beat after launch: a cover asked for before the window is up never shows.
                 try? await Task.sleep(for: .milliseconds(900))

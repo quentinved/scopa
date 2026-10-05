@@ -29,13 +29,13 @@ enum Search {
     /// that did not carry the piles).
     static func opinions(for view: PlayerView,
                          using rng: inout some RandomNumberGenerator) -> [(move: Move, value: Double)]? {
-        let candidates = moves(seat: view.seat, hand: view.hand, table: view.table)
+        let candidates = moves(seat: view.seat, hand: view.hand, table: view.table, house: view.configuration.house)
         guard !candidates.isEmpty else { return nil }
         guard candidates.count > 1 else { return [(candidates[0], 0)] }
         let worlds = worlds(for: view, using: &rng)
         guard !worlds.isEmpty else { return nil }
 
-        let effort = effort(for: view, worlds: worlds.count)
+        let effort = effort(for: view, worlds: worlds.count, candidates: candidates.count)
         let side = view.mySide
         let sides = view.configuration.sideCount
         var totals = [Double](repeating: 0, count: candidates.count)
@@ -52,14 +52,21 @@ enum Search {
 
     /// Deeper the less is left to guess about, which is where the round is decided and
     /// where the tree is small. Tuned so the worst case stays inside the bot's pause.
-    static func effort(for view: PlayerView, worlds: Int) -> Effort {
+    static func effort(for view: PlayerView, worlds: Int, candidates: Int = 3) -> Effort {
         let left = view.stockCount + view.cardsInPlay
         // One world means nothing is guessed: play every remaining card.
         if worlds == 1 { return Effort(depth: left, nodes: 30_000) }
         if left <= 6 { return Effort(depth: left, nodes: 3_000) }
+        // Ten cards in hand is ten times the moves to weigh: the same thinking in all, spread thinner.
+        if view.configuration.handSize > 3 {
+            return Effort(depth: 4, nodes: max(100, scoponeNodes / max(worlds * candidates, 1)))
+        }
         if view.configuration.seatCount <= 2 { return Effort(depth: 6, nodes: 2_000) }
         return Effort(depth: 5, nodes: 1_500)
     }
+
+    /// What one scopone move may cost in all, about what a classic table for four spends.
+    static let scoponeNodes = 40_000
 
     // MARK: Worlds
 
@@ -68,6 +75,7 @@ enum Search {
         let hidden = view.opponents.count { $0.cardsInHand > 0 }
         // Empty stock and one hidden hand: that hand is the unseen cards, so one world is exact.
         if view.stockCount == 0, hidden <= 1 { return 1 }
+        if view.configuration.handSize > 3 { return 8 }
         return view.configuration.seatCount <= 2 ? 16 : 12
     }
 
@@ -135,7 +143,7 @@ enum Search {
         let sides = state.configuration.sideCount
         var best: SIMD4<Double>?
         var bestMargin = -Double.infinity
-        for move in moves(seat: seat, hand: round.hands[seat], table: round.table) {
+        for move in moves(seat: seat, hand: round.hands[seat], table: round.table, house: state.configuration.house) {
             let (next, _) = Rules.applyLegal(move, to: state)
             let value = value(of: next, depth: depth - 1, budget: &budget)
             let margin = margin(value, for: side, of: sides)
@@ -167,15 +175,20 @@ enum Search {
         value += odds(cards, left: Deck.standard.count - cards.reduce(0, +), of: sides)
         let coins = piles.map { $0.count { $0.suit == .coins } }
         value += odds(coins, left: Rank.allCases.count - coins.reduce(0, +), of: sides)
-        value += settebelloOdds(piles, of: sides)
+        value += holderOdds(of: .settebello, in: piles, of: sides)
         value += primieraOdds(piles, rule: config.primiera, of: sides)
+        if config.house.contains(.reBello) { value += holderOdds(of: .reBello, in: piles, of: sides) }
+        // A napola already in a pile is as good as scored; one still to be made is not guessed at.
+        if config.house.contains(.napola) {
+            for side in 0..<min(sides, 4) { value[side] += Double(Scoring.napola(of: piles[side])) }
+        }
         return value
     }
 
-    /// The settebello point: whole to whoever holds it, otherwise split evenly.
-    private static func settebelloOdds(_ piles: [[Card]], of sides: Int) -> SIMD4<Double> {
+    /// A one-card point, the settebello or the re bello: whole to whoever holds it, otherwise split evenly.
+    private static func holderOdds(of card: Card, in piles: [[Card]], of sides: Int) -> SIMD4<Double> {
         var out = SIMD4<Double>()
-        if let holder = piles.firstIndex(where: { $0.contains(.settebello) }), holder < 4 {
+        if let holder = piles.firstIndex(where: { $0.contains(card) }), holder < 4 {
             out[holder] = 1
         } else {
             for side in 0..<min(sides, 4) { out[side] = 1 / Double(sides) }
@@ -217,9 +230,9 @@ enum Search {
     // MARK: Moves
 
     /// Every legal move from one hand over one table. A card that can take must take.
-    static func moves(seat: Int, hand: [Card], table: [Card]) -> [Move] {
+    static func moves(seat: Int, hand: [Card], table: [Card], house: Set<HouseRule> = []) -> [Move] {
         hand.flatMap { card -> [Move] in
-            let options = Rules.captureOptions(for: card, on: table)
+            let options = Rules.captureOptions(for: card, on: table, house: house)
             guard !options.isEmpty else { return [Move(seat: seat, card: card)] }
             return options.map { Move(seat: seat, card: card, captures: $0) }
         }

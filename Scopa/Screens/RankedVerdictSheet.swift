@@ -26,10 +26,12 @@ struct RankedVerdictSheet: View {
              move: .init(before: 600, after: 600, won: false)),
         Case(id: "run", caption: "A win on a run, paid the run on top",
              move: .init(before: 430, after: 456, won: true, streak: 4)),
-        Case(id: "houseWin", caption: "A win over the house, the run left as it was",
-             move: .init(before: 430, after: 455, won: true, streak: 3, isHouse: true)),
-        Case(id: "houseLoss", caption: "A loss to the house, the run kept",
-             move: .init(before: 455, after: 450, won: false, streak: 3, isHouse: true)),
+        Case(id: "houseWin", caption: "A win over the house on a run, paid the run on top",
+             move: .init(before: 430, after: 459, won: true, streak: 3, isHouse: true)),
+        Case(id: "houseLoss", caption: "A loss to the house, the run ended",
+             move: .init(before: 455, after: 450, won: false, streak: 0, isHouse: true)),
+        Case(id: "houseSpent", caption: "A house game past the day's ten, the run kept",
+             move: .init(before: 455, after: 455, won: true, streak: 3, isHouse: true)),
     ]
 
     var body: some View {

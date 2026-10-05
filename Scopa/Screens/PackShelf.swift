@@ -128,20 +128,17 @@ private struct PackTillModifier: ViewModifier {
                 PackOpening(opening: opened, name: name)
                     .environment(\.cardTheme, opened.volume.theme)
             }
-            .confirmationDialog(Text(verbatim: till.buying?.title ?? ""),
-                                isPresented: Binding(get: { till.buying != nil },
-                                                     set: { if !$0 { till.buying = nil } }),
-                                titleVisibility: .visible) {
-                if let buying = till.buying, let price = buying.price {
-                    Button("Open it for \(price.coins) denari") {
+            .confirmation(isPresented: Binding(get: { till.buying != nil },
+                                               set: { if !$0 { till.buying = nil } })) {
+                guard let buying = till.buying, let price = buying.price else { return nil }
+                return Confirmation(Text(verbatim: buying.title),
+                                    message: Text("Leaves you \((purse.balance - price).coins) denari."),
+                                    actions: [
+                    .init(title: Text("Open it for \(price.coins) denari")) {
                         till.buy(buying, book: book, purse: purse)
-                    }
-                }
-                Button("Not now", role: .cancel) {}
-            } message: {
-                if let buying = till.buying, let price = buying.price {
-                    Text("Leaves you \((purse.balance - price).coins) denari.")
-                }
+                    },
+                    .init(title: Text("Not now"), role: .cancel),
+                ])
             }
     }
 }

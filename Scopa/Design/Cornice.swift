@@ -58,11 +58,11 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The line under the swatch in the shop.
     var explanation: LocalizedStringKey {
         switch self {
-        case .none: "The mark on its own"
-        case .corda: "Twisted, like a curtain rope"
-        case .fiori: "Six of them, in gold"
-        case .nastro: "Tied under your name"
-        case .onde: "Off a Ligurian plate"
+        case .none: "No frame. Confident"
+        case .corda: "Twisted rope, like a theatre curtain"
+        case .fiori: "Six gold flowers. Somebody loves you"
+        case .nastro: "A ribbon under your name. Fancy"
+        case .onde: "Waves off a Ligurian plate"
         }
     }
 

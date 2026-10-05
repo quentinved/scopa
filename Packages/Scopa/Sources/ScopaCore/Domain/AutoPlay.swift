@@ -8,8 +8,9 @@ public extension Rules {
         guard !hand.isEmpty else { return nil }
 
         let captures = hand.flatMap { card in
-            captureOptions(for: card, on: round.table).map { option in
-                (Move(seat: seat, card: card, captures: option), captureValue(card, option, round))
+            captureOptions(for: card, on: round.table, house: state.configuration.house).map { option in
+                (Move(seat: seat, card: card, captures: option),
+                 captureValue(card, option, round, sweepScores: state.configuration.house.sweepScores(playing: card)))
             }
         }
         if let best = captures.max(by: { $0.1.lexicographicallyPrecedes($1.1) }) {
@@ -25,9 +26,10 @@ public extension Rules {
         guard view.isMyTurn, !view.hand.isEmpty else { return nil }
 
         let captures = view.hand.flatMap { card in
-            captureOptions(for: card, on: view.table).map { option in
+            view.captureOptions(for: card).map { option in
                 (Move(seat: view.seat, card: card, captures: option),
-                 captureValue(card, option, tableCount: view.table.count, isOnLastCard: view.isOnLastCard))
+                 captureValue(card, option, tableCount: view.table.count,
+                              sweeps: view.isScopa(playing: card, taking: option)))
             }
         }
         if let best = captures.max(by: { $0.1.lexicographicallyPrecedes($1.1) }) { return best.0 }
@@ -37,14 +39,15 @@ public extension Rules {
     }
 
     /// Ranked highest first: a sweep, then the settebello, then coins, then card count.
-    private static func captureValue(_ card: Card, _ option: [Card], _ round: Round) -> [Int] {
-        captureValue(card, option, tableCount: round.table.count, isOnLastCard: round.isOnLastCard)
+    private static func captureValue(_ card: Card, _ option: [Card], _ round: Round, sweepScores: Bool) -> [Int] {
+        let sweeps = sweepScores && option.count == round.table.count && !round.isOnLastCard
+        return captureValue(card, option, tableCount: round.table.count, sweeps: sweeps)
     }
 
-    private static func captureValue(_ card: Card, _ option: [Card], tableCount: Int, isOnLastCard: Bool) -> [Int] {
+    private static func captureValue(_ card: Card, _ option: [Card], tableCount: Int, sweeps: Bool) -> [Int] {
         let taken = option + [card]
         return [
-            option.count == tableCount && !isOnLastCard ? 1 : 0,
+            sweeps ? 1 : 0,
             taken.contains(.settebello) ? 1 : 0,
             taken.count { $0.suit == .coins },
             taken.count,

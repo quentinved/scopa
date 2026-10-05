@@ -63,6 +63,8 @@ struct CampaignMap: View {
     /// What the walk-back moment is holding back: stars not yet struck, a road not yet drawn.
     let moment: CampaignMoment
     let you: SeatBadge
+    /// Who else sits at each table, by stage number, off the ladder.
+    var tables: [Int: Ladder.CampaignTable] = [:]
     let tap: (CampaignStage) -> Void
 
     private var layout: CampaignLayout { CampaignLayout(width: width) }
@@ -78,6 +80,7 @@ struct CampaignMap: View {
                     .position(x: width / 2, y: layout.top(of: region) + CampaignLayout.bannerHeight / 2)
             }
             ForEach(Campaign.stages) { stage in medallion(stage) }
+            ForEach(Campaign.stages) { stage in crowd(stage) }
         }
         .frame(width: width, height: layout.height, alignment: .topLeading)
         .frame(width: max(span, width))
@@ -152,6 +155,23 @@ struct CampaignMap: View {
                               pops: moment.popped == stage, you: isCurrent ? you : nil)
             .onTapGesture { tap(stage) }
             .position(layout.centre(of: stage))
+    }
+}
+
+extension CampaignMap {
+    /// Other players at a table, beside its medallion on the side away from the map's edge.
+    @ViewBuilder func crowd(_ stage: CampaignStage) -> some View {
+        if let table = tables[stage.number], !table.faces.isEmpty {
+            let centre = layout.centre(of: stage)
+            let leftward = centre.x > width * 0.55
+            let reach: CGFloat = (stage.isFinale ? 33 : 27) + 10
+            StageCrowd(table: table)
+                .fixedSize()
+                .frame(width: 0, height: 0, alignment: leftward ? .trailing : .leading)
+                .opacity(book.isUnlocked(stage) ? 1 : 0.75)
+                .allowsHitTesting(false)
+                .position(x: centre.x + (leftward ? -reach : reach), y: centre.y)
+        }
     }
 }
 

@@ -273,7 +273,16 @@ enum DebugLaunch {
     /// `-shop` opens the shop straight away.
     static var showsShop: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-shop") || promoCode != nil || shelf != nil
+        ProcessInfo.processInfo.arguments.contains("-shop") || promoCode != nil || shelf != nil || confirmsPurchase
+        #else
+        false
+        #endif
+    }
+
+    /// `-confirmBuy` opens the shop with a purchase waiting on a yes.
+    static var confirmsPurchase: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-confirmBuy")
         #else
         false
         #endif
@@ -411,6 +420,25 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-adFree` plays as though the no-ads pass had been bought: no strip and no
+    /// interruption, but the opt-in video is still offered. Nothing is written down.
+    static var ownsAdFree: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-adFree")
+        #else
+        false
+        #endif
+    }
+
+    /// `-adFreeSheet` opens the no-ads purchase from the lobby on arrival.
+    static var showsAdFree: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-adFreeSheet")
+        #else
+        false
+        #endif
+    }
+
     /// `-noGameCenter` keeps the app from signing in at launch, so Apple's sign-in sheet does
     /// not sit in front of a screenshot.
     static var staysSignedOut: Bool {
@@ -503,6 +531,18 @@ enum DebugLaunch {
         return arguments.firstIndex(of: "-openPack")
             .flatMap { arguments[safe: $0 + 1] }
             .flatMap(PackTier.init(rawValue:))
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-packStep new` starts an opening on its first new card, already turned over;
+    /// `-packStep spare` on its first one already owned, `-packStep 3` on that place, and
+    /// `-packStep done` on what it all came to. Pair it with `-album -openPack`.
+    static var packStep: String? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-packStep").flatMap { arguments[safe: $0 + 1] }
         #else
         return nil
         #endif
@@ -705,7 +745,8 @@ enum DebugLaunch {
         for _ in 0..<seated { store.addBot() }
     }
 
-    /// `-startTable`, taking `-seats`, `-bots`, `-teams`, `-clock` and `-target`.
+    /// `-startTable`, taking `-seats`, `-bots`, `-teams`, `-clock`, `-target` and
+    /// `-house scopone,napola` (the raw names, comma separated).
     @MainActor
     private static func startLocalTable(_ store: TableStore, with arguments: [String]) {
         guard arguments.contains("-startTable") else { return }
@@ -718,11 +759,15 @@ enum DebugLaunch {
         }
         let clock = arguments.firstIndex(of: "-clock").flatMap { TurnClock(rawValue: arguments[safe: $0 + 1] ?? "") } ?? .default
         let target = arguments.firstIndex(of: "-target").flatMap { Int(arguments[safe: $0 + 1] ?? "") } ?? 11
+        let house = arguments.firstIndex(of: "-house").map { index in
+            Set((arguments[safe: index + 1] ?? "").split(separator: ",").compactMap { HouseRule(rawValue: String($0)) })
+        } ?? []
         store.playOnThisDevice(
             seats: chairs,
             teams: arguments.contains("-teams") && names.count == 4,
             turnClock: clock,
-            targetScore: target
+            targetScore: target,
+            house: house
         )
     }
     #endif

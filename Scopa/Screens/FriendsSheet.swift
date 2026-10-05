@@ -53,7 +53,8 @@ struct FriendsSheet: View {
         case .thisPhone:
             OnThisPhonePage(you: store.playerName, knowsTieRules: store.knowsTieRules) { table in
                 store.playOnThisDevice(seats: table.seats, teams: table.teams, turnClock: table.clock,
-                                       targetScore: table.target, primiera: table.primiera, ties: table.ties)
+                                       targetScore: table.target, primiera: table.primiera, ties: table.ties,
+                                       house: table.house)
             }
         case .joinByCode:
             JoinTablePage(store: store)

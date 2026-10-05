@@ -9,6 +9,22 @@ import ScopaRewards
 /// a gift if it has one; the lobby does the rest, once per player.
 enum Releases {
     static let all: [Release] = [
+        Release(version: "1.2", gift: nil, notes: [
+            ReleaseNote(art: .houseRules, title: "Italy's house rules",
+                        body: "Scopone, Re bello, Napola and Asso piglia tutto. Mix them at any table with friends, from the House rules row before the cards are dealt."),
+            ReleaseNote(art: .journey, title: "A rule in every region",
+                        body: "The campaign teaches one as you travel: the Napola in Napoli, Asso piglia tutto in Sicily, Re bello in Venice and the Scopone in Rome. Each comes with a short lesson the first time."),
+            ReleaseNote(art: .songs, title: "Music for the table",
+                        body: "Six new songs, from a slow Pomeriggio waltz to the legendary Mergellina. Listen before you buy, in the shop's Songs section."),
+            ReleaseNote(art: .board, title: "A board for the campaign",
+                        body: "See who leads the road, among everyone or just your friends, and who has reached each stage on the map."),
+            ReleaseNote(art: .house, title: "Ranked, quicker",
+                        body: "Ranked finds you an opponent faster and more reliably, and the screen before a game says just what matters: who you face, and what a win or a loss is worth."),
+            ReleaseNote(art: .wheel, title: "Who won at the wheel",
+                        body: "Under the wheel, what everyone else won today, friends first."),
+            ReleaseNote(art: .noAds, title: "Scopa without ads",
+                        body: "One purchase in Settings takes the banner and the ads between games away for good. The videos that pay denari stay, for whenever you want them."),
+        ]),
         Release(version: "1.1", gift: nil, notes: [
             ReleaseNote(art: .journey, title: "A journey through Italy",
                         body: "The new solo campaign: region by region, stage by stage, against players who get better as you go. Up to three stars a stage, and a prize at the end of every region."),

@@ -62,12 +62,12 @@ enum Tapis: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The line under the swatch in the shop.
     var explanation: LocalizedStringKey {
         switch self {
-        case .liscio: "The table as it comes"
-        case .campo: "A field ruled in gold"
-        case .lino: "Linen, hemmed by hand"
-        case .maiolica: "Tiles from a hotel by the sea"
-        case .ventaglio: "Deco fans, as in a grand café"
-        case .velluto: "Velvet, piped with gold cord"
+        case .liscio: "Plain felt. Let the cards do the talking"
+        case .campo: "Ruled in gold, like a proper pitch"
+        case .lino: "Linen, hemmed by a very patient aunt"
+        case .maiolica: "Tiles pinched from a seaside hotel"
+        case .ventaglio: "Deco fans. A spritz is recommended"
+        case .velluto: "Velvet and gold cord. Little finger up"
         }
     }
 }

@@ -5,9 +5,9 @@ import ScopaRewards
 /// The solo campaign: thirty tables across Italy, region by region, each a little harder
 /// than the last.
 ///
-/// Nothing here is a new rule. Every stage is a table the engine already deals — a seat
-/// count, a target, a clock, a primiera — against bots whose strength climbs through the
-/// same two dials the settings and the ranked house use.
+/// Every stage is a table the engine already deals — a seat count, a target, a clock, a
+/// primiera, the house rules of the region — against bots whose strength climbs through
+/// the same two dials the settings and the ranked house use.
 enum Campaign {
     static let stages: [CampaignStage] = CampaignRegion.allCases.flatMap(\.stages)
 
@@ -45,6 +45,17 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
         case .sicilia: "Sun, salt and long games"
         case .venezia: "Lamplight on the canals"
         case .roma: "Where every road ends"
+        }
+    }
+
+    /// The house rule the region teaches. Liguria plays the classic game, so nobody is lost.
+    var rule: HouseRule? {
+        switch self {
+        case .liguria: nil
+        case .napoli: .napola
+        case .sicilia: .assoPigliaTutto
+        case .venezia: .reBello
+        case .roma: .scopone
         }
     }
 
@@ -123,6 +134,7 @@ struct CampaignStage: Identifiable, Hashable {
         var seating: Seating = .duel
         var clock: TurnClock = .off
         var primiera: PrimieraRule = .mostSevens
+        var house: Set<HouseRule> = []
     }
 
     let plan: Plan
@@ -140,6 +152,7 @@ struct CampaignStage: Identifiable, Hashable {
     var seating: Seating { plan.seating }
     var clock: TurnClock { plan.clock }
     var primiera: PrimieraRule { plan.primiera }
+    var house: Set<HouseRule> { plan.house }
 
     static func == (a: Self, b: Self) -> Bool { a.id == b.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }

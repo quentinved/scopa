@@ -88,6 +88,27 @@ extension TieRule {
     }
 }
 
+/// The regional rules keep their Italian names in every language, as the tables that play them do.
+extension HouseRule {
+    var label: LocalizedStringKey {
+        switch self {
+        case .scopone: "Scopone"
+        case .reBello: "Re bello"
+        case .napola: "Napola"
+        case .assoPigliaTutto: "Asso piglia tutto"
+        }
+    }
+
+    var explanation: LocalizedStringKey {
+        switch self {
+        case .scopone: "Four in two teams, ten cards each, nothing on the table to start"
+        case .reBello: "The king of coins is a point, like the settebello"
+        case .napola: "Ace, 2 and 3 of coins score 3, and a point more for each coin that follows"
+        case .assoPigliaTutto: "An ace takes the whole table, but that is no scopa"
+        }
+    }
+}
+
 /// The four suits under their Italian names, except where a language has its own word:
 /// `Spade` are `Épées` in French, not spades.
 extension Suit {
@@ -156,10 +177,10 @@ extension Award {
 extension CardStyle {
     var explanation: LocalizedStringKey {
         switch self {
-        case .moderna: "Flat and geometric, the house hand"
-        case .classica: "The court drawn out, in full"
-        case .antica: "A woodcut: outline and hatching"
-        case .litografia: "A lithographed sheet, in full colour"
+        case .moderna: "Clean lines, zero fuss. The house deck"
+        case .classica: "Kings in full robes, and they know it"
+        case .antica: "Carved in wood, like great-grandpa's deck"
+        case .litografia: "Full colour, still warm from the press"
         }
     }
 }
@@ -167,12 +188,12 @@ extension CardStyle {
 extension CardSkin {
     var explanation: LocalizedStringKey {
         switch self {
-        case .riviera: "Cream and bottle green, the house colours"
-        case .napoletana: "Warm cream on red"
-        case .piacentina: "Cool paper on navy"
-        case .bergamasca: "Bright, on cobalt"
-        case .pergamena: "Aged paper and brown ink"
-        case .notturna: "Bone and gold on black, printed in reverse"
+        case .riviera: "Cream and bottle green. The classic"
+        case .napoletana: "Red as the sauce. Naples approves"
+        case .piacentina: "Navy and cool paper. Very composed"
+        case .bergamasca: "Bright cobalt. Not one for whispering"
+        case .pergamena: "Old paper, brown ink. Found in the attic"
+        case .notturna: "Gold on black, for the midnight rematch"
         }
     }
 }
@@ -180,11 +201,11 @@ extension CardSkin {
 extension TableFelt {
     var explanation: LocalizedStringKey {
         switch self {
-        case .riviera: "The house table, bottle green"
-        case .notte: "Deep blue, after closing"
-        case .vigna: "Wine, poured on the cloth"
-        case .pietra: "Grey stone, for a quiet room"
-        case .festa: "Deep teal, seven evenings in a row"
+        case .riviera: "Bottle green, the way it's always been"
+        case .notte: "Deep blue, for after closing time"
+        case .vigna: "Wine red. Somebody tipped the bottle"
+        case .pietra: "Grey stone. Serious players only"
+        case .festa: "Deep teal, earned over seven evenings"
         }
     }
 }

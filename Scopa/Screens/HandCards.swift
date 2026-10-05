@@ -51,8 +51,9 @@ struct HandCards: View {
     private static let carry: CGFloat = 12
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: stage.pick(tall: 10, wide: 8) * lift) {
-            ForEach(Array(hand.enumerated()), id: \.element) { index, card in
+        // Three cards sit side by side; scopone's ten tuck over each other, rank corners showing.
+        OverlapRow(spacing: stage.pick(tall: 10, wide: 8) * lift) {
+            ForEach(Array(held.enumerated()), id: \.element) { index, card in
                 handCard(card, index: index)
             }
         }
@@ -62,6 +63,16 @@ struct HandCards: View {
         // without this an insertion could pop in.
         .animation(.spring(duration: 0.55, bounce: 0.25), value: hand)
         .animation(.snappy(duration: 0.22), value: picked)
+    }
+
+    /// The hand in the order it is held. Ten tucked cards show only their ranks, so they are
+    /// grouped by suit the way a player sorts them; three are left as they were dealt.
+    private var held: [Card] {
+        guard hand.count > 3 else { return hand }
+        let suits = Suit.allCases
+        return hand.sorted {
+            (suits.firstIndex(of: $0.suit)!, $0.rank) < (suits.firstIndex(of: $1.suit)!, $1.rank)
+        }
     }
 
     private func handCard(_ card: Card, index: Int) -> some View {
@@ -118,7 +129,7 @@ struct HandCards: View {
                 .combined(with: .opacity)
                 .combined(with: .scale(scale: 0.7))
                 .animation(.spring(duration: 0.62, bounce: 0.32)
-                    .delay(Double(index) * 0.26)),
+                    .delay(Double(index) * (hand.count > 3 ? 0.1 : 0.26))),
             removal: .scale(scale: 0.7).combined(with: .opacity)
         )
     }

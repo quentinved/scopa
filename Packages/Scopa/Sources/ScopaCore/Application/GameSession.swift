@@ -31,7 +31,7 @@ public actor GameSession {
     public func startRound() -> [GameEvent] {
         switch state.phase {
         case .awaitingDeal, .roundOver:
-            let deck = Rules.shuffledDeck(using: &rng)
+            let deck = Rules.shuffledDeck(for: state.configuration, using: &rng)
             let (next, events) = Rules.deal(deck, into: state)
             state = next
             record.rounds.append(.init(deck: deck))

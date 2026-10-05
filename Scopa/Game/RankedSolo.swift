@@ -54,6 +54,19 @@ enum RankedSolo: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// How the Worker's ranked queue names the format. See `Server/src/rankedline.ts`.
+    var queueName: String {
+        switch self {
+        case .headsUp: "1v1"
+        case .teams: "2v2"
+        }
+    }
+
+    init?(queueName: String) {
+        guard let format = Self.allCases.first(where: { $0.queueName == queueName }) else { return nil }
+        self = format
+    }
+
     /// The part of the matchmaking pool that keeps the two formats apart. The four keeps the
     /// name it always had, so a phone that has not been updated still meets one that has.
     var pool: String {

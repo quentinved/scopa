@@ -19,6 +19,7 @@ struct OnThisPhonePage: View {
         var target: Int
         var primiera: PrimieraRule
         var ties: TieRule
+        var house: Set<HouseRule>
     }
 
     /// The seats after yours. Yours is always the first, and always a person.
@@ -28,6 +29,7 @@ struct OnThisPhonePage: View {
     @State private var target = 11
     @State private var primiera = PrimieraRule.default
     @State private var ties = TieRule.default
+    @State private var house: Set<HouseRule> = []
 
     fileprivate struct Chair: Identifiable, Hashable {
         static let botNames = BotNames.all
@@ -62,7 +64,7 @@ struct OnThisPhonePage: View {
 
     private var table: Table {
         Table(seats: [.person(name: you)] + others.map { $0.isBot ? .bot(name: $0.name) : .person(name: $0.name) },
-              teams: teams, clock: clock, target: target, primiera: primiera, ties: ties)
+              teams: teams, clock: clock, target: target, primiera: primiera, ties: ties, house: house)
     }
 
     // MARK: The seats
@@ -116,6 +118,7 @@ struct OnThisPhonePage: View {
             Button {
                 others.removeLast()
                 teams = false
+                house.remove(.scopone)
             } label: {
                 Label("Remove", systemImage: "minus")
             }
@@ -136,6 +139,12 @@ struct OnThisPhonePage: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Palette.onTable)
                     .tint(Palette.terracotta)
+                    .onChange(of: teams) { _, paired in if !paired { house.remove(.scopone) } }
+            }
+            // Scopone is only ever four in two teams, so asking for it pairs the table off.
+            HouseRulesPicker(selection: house, seats: others.count + 1) { rules in
+                if rules.contains(.scopone) { teams = true }
+                house = rules
             }
             choice("Time to play a card", selection: $clock, cases: TurnClock.allCases)
             choice("The primiera", selection: $primiera, cases: PrimieraRule.allCases)

@@ -378,7 +378,7 @@ enum Ladder {
 
     /// POSTs a signed body and decodes the answer. Nil when the ladder is switched off or
     /// nobody is signed in, which is how every signed call opts out.
-    private static func signedPost<Body: Encodable, Answer: Decodable>(
+    static func signedPost<Body: Encodable, Answer: Decodable>(
         _ path: String, body: (GameCenterIdentity) -> Body
     ) async throws -> Answer? {
         guard let baseURL, GameCenter.isSignedIn else { return nil }
@@ -393,13 +393,13 @@ enum Ladder {
     }
 
     /// GETs and decodes, throwing on anything but a 2xx.
-    private static func get<Answer: Decodable>(_ url: URL) async throws -> Answer {
+    static func get<Answer: Decodable>(_ url: URL) async throws -> Answer {
         let (data, response) = try await URLSession.shared.data(from: url)
         try check(response)
         return try JSONDecoder().decode(Answer.self, from: data)
     }
 
-    private static func check(_ response: URLResponse) throws {
+    static func check(_ response: URLResponse) throws {
         guard (response as? HTTPURLResponse).map({ 200..<300 ~= $0.statusCode }) == true else {
             throw URLError(.badServerResponse)
         }
@@ -548,7 +548,7 @@ extension Ladder {
     }
 
     /// POSTs a body that carries its own signature, or needs none.
-    private static func unsignedPost<Body: Encodable, Answer: Decodable>(_ path: String, body: Body) async throws -> Answer? {
+    static func unsignedPost<Body: Encodable, Answer: Decodable>(_ path: String, body: Body) async throws -> Answer? {
         guard let baseURL else { return nil }
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = "POST"

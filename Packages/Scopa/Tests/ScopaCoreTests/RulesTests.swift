@@ -233,15 +233,15 @@ private func c(_ rank: Rank, _ suit: Suit = .clubs) -> Card { Card(rank, of: sui
 
         let view = state.view(forSeat: 0)
         #expect(view.cardsInPlay == 2 && !view.isOnLastCard)
-        #expect(view.isScopa(taking: [c(.three), c(.four)]))
-        #expect(!view.isScopa(taking: [c(.three)]))
-        #expect(!view.isScopa(taking: []))
+        #expect(view.isScopa(playing: c(.seven, .coins), taking: [c(.three), c(.four)]))
+        #expect(!view.isScopa(playing: c(.seven, .coins), taking: [c(.three)]))
+        #expect(!view.isScopa(playing: c(.seven, .coins), taking: []))
 
         // With one card left in play, a sweep no longer scores.
         var last = state
         last.round?.hands[1] = []
         #expect(last.view(forSeat: 0).isOnLastCard)
-        #expect(!last.view(forSeat: 0).isScopa(taking: [c(.three), c(.four)]))
+        #expect(!last.view(forSeat: 0).isScopa(playing: c(.seven, .coins), taking: [c(.three), c(.four)]))
     }
 }
 

@@ -242,9 +242,14 @@ struct WaitingRoomView: View {
             clockTabs
             primieraTabs
             tieTabs
+            houseRules
             targetRow
             if players.count != 4 && lobby?.teams == true {
                 Text("Teams need four players.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.terracotta)
+            } else if lobby?.house.contains(.scopone) == true && lobby?.teams != true {
+                Text("Scopone is played four, in two teams.")
                     .font(.system(size: 13))
                     .foregroundStyle(Palette.terracotta)
             }
@@ -303,6 +308,14 @@ struct WaitingRoomView: View {
             .padding(5)
             .glassPanel(radius: GlassRadius.control)
         }
+    }
+
+    /// Every phone sees the house rules, since they change what a card may take; only the host sets them.
+    private var houseRules: some View {
+        HouseRulesPicker(selection: lobby?.house ?? [], seats: players.count, enabled: store.isHost) {
+            store.setHouse($0)
+        }
+        .padding(.horizontal, 4)
     }
 
     private var targetRow: some View {

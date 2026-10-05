@@ -1,10 +1,12 @@
-/// Classic Scopa rules as pure functions over `GameState`.
+/// Scopa's rules, classic and house, as pure functions over `GameState`.
 public enum Rules {
     // MARK: Captures
 
     /// Every legal set of table cards `card` may take. Empty means the card must be laid down.
-    /// A single card of equal rank takes priority over any sum of smaller cards.
-    public static func captureOptions(for card: Card, on table: [Card]) -> [[Card]] {
+    /// A single card of equal rank takes priority over any sum of smaller cards; under asso
+    /// piglia tutto an ace takes the lot.
+    public static func captureOptions(for card: Card, on table: [Card], house: Set<HouseRule> = []) -> [[Card]] {
+        if house.contains(.assoPigliaTutto), card.rank == .ace, !table.isEmpty { return [table] }
         let singles = table.filter { $0.rank == card.rank }
         if !singles.isEmpty { return singles.map { [$0] } }
 
@@ -50,7 +52,7 @@ public enum Rules {
         let taken = Set(move.captures)
         guard taken.count == move.captures.count, taken.isSubset(of: round.table) else { throw .captureNotOnTable }
 
-        let options = captureOptions(for: move.card, on: round.table)
+        let options = captureOptions(for: move.card, on: round.table, house: state.configuration.house)
         if taken.isEmpty {
             guard options.isEmpty else { throw .captureIsMandatory }
         } else {
@@ -62,15 +64,22 @@ public enum Rules {
 
     /// Shuffles and deals a new round.
     public static func startRound(_ state: GameState, using rng: inout some RandomNumberGenerator) -> (GameState, [GameEvent]) {
-        deal(shuffledDeck(using: &rng), into: state)
+        deal(shuffledDeck(for: state.configuration, using: &rng), into: state)
     }
 
-    /// A shuffled deck, reshuffled while three or more kings would land on the table.
-    public static func shuffledDeck(using rng: inout some RandomNumberGenerator) -> [Card] {
+    /// A shuffled deck, reshuffled while three or more kings would land on the table, or
+    /// under asso piglia tutto any ace.
+    public static func shuffledDeck(for config: GameConfiguration? = nil,
+                                    using rng: inout some RandomNumberGenerator) -> [Card] {
+        let tableSize = config?.tableSize ?? 4
+        let house = config?.house ?? []
         var deck: [Card]
+        var table: ArraySlice<Card>
         repeat {
             deck = Deck.shuffled(using: &rng)
-        } while deck.suffix(GameConfiguration.tableSize).count { $0.rank == .king } >= 3
+            table = deck.suffix(tableSize)
+        } while table.count { $0.rank == .king } >= 3
+            || (house.contains(.assoPigliaTutto) && table.contains { $0.rank == .ace })
         return deck
     }
 
@@ -81,8 +90,8 @@ public enum Rules {
         let config = state.configuration
         var deck = deck
 
-        let table = Array(deck.suffix(GameConfiguration.tableSize))
-        deck.removeLast(GameConfiguration.tableSize)
+        let table = Array(deck.suffix(config.tableSize))
+        deck.removeLast(config.tableSize)
 
         var round = Round(
             stock: deck,
@@ -93,7 +102,7 @@ public enum Rules {
             turnSeat: config.nextSeat(after: state.dealerSeat),
             lastCaptureSide: nil
         )
-        dealHands(&round, seatCount: config.seatCount)
+        dealHands(&round, config)
 
         state.round = round
         state.phase = .playing
@@ -101,10 +110,10 @@ public enum Rules {
         return (state, [.dealt])
     }
 
-    static func dealHands(_ round: inout Round, seatCount: Int) {
-        for seat in 0..<seatCount {
-            round.hands[seat] = Array(round.stock.suffix(GameConfiguration.handSize))
-            round.stock.removeLast(GameConfiguration.handSize)
+    static func dealHands(_ round: inout Round, _ config: GameConfiguration) {
+        for seat in 0..<config.seatCount {
+            round.hands[seat] = Array(round.stock.suffix(config.handSize))
+            round.stock.removeLast(config.handSize)
         }
     }
 
@@ -127,7 +136,8 @@ public enum Rules {
         if move.captures.isEmpty {
             round.table.append(move.card)
         } else {
-            events += capture(move, in: &round, side: config.side(ofSeat: move.seat), isLastCard: isLastCard)
+            let sweeps = !isLastCard && config.house.sweepScores(playing: move.card)
+            events += capture(move, in: &round, side: config.side(ofSeat: move.seat), sweeps: sweeps)
         }
         round.turnSeat = config.nextSeat(after: move.seat)
 
@@ -135,7 +145,7 @@ public enum Rules {
             if round.stock.isEmpty {
                 return finishRound(state, round, events)
             }
-            dealHands(&round, seatCount: config.seatCount)
+            dealHands(&round, config)
             events.append(.dealt)
         }
 
@@ -144,14 +154,14 @@ public enum Rules {
     }
 
     /// Moves the taken cards and the played card to `side`'s pile. Clearing the table
-    /// scores a scopa, except on the last card of the round.
-    private static func capture(_ move: Move, in round: inout Round, side: Int, isLastCard: Bool) -> [GameEvent] {
+    /// scores a scopa when `sweeps`: never on the last card of the round.
+    private static func capture(_ move: Move, in round: inout Round, side: Int, sweeps: Bool) -> [GameEvent] {
         let taken = Set(move.captures)
         round.table.removeAll { taken.contains($0) }
         round.captures[side] += move.captures + [move.card]
         round.lastCaptureSide = side
         var events: [GameEvent] = [.captured(seat: move.seat, cards: move.captures)]
-        if round.table.isEmpty && !isLastCard {
+        if round.table.isEmpty && sweeps {
             round.scope[side] += 1
             events.append(.scopa(seat: move.seat))
         }
@@ -169,8 +179,9 @@ public enum Rules {
             round.table.removeAll()
         }
 
+        let config = state.configuration
         let score = Scoring.score(captures: round.captures, scope: round.scope,
-                                  primiera: state.configuration.primiera, ties: state.configuration.ties)
+                                  primiera: config.primiera, ties: config.ties, house: config.house)
         for side in state.scores.indices { state.scores[side] += score.points[side] }
         state.round = round
         state.dealerSeat = state.configuration.nextSeat(after: state.dealerSeat)

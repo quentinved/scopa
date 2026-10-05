@@ -26,4 +26,6 @@ enum Haptic {
     static let turn: SensoryFeedback = .impact(flexibility: .soft, intensity: 0.5)
     /// Something out of a pack that was worth waiting for.
     static let prize: SensoryFeedback = .success
+    /// NEW landing on something out of a pack that you did not have.
+    static let stamp: SensoryFeedback = .impact(weight: .heavy, intensity: 1.0)
 }

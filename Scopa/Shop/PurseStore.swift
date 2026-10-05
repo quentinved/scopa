@@ -58,6 +58,7 @@ final class PurseStore {
     func owns(_ livery: SeatLivery) -> Bool { owns(Cosmetics.item(for: livery)) }
     func owns(_ flourish: Flourish) -> Bool { owns(Cosmetics.item(for: flourish)) }
     func owns(_ cheer: Cheer) -> Bool { owns(Cosmetics.item(for: cheer)) }
+    func owns(_ song: Song) -> Bool { owns(Cosmetics.item(for: song)) }
 
     /// Everything this player may say at a table: the free reactions plus any bought packs.
     var reactions: [Reaction] {

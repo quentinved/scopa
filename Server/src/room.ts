@@ -57,6 +57,25 @@ export function makeCode(): string {
   return code;
 }
 
+/// Retries on a clash. Codes are four letters of a 32-letter alphabet, so it is rare.
+const CODE_ATTEMPTS = 5;
+
+/// Opens a room under a fresh code and returns the code, or null when no room could be opened.
+export async function openTable(rooms: DurableObjectNamespace, host: string, hostName: string,
+                                capacity?: number): Promise<string | null> {
+  for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
+    const code = makeCode();
+    const opened = await rooms.get(rooms.idFromName(code)).fetch("https://room/open", {
+      method: "POST",
+      body: JSON.stringify({ code, host, hostName, capacity }),
+    });
+    if (opened.ok) return code;
+    // 409 means the code is taken. Anything else is a real failure.
+    if (opened.status !== 409) return null;
+  }
+  return null;
+}
+
 /// Whether a string could be a code at all, so a typo is refused before a Durable
 /// Object is woken for it.
 export function isCode(value: string): boolean {

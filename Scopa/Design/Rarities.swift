@@ -65,6 +65,17 @@ enum Rarities {
 
     // MARK: Shop grades
 
+    /// The grade in the player's language: the Italian names read as decoration, not as an
+    /// order, to anyone who does not speak it.
+    static func title(_ grade: Grade, locale: Locale) -> String {
+        switch grade {
+        case .comune: String(localized: "Common", locale: locale)
+        case .raro: String(localized: "Rare", locale: locale)
+        case .prezioso: String(localized: "Precious", locale: locale)
+        case .leggendario: String(localized: "Legendary", locale: locale)
+        }
+    }
+
     static func tint(_ grade: Grade) -> Color {
         switch grade {
         case .comune: Palette.onTableSoft
@@ -96,6 +107,8 @@ enum Rarities {
 /// album and the shop cannot drift into printing the same idea two ways.
 struct RarityTag: View {
     var text: String
+    /// Said in the reader's language when the tag is a shop grade, in place of `text`.
+    var grade: Grade? = nil
     var tint: Color
     var sheen: AnyShapeStyle?
     var size: CGFloat = 10.5
@@ -103,11 +116,15 @@ struct RarityTag: View {
     /// a page of filled tags would be a page of shouting.
     var filled = false
 
+    @Environment(\.locale) private var locale
+
+    private var label: String { grade.map { Rarities.title($0, locale: locale) } ?? text }
+
     var body: some View {
-        Text(verbatim: text.uppercased())
+        Text(verbatim: label.uppercased())
             .font(.system(size: size, weight: .heavy))
             .tracking(1.1)
-            // "Settebello" and "Leggendario" are twice the length of "Raro" and these tags
+            // "Settebello" and "Leggendario" are twice the length of "Rare" and these tags
             // sit in rows sized for the short ones.
             .lineLimit(1)
             .minimumScaleFactor(0.6)
@@ -121,7 +138,7 @@ struct RarityTag: View {
                     Capsule().strokeBorder(tint.opacity(0.75), lineWidth: 1)
                 }
             }
-            .accessibilityLabel(Text(verbatim: text))
+            .accessibilityLabel(Text(verbatim: label))
     }
 }
 
@@ -132,7 +149,7 @@ extension RarityTag {
     }
 
     init(_ grade: Grade, size: CGFloat = 10.5, filled: Bool = false) {
-        self.init(text: grade.title, tint: Rarities.tint(grade), sheen: Rarities.sheen(grade),
+        self.init(text: grade.title, grade: grade, tint: Rarities.tint(grade), sheen: Rarities.sheen(grade),
                   size: size, filled: filled)
     }
 }

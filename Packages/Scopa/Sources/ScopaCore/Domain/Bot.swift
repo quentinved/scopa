@@ -57,7 +57,7 @@ public struct Bot: Hashable, Sendable {
     /// with no take may always be laid, even while another card could capture.
     public func evaluate(_ view: PlayerView) -> [ScoredMove] {
         view.hand.flatMap { card -> [ScoredMove] in
-            let options = Rules.captureOptions(for: card, on: view.table)
+            let options = view.captureOptions(for: card)
             guard !options.isEmpty else {
                 return [ScoredMove(move: Move(seat: view.seat, card: card), score: layScore(card, view))]
             }
@@ -71,17 +71,19 @@ public struct Bot: Hashable, Sendable {
     private func captureScore(_ card: Card, _ option: [Card], _ view: PlayerView) -> Int {
         let taken = option + [card]
         var score = Weight.take
-        if view.isScopa(taking: option) { score += Weight.scopa }
+        if view.isScopa(playing: card, taking: option) { score += Weight.scopa }
         if taken.contains(.settebello) { score += Weight.settebello }
         score += taken.count { $0.suit == .coins } * Weight.coin
         score += taken.count * Weight.card
         score += taken.reduce(0) { $0 + Scoring.primieraValue($1.rank) } / 2
+        score += Self.houseValue(of: taken, in: view)
 
         let left = view.table.filter { !Set(option).contains($0) }
         // The last capture of a round also sweeps up whatever is still on the table.
         if view.isOnLastCard {
             score += left.count * Weight.card + left.count { $0.suit == .coins } * Weight.coin
             if left.contains(.settebello) { score += Weight.settebello }
+            score += Self.houseValue(of: left, in: view)
         }
         score -= Self.exposure(of: left, in: view)
         return score
@@ -101,6 +103,7 @@ public struct Bot: Hashable, Sendable {
         if card.suit == .coins { value += Weight.coin * 2 }
         // Sevens, sixes and aces are what the primiera pays for.
         value += Scoring.primieraValue(card.rank) / 2
+        value += houseValue(of: [card], in: view)
         return (value, exposure(of: view.table + [card], in: view))
     }
 
@@ -112,16 +115,29 @@ public struct Bot: Hashable, Sendable {
         let sweepScores = !(view.stockCount == 0 && view.cardsInPlay <= 2)
 
         let total = Rank.allCases.reduce(0) { total, rank in
-            let best = Rules.captureOptions(for: Card(rank, of: .cups), on: table).map { option -> Int in
+            let answer = Card(rank, of: .cups)
+            let house = view.configuration.house
+            let best = Rules.captureOptions(for: answer, on: table, house: house).map { option -> Int in
                 var value = option.count * Weight.card
                 value += option.count { $0.suit == .coins } * Weight.coin
                 if option.contains(.settebello) { value += Weight.settebello }
-                if sweepScores, option.count == table.count { value += Weight.scopa }
+                value += houseValue(of: option, in: view)
+                if sweepScores, option.count == table.count, house.sweepScores(playing: answer) { value += Weight.scopa }
                 return value
             }
             return total + (best.max() ?? 0)
         }
         return total / Weight.unseenHand
+    }
+
+    /// What the table's house rules add to a pile: the re bello is priced like the
+    /// settebello, and the low coins a napola is built from count twice.
+    static func houseValue(of cards: [Card], in view: PlayerView) -> Int {
+        let house = view.configuration.house
+        var value = 0
+        if house.contains(.reBello), cards.contains(.reBello) { value += Weight.settebello }
+        if house.contains(.napola) { value += cards.count { $0.suit == .coins && $0.rank <= .three } * Weight.coin }
+        return value
     }
 
     /// Tuned so that any take beats any lay, and a scopa beats every other take.

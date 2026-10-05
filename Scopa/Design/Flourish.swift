@@ -56,12 +56,12 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
 
     var explanation: LocalizedStringKey {
         switch self {
-        case .stendardo: "Just the band"
-        case .coriandoli: "Paper, falling"
-        case .scintille: "Fireworks, bursting"
-        case .pioggia: "It rains denari"
-        case .aureola: "One ring of gold"
-        case .sigillo: "Sealed in wax"
+        case .stendardo: "Just the banner. Modest"
+        case .coriandoli: "Confetti. Someone has to sweep it"
+        case .scintille: "Fireworks, indoors. Bold"
+        case .pioggia: "It rains denari. Leave the umbrella"
+        case .aureola: "A golden halo. Patron saint of sweeps"
+        case .sigillo: "Sealed in wax. It's official"
         }
     }
 

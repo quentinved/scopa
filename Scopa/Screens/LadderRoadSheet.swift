@@ -177,7 +177,7 @@ struct LadderRoadSheet: View {
                 rule(signed(Ranking.houseWin),
                      "A win against the house, for the first \(Ranking.houseGamesPerDay) games of the day.")
                 rule(signed(Ranking.streakStep),
-                     "For each win in a row against real players before it, up to \(signed(Ranking.streakCap)).")
+                     "For each win in a row before it, the house included, up to \(signed(Ranking.streakCap)).")
                 rule(signed(Ranking.points(won: false, opponentAbove: 0, in: .gold)),
                      "A loss against someone of your level. Half that in Bronze and Silver, and \(signed(Ranking.houseLoss)) against the house.")
                 rule("\(Ranking.pointsPerDivision)",

@@ -22,6 +22,7 @@ enum Cosmetics {
                   + SeatLivery.allCases.compactMap { item(for: $0) }
                   + Flourish.allCases.compactMap { item(for: $0) }
                   + Cheer.allCases.compactMap { item(for: $0) }
+                  + Song.allCases.compactMap { item(for: $0) }
                   + reactionPacks.map(\.item))
     }
 
@@ -280,6 +281,19 @@ enum Cosmetics {
                         grade: cheer.grade)
     }
 
+    // MARK: Table songs
+
+    static func item(for song: Song) -> ShopItem? {
+        guard let price = song.price else { return nil }
+        return ShopItem(id: ShopItem.ID("song.\(song.rawValue)"), kind: .song,
+                        title: song.title, detail: song.detail, price: price,
+                        grade: song.grade)
+    }
+
+    static func song(of id: ShopItem.ID) -> Song? {
+        Song.allCases.first { item(for: $0)?.id == id }
+    }
+
     // MARK: What a pack owes
 
     /// Something at this grade that is not owned yet, or nil when there is nothing left to
@@ -376,20 +390,41 @@ enum Cosmetics {
 
     // MARK: Shelves
 
+    /// Plain names, so a newcomer can tell the shelves apart at a glance.
     static func title(of kind: ShopItem.Kind) -> LocalizedStringKey {
         switch kind {
-        case .cardTheme: "How the deck is drawn"
-        case .cardSkin: "What colour it is printed in"
-        case .cardBack: "The back of the cards"
-        case .felt: "The colour of the table"
-        case .tapis: "How the table is dressed"
-        case .mark: "The mark on your seat"
-        case .cornice: "What goes round it"
-        case .reactions: "What you can say"
-        case .companion: "Who sits with you"
-        case .livery: "The colour of your mark"
-        case .flourish: "What a sweep looks like"
-        case .cheer: "What a sweep sounds like"
+        case .cardTheme: "Card art"
+        case .cardSkin: "Card colours"
+        case .cardBack: "Card backs"
+        case .felt: "Table colour"
+        case .tapis: "Table cloth"
+        case .mark: "Seat badge"
+        case .cornice: "Badge frame"
+        case .reactions: "Phrases"
+        case .companion: "Companion"
+        case .livery: "Badge colour"
+        case .flourish: "Sweep effect"
+        case .cheer: "Sweep sound"
+        case .song: "Table music"
+        }
+    }
+
+    /// The line under a shelf's name: what buying from it changes, and who notices.
+    static func subtitle(of kind: ShopItem.Kind) -> LocalizedStringKey {
+        switch kind {
+        case .cardTheme: "How the figures and pips on every card are drawn."
+        case .cardSkin: "The inks the deck is printed in. Works with any card art."
+        case .cardBack: "The pattern on the back of every card."
+        case .felt: "The colour of the felt under the cards."
+        case .tapis: "The pattern and border woven across the felt."
+        case .mark: "The emblem on your seat. Everyone at the table sees it."
+        case .cornice: "A ring around your badge. Everyone sees it."
+        case .reactions: "Extra things to say at the table, four to a set."
+        case .companion: "A little animal by your hand that cheers your sweeps. Everyone sees it."
+        case .livery: "The colour your badge is struck in. Everyone sees it."
+        case .flourish: "What fills the table when you sweep it clean (a scopa)."
+        case .cheer: "What you hear when you make a scopa. Only you hear it."
+        case .song: "The song that plays during your games. Tap play to listen first."
         }
     }
 }

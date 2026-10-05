@@ -81,7 +81,13 @@ struct RoundSummary: View {
 
     private var contests: [Contest] {
         guard let score else { return [] }
-        var list = ScoreCategory.allCases.map { contest(for: $0, in: score) }
+        // A house category only where the table plays it, and a napola only once somebody made one.
+        let played = ScoreCategory.allCases.filter { category in
+            guard !ScoreCategory.classic.contains(category) else { return true }
+            guard let tallies = score.tallies[category] else { return false }
+            return category != .napola || tallies.contains { $0 > 0 }
+        }
+        var list = played.map { contest(for: $0, in: score) }
         if score.scope.contains(where: { $0 > 0 }) {
             list.append(Contest(id: "scopa", label: String(localized: "Scopa", locale: locale),
                                 values: order.map { "\(score.scope[$0])" },
@@ -97,7 +103,11 @@ struct RoundSummary: View {
             label: label(for: category),
             values: order.map { side in
                 // The seven is had or not had. A count of one would read as a score.
-                category == .settebello ? (tallies[side] > 0 ? "✓" : "–") : "\(tallies[side])"
+                switch category {
+                case .settebello, .reBello: tallies[side] > 0 ? "✓" : "–"
+                case .napola: tallies[side] > 0 ? "\(tallies[side])" : "–"
+                default: "\(tallies[side])"
+                }
             },
             // Read off the score, not worked out from the winner: a shared category pays
             // with no winner at all.
@@ -429,6 +439,8 @@ struct RoundSummary: View {
         case .primiera: view.configuration.primiera == .mostSevens
             ? String(localized: "Sevens", locale: locale)
             : String(localized: "Primiera", locale: locale)
+        case .reBello: String(localized: "Re bello", locale: locale)
+        case .napola: String(localized: "Napola", locale: locale)
         }
     }
 

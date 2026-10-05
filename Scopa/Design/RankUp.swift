@@ -82,7 +82,7 @@ private struct LadderCeremonyHost: ViewModifier {
                         .transition(.opacity)
                 }
             }
-            .sheet(isPresented: $showsRoad) { LadderRoadSheet(store: store) }
+            .sheet(isPresented: $showsRoad) { LadderRoadSheet(store: store).coversBanner() }
             .task { await arrive() }
             .onChange(of: store.rank) { if store.route == .lobby { ceremony.check() } }
             .onChange(of: store.route) { _, route in if route == .lobby { ceremony.checkSoon() } }

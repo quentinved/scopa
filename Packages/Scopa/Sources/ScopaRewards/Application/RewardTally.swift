@@ -44,9 +44,9 @@ public struct RewardTally: Hashable, Codable, Sendable {
             // Won outright, on purpose: a table that pays both sides for a category they
             // ended level on is a house rule between friends, and a cappotto shared with
             // the other side is not one. What it pays out stays what the rulebook pays for.
-            let mine = ScoreCategory.allCases.filter { (score.categoryWinners[$0] ?? nil) == side }
+            let mine = ScoreCategory.classic.filter { (score.categoryWinners[$0] ?? nil) == side }
             if mine.contains(.settebello) { settebelli += 1 }
-            if mine.count == ScoreCategory.allCases.count { cappotti += 1 }
+            if mine.count == ScoreCategory.classic.count { cappotti += 1 }
             // A daily deal is one round, so its end is the game's end. More points than the
             // bot wins it; level is a loss, which is the same rule the ladder ranks by.
             if mode.isDailyDeal {

@@ -123,17 +123,20 @@ public enum Ranking {
 
     /// A ranked game against the house pays a win in full and prices the loss at a fifth of
     /// it: an evening alone climbs, and the ration below is what keeps it honest rather than
-    /// the price. It neither lengthens a run nor ends one — a run is something people take
-    /// off each other.
+    /// the price. Within the ration it is part of the run like any other game: with so few
+    /// people about, a run against people only never got going.
     public static let houseWin = 25
     public static let houseLoss = -5
 
-    /// House games per day the ladder counts. Past this they move nothing, which is the only
-    /// brake on the house now that a win off it pays like a real one: ten wins is +250.
+    /// House games per day the ladder counts. Past this they move nothing, the run included,
+    /// which is the only brake on the house: ten wins is +320 with the run.
     public static let houseGamesPerDay = 10
 
-    /// What one house game does to a rating, before the floor is applied.
-    public static func houseChange(won: Bool) -> Int { won ? houseWin : houseLoss }
+    /// What one house game does to a rating, before the floor is applied. `streak` is the run
+    /// standing before it, as for `change`.
+    public static func houseChange(won: Bool, streak: Int = 0) -> Int {
+        won ? houseWin + streakBonus(after: streak) : houseLoss
+    }
 
     /// A rating after a change, clamped to the season floor and the top. The floor rises
     /// to the start of any league the new rating reaches.

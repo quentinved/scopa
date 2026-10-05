@@ -319,3 +319,76 @@ def crackle(rng: np.random.Generator, duration: float, sparks: int = 70,
         for channel in range(2):
             dsp.place(out[channel], stereo[channel], at)
     return level * out
+
+
+# MARK: The table songs
+#
+# The shop's songs add a mandolin, a flute and a tambourine to the band. Same room, same
+# tuning, so a cheer still lands on any of them.
+
+
+def mandolin(note: float, duration: float, level: float = 1.0,
+             rng: np.random.Generator | None = None) -> np.ndarray:
+    """One mandolin course: two steel strings a hair apart, bright and quick to fade."""
+    rng = rng or np.random.default_rng()
+    n = dsp.seconds(duration)
+    freq = dsp.midi_hz(note)
+    pair = _string(freq, n, 0.9968, 3, rng) + _string(freq * 1.0017, n, 0.9968, 3, rng)
+    pair *= dsp.pluck(n, attack=0.001, decay=duration * 0.9)
+    body = dsp.peak(dsp.peak(pair, 1100.0, 4.0, q=1.2), 2600.0, 2.5, q=1.6)
+    return level * 0.5 * dsp.lowpass(dsp.highpass(body, 170.0), 5600.0)
+
+
+def tremolo(note: float, duration: float, rate: float, level: float = 1.0,
+            rng: np.random.Generator | None = None) -> np.ndarray:
+    """A held mandolin note: the course picked down and up, fast, for as long as it lasts."""
+    rng = rng or np.random.default_rng()
+    gap = 1.0 / rate
+    count = max(int(round(duration / gap)), 1)
+    out = dsp.silence(duration + 0.6)
+    for i in range(count):
+        last = i == count - 1
+        weight = (1.0 if i % 2 == 0 else 0.8) * rng.uniform(0.88, 1.0)
+        ring = 0.55 if last else gap * 2.6
+        dsp.place(out, mandolin(note, ring, level=weight * 0.62, rng=rng), i * gap)
+    return level * out
+
+
+def flute(note: float, duration: float, level: float = 1.0,
+          rng: np.random.Generator | None = None) -> np.ndarray:
+    """A wooden flute: nearly a sine, breath round it, and a vibrato that arrives late."""
+    rng = rng or np.random.default_rng()
+    n = dsp.seconds(duration)
+    t = np.arange(n) / SR
+    freq = dsp.midi_hz(note)
+    depth = 0.0045 * np.clip((t - 0.22) / 0.4, 0.0, 1.0)
+    phase = 2.0 * np.pi * np.cumsum(freq * (1.0 + depth * np.sin(2.0 * np.pi * 5.1 * t))) / SR
+    tone = np.sin(phase) + 0.2 * np.sin(2.0 * phase) + 0.07 * np.sin(3.0 * phase)
+    breath = 0.06 * dsp.bandpass(rng.uniform(-1, 1, n), freq * 2.0, 1.4)
+    edge = min(0.07, duration * 0.3)
+    env = dsp.swell(n, edge, duration * 0.7, min(0.14, duration * 0.3))
+    return level * env * (tone + breath)
+
+
+def squeeze(notes: list[float], duration: float, level: float = 1.0) -> np.ndarray:
+    """The accordion with the bellows moving: eased in and out, so a short chord does not click."""
+    n = dsp.seconds(duration)
+    edge = min(0.03, duration * 0.2)
+    return accordion(notes, duration, level) * dsp.swell(n, edge, duration * 0.75, duration * 0.2)
+
+
+def tambourine(rng: np.random.Generator, level: float = 1.0, shake: bool = False) -> np.ndarray:
+    """Zils on a frame: bright partials that disagree, rattling, over a tap of skin.
+    A shake is the zils alone, smeared, with no hand on the skin.
+    """
+    n = dsp.seconds(0.3)
+    t = np.arange(n) / SR
+    attack = 0.018 if shake else 0.0008
+    jingle = np.zeros(n)
+    for freq in rng.uniform(5200.0, 9600.0, 6):
+        jingle += np.sin(2.0 * np.pi * freq * t + rng.uniform(0, 2 * np.pi)) \
+            * dsp.pluck(n, attack, rng.uniform(0.07, 0.15))
+    jingle *= 1.0 + 0.6 * rng.uniform(-1, 1, n)
+    grit = dsp.highpass(rng.uniform(-1, 1, n), 6000.0) * dsp.pluck(n, attack, 0.06)
+    tap = 0.0 if shake else 0.22 * dsp.bandpass(rng.uniform(-1, 1, n), 900.0, 1.2) * dsp.pluck(n, 0.0005, 0.03)
+    return level * (0.12 * jingle + 0.2 * dsp.lowpass(grit, 11000.0) + tap)

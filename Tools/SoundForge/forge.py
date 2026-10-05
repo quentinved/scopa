@@ -26,12 +26,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 import dsp  # noqa: E402
 import music  # noqa: E402
 import sfx  # noqa: E402
+import songs  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[2] / "Scopa" / "Audio" / "Sounds"
 
 LOOPS = {
     "music_lungomare": music.lungomare,
     "music_tavolo": music.tavolo,
+    **songs.LOOPS,
 }
 
 ONE_SHOTS = {

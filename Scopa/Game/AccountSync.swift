@@ -329,6 +329,7 @@ private enum Stored {
         .init("cardStyle"), .init("cardSkin"), .init("language"),
         .init("tableFelt"), .init("tapis"), .init("cardBack"), .init("seatMark"),
         .init("companion"), .init("cornice"), .init("livery"), .init("flourish"), .init("cheer"),
+        .init("tableSong"),
         .init("hasSeenRules", .flag), .init("knowsTieRules", .flag), .init("adsAreSwept", .flag),
         .init("musicOn", .flag), .init("soundsOn", .flag),
         .init("reminders.on", .flag), .init("reminders.offered", .flag),

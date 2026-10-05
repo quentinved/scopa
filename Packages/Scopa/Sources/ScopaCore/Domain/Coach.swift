@@ -115,7 +115,7 @@ public enum Coach {
             return Counsel(
                 card: card,
                 captures: pick.move.captures,
-                sweeps: view.isScopa(taking: pick.move.captures),
+                sweeps: view.isScopa(playing: pick.move.card, taking: pick.move.captures),
                 standing: standing,
                 reasons: reasons(for: pick.move, in: view, alone: scored.count == 1, cheapest: cheapest),
                 warnings: warnings(after: pick.move, in: view)
@@ -132,7 +132,8 @@ public enum Coach {
     /// equal takes looks careless. Sweeps first, then the bigger pile, then more coins.
     private static func isWeaker(_ lhs: Bot.ScoredMove, than rhs: Bot.ScoredMove, in view: PlayerView) -> Bool {
         if lhs.score != rhs.score { return lhs.score < rhs.score }
-        let sweeps = (view.isScopa(taking: lhs.move.captures), view.isScopa(taking: rhs.move.captures))
+        let sweeps = (view.isScopa(playing: lhs.move.card, taking: lhs.move.captures),
+                      view.isScopa(playing: rhs.move.card, taking: rhs.move.captures))
         if sweeps.0 != sweeps.1 { return !sweeps.0 }
         if lhs.move.captures.count != rhs.move.captures.count {
             return lhs.move.captures.count < rhs.move.captures.count
@@ -183,7 +184,7 @@ public enum Coach {
             return notes
         }
         let taken = move.captures + [move.card]
-        if view.isScopa(taking: move.captures) { notes.append(.sweeps) }
+        if view.isScopa(playing: move.card, taking: move.captures) { notes.append(.sweeps) }
         if taken.contains(.settebello) { notes.append(.takesSettebello) }
         if view.isOnLastCard, view.table.count > move.captures.count { notes.append(.takesTheLeftovers) }
         let coins = taken.count { $0.suit == .coins }
@@ -218,7 +219,9 @@ public enum Coach {
     static func sweepingRank(over table: [Card], in view: PlayerView) -> Rank? {
         Rank.allCases.first { rank in
             guard view.unseen(rank) > 0 else { return false }
-            return Rules.captureOptions(for: Card(rank, of: .cups), on: table)
+            let answer = Card(rank, of: .cups)
+            guard view.configuration.house.sweepScores(playing: answer) else { return false }
+            return Rules.captureOptions(for: answer, on: table, house: view.configuration.house)
                 .contains { $0.count == table.count }
         }
     }

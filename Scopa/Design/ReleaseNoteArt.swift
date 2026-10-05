@@ -9,6 +9,7 @@ struct ReleaseNoteArt: View {
     /// One drawing per kind of news. A release adds a case when nothing here fits.
     enum Kind: Hashable {
         case journey, lobby, volumes, wheel, medals, board, house, cloths, oneTap, videos, codes
+        case houseRules, songs, noAds
     }
 
     let kind: Kind
@@ -26,6 +27,49 @@ struct ReleaseNoteArt: View {
         case .oneTap: OneTapSketch()
         case .videos: videos
         case .codes: CouponTicket()
+        case .houseRules: houseRules
+        case .songs: songs
+        case .noAds: NoAdsArtwork(size: 200, hasGround: false)
+        }
+    }
+
+    /// A napola from the ace, the re bello beside it, and a scopone hand of ten behind.
+    private var houseRules: some View {
+        let cards = [Card(.ace, of: .coins), Card(.two, of: .coins), Card(.three, of: .coins), .reBello]
+        return VStack(spacing: 14) {
+            HiddenHand(count: 10, width: 30)
+            ZStack {
+                ForEach(Array(cards.enumerated()), id: \.offset) { place, card in
+                    let lean = CGFloat(place) - 1.5
+                    CardView(card: card, width: 60, highlighted: card == .reBello)
+                        .rotationEffect(.degrees(Double(lean) * 8))
+                        .offset(x: lean * 46, y: abs(lean) * 6)
+                }
+            }
+        }
+    }
+
+    /// A record on the table, notes rising off it.
+    private var songs: some View {
+        ZStack {
+            Circle()
+                .fill(Palette.ink.opacity(0.8))
+                .frame(width: 130, height: 130)
+                .overlay {
+                    ForEach([0.82, 0.66, 0.5], id: \.self) { ring in
+                        Circle().stroke(Palette.cream.opacity(0.12), lineWidth: 1).padding(65 * (1 - ring))
+                    }
+                }
+                .overlay { Circle().fill(Palette.terracotta).frame(width: 42, height: 42) }
+                .overlay { Circle().fill(Palette.goldLight).frame(width: 8, height: 8) }
+            Image(systemName: "music.note")
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+                .offset(x: 86, y: -48)
+            Image(systemName: "music.quarternote.3")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(Palette.cream)
+                .offset(x: -88, y: -36)
         }
     }
 

@@ -39,6 +39,8 @@ public struct ShopItem: Identifiable, Hashable, Codable, Sendable {
         case flourish
         /// What a sweep sounds like.
         case cheer
+        /// The song that plays under a game.
+        case song
     }
 
     public let id: ID
