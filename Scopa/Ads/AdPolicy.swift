@@ -18,16 +18,16 @@ struct AdPolicy {
     // MARK: The dials
 
     /// Games finished before the first interruption, so a first sitting is left alone.
-    static let graceGames = 3
+    static let graceGames = 2
 
     /// Games between interruptions afterwards, so every other game at most.
     static let gamesBetween = 2
 
     /// Shortest gap between two interruptions. Pass-and-play games can end minutes apart.
-    static let quietPeriod: TimeInterval = 4 * 60
+    static let quietPeriod: TimeInterval = 3 * 60
 
     /// Hard ceiling per day, whatever the other rules allow.
-    static let dailyCap = 4
+    static let dailyCap = 6
 
     /// What one opt-in ad pays at least: a hundred, about three games' winnings, so a
     /// video is worth the half minute it takes. A game paid out again for an ad pays its

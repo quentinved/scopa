@@ -7,214 +7,6 @@
     " " : {
       "shouldTranslate" : false
     },
-    "A board for the campaign" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un classement pour la campagne"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una classifica per la campagna"
-          }
-        }
-      }
-    },
-    "A rule in every region" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une règle dans chaque région"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una regola in ogni regione"
-          }
-        }
-      }
-    },
-    "Italy's house rules" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les règles maison d'Italie"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le regole della casa d'Italia"
-          }
-        }
-      }
-    },
-    "Music for the table" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De la musique pour la table"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Musica per il tavolo"
-          }
-        }
-      }
-    },
-    "One purchase in Settings takes the banner and the ads between games away for good. The videos that pay denari stay, for whenever you want them." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un seul achat, dans les Réglages, retire pour de bon la bannière et les pubs entre les parties. Les vidéos qui rapportent des deniers restent, pour quand vous en voulez."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un solo acquisto, nelle Impostazioni, toglie per sempre il banner e la pubblicità tra le partite. I video che pagano denari restano, per quando li vuoi tu."
-          }
-        }
-      }
-    },
-    "Ranked finds you an opponent faster and more reliably, and the screen before a game says just what matters: who you face, and what a win or a loss is worth." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le classé vous trouve un adversaire plus vite et plus sûrement, et l'écran avant une partie dit l'essentiel : qui vous affrontez, et ce que vaut une victoire ou une défaite."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La classificata ti trova un avversario più in fretta e in modo più affidabile, e la schermata prima di una partita dice l'essenziale: chi affronti, e quanto vale una vittoria o una sconfitta."
-          }
-        }
-      }
-    },
-    "Ranked, quicker" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le classé, plus vite"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La classificata, più veloce"
-          }
-        }
-      }
-    },
-    "Scopone, Re bello, Napola and Asso piglia tutto. Mix them at any table with friends, from the House rules row before the cards are dealt." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scopone, Re bello, Napola et Asso piglia tutto. Mélangez-les à n'importe quelle table entre amis, depuis la ligne Règles maison avant la donne."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scopone, Re bello, Napola e Asso piglia tutto. Mescolale a qualsiasi tavolo con gli amici, dalla riga Regole della casa prima di distribuire."
-          }
-        }
-      }
-    },
-    "See who leads the road, among everyone or just your friends, and who has reached each stage on the map." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voyez qui mène la route, parmi tout le monde ou entre amis, et qui a atteint chaque étape sur la carte."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Guarda chi guida il viaggio, tra tutti o solo tra amici, e chi è arrivato a ogni tappa sulla mappa."
-          }
-        }
-      }
-    },
-    "Six new songs, from a slow Pomeriggio waltz to the legendary Mergellina. Listen before you buy, in the shop's Songs section." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Six nouvelles chansons, de la lente valse Pomeriggio à la légendaire Mergellina. Écoutez-les avant d'acheter, dans le rayon Chansons de la boutique."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sei nuove canzoni, dal lento valzer Pomeriggio alla leggendaria Mergellina. Ascoltale prima di comprarle, nel reparto Canzoni del negozio."
-          }
-        }
-      }
-    },
-    "The campaign teaches one as you travel: the Napola in Napoli, Asso piglia tutto in Sicily, Re bello in Venice and the Scopone in Rome. Each comes with a short lesson the first time." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La campagne vous en apprend une à chaque étape du voyage : la Napola à Naples, l'Asso piglia tutto en Sicile, le Re bello à Venise et le Scopone à Rome. Chacune avec une courte leçon la première fois."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La campagna te ne insegna una lungo il viaggio: la Napola a Napoli, l'Asso piglia tutto in Sicilia, il Re bello a Venezia e lo Scopone a Roma. Ognuna con una breve lezione la prima volta."
-          }
-        }
-      }
-    },
-    "Under the wheel, what everyone else won today, friends first." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sous la roue, ce que les autres ont gagné aujourd'hui, vos amis en premier."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sotto la ruota, cosa hanno vinto gli altri oggi, prima i tuoi amici."
-          }
-        }
-      }
-    },
-    "Who won at the wheel" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qui a gagné à la roue"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chi ha vinto alla ruota"
-          }
-        }
-      }
-    },
     "·" : {
       "shouldTranslate" : false
     },
@@ -295,6 +87,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · sincronizzato %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@ reached" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@ atteint"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@ raggiunto"
           }
         }
       }
@@ -465,6 +274,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pacchetto %@"
+          }
+        }
+      }
+    },
+    "%@ reached" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ atteint"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ raggiunto"
           }
         }
       }
@@ -1810,6 +1635,22 @@
         }
       }
     },
+    "+%lld denari" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld deniers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld denari"
+          }
+        }
+      }
+    },
     "+%lld for every season you finish here" : {
       "localizations" : {
         "fr" : {
@@ -1822,6 +1663,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%lld per ogni stagione finita qui"
+          }
+        }
+      }
+    },
+    "+%lld in %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%1$lld dans %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%1$lld tra %2$lld"
           }
         }
       }
@@ -1983,6 +1840,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un pacchetto %1$@ ti aspetta nel negozio, e %2$lld denari sono nel tuo borsellino."
+          }
+        }
+      }
+    },
+    "A board for the campaign" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un classement pour la campagne"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una classifica per la campagna"
           }
         }
       }
@@ -2473,6 +2346,23 @@
         }
       }
     },
+    "A pack for every division" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un paquet pour chaque division"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un pacchetto per ogni divisione"
+          }
+        }
+      }
+    },
     "A pack holds a few things picked at random from the shelves below, for less than buying them one by one. Never anything you already own. Odds shows the chances." : {
       "localizations" : {
         "fr" : {
@@ -2586,6 +2476,22 @@
         }
       }
     },
+    "A rule in every region" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une règle dans chaque région"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una regola in ogni regione"
+          }
+        }
+      }
+    },
     "A scopa is the whole table in one card." : {
       "localizations" : {
         "fr" : {
@@ -2662,6 +2568,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un valzer lento alla chitarra, ritmo pennichella"
+          }
+        }
+      }
+    },
+    "A stop on the way through %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une étape en route dans %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una tappa lungo %@"
+          }
+        }
+      }
+    },
+    "A tag in the top corner of the cloth recaps each move" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une étiquette dans le coin du tapis rappelle chaque coup"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un'etichetta nell'angolo del tappeto riassume ogni mossa"
           }
         }
       }
@@ -4610,6 +4548,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Linee pulite, zero fronzoli"
+          }
+        }
+      }
+    },
+    "Climb a division in ranked and a pack waits for you in the album. Once a season for each, all the way to the top." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gravissez une division en classé et un paquet vous attend dans l'album. Une fois par saison pour chacune, jusqu'au sommet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scala una divisione in classificata e un pacchetto ti aspetta nell'album. Una volta a stagione per ognuna, fino in cima."
           }
         }
       }
@@ -8312,6 +8267,22 @@
         }
       }
     },
+    "Italy's house rules" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les règles maison d'Italie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le regole della casa d'Italia"
+          }
+        }
+      }
+    },
     "Join a friend's table" : {
       "localizations" : {
         "fr" : {
@@ -9516,6 +9487,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Musica"
+          }
+        }
+      }
+    },
+    "Music for the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De la musique pour la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musica per il tavolo"
           }
         }
       }
@@ -11181,6 +11168,22 @@
         }
       }
     },
+    "One more turn" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tour de plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un altro giro"
+          }
+        }
+      }
+    },
     "One notification a day when the wheel's free turn is back, and none once you have taken it." : {
       "localizations" : {
         "fr" : {
@@ -11225,6 +11228,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Uno di voi apre un tavolo, gli altri si uniscono."
+          }
+        }
+      }
+    },
+    "One purchase in Settings takes the banner and the ads between games away for good. The videos that pay denari stay, for whenever you want them." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un seul achat, dans les Réglages, retire pour de bon la bannière et les pubs entre les parties. Les vidéos qui rapportent des deniers restent, pour quand vous en voulez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un solo acquisto, nelle Impostazioni, toglie per sempre il banner e la pubblicità tra le partite. I video che pagano denari restano, per quando li vuoi tu."
           }
         }
       }
@@ -11729,6 +11748,38 @@
         }
       }
     },
+    "Pack in %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquet dans %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacchetto tra %lld"
+          }
+        }
+      }
+    },
+    "Pack in the album for each division climbed, once a season." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paquet dans l'album pour chaque division gravie, une fois par saison."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacchetto nell'album per ogni divisione scalata, una volta a stagione."
+          }
+        }
+      }
+    },
     "Packs" : {
       "localizations" : {
         "fr" : {
@@ -11757,6 +11808,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld pagati"
+          }
+        }
+      }
+    },
+    "Paid on the way up" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payé en chemin"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagato lungo la salita"
           }
         }
       }
@@ -12678,6 +12745,22 @@
         }
       }
     },
+    "Ranked finds you an opponent faster and more reliably, and the screen before a game says just what matters: who you face, and what a win or a loss is worth." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le classé vous trouve un adversaire plus vite et plus sûrement, et l'écran avant une partie dit l'essentiel : qui vous affrontez, et ce que vaut une victoire ou une défaite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La classificata ti trova un avversario più in fretta e in modo più affidabile, e la schermata prima di una partita dice l'essenziale: chi affronti, e quanto vale una vittoria o una sconfitta."
+          }
+        }
+      }
+    },
     "Ranked game" : {
       "localizations" : {
         "fr" : {
@@ -12706,6 +12789,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La classificata ora ha la porta grande, con la tua medaglia, la tua percentuale di vittorie e quanto manca alla prossima divisione. La campagna è subito sotto, e Partita veloce diventa Riprendi quando c'è una partita in sospeso."
+          }
+        }
+      }
+    },
+    "Ranked pays at three stops inside every division, in denari, and a pack waits in the album at the top of it. Once a season for each. The coins on your rank card show what is next." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le classé paie à trois étapes dans chaque division, en deniers, et un paquet vous attend dans l'album au sommet. Une fois par saison pour chacune. Les pièces sur votre carte de rang montrent la suite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La classificata paga a tre tappe dentro ogni divisione, in denari, e un pacchetto ti aspetta nell'album in cima. Una volta a stagione per ognuna. Le monete sulla tua carta del grado mostrano cosa viene dopo."
           }
         }
       }
@@ -12740,6 +12839,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Classificata, o sconosciuti"
+          }
+        }
+      }
+    },
+    "Ranked, quicker" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le classé, plus vite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La classificata, più veloce"
           }
         }
       }
@@ -13565,6 +13680,22 @@
         }
       }
     },
+    "Scopone, Re bello, Napola and Asso piglia tutto. Mix them at any table with friends, from the House rules row before the cards are dealt." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopone, Re bello, Napola et Asso piglia tutto. Mélangez-les à n'importe quelle table entre amis, depuis la ligne Règles maison avant la donne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopone, Re bello, Napola e Asso piglia tutto. Mescolale a qualsiasi tavolo con gli amici, dalla riga Regole della casa prima di distribuire."
+          }
+        }
+      }
+    },
     "Sealed in wax. It's official" : {
       "localizations" : {
         "fr" : {
@@ -13799,6 +13930,22 @@
         }
       }
     },
+    "See who leads the road, among everyone or just your friends, and who has reached each stage on the map." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyez qui mène la route, parmi tout le monde ou entre amis, et qui a atteint chaque étape sur la carte."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda chi guida il viaggio, tra tutti o solo tra amici, e chi è arrivato a ogni tappa sulla mappa."
+          }
+        }
+      }
+    },
     "Send the code" : {
       "localizations" : {
         "fr" : {
@@ -14020,6 +14167,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A corto di denari?"
+          }
+        }
+      }
+    },
+    "Show the last move" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le dernier coup"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra l'ultima mossa"
           }
         }
       }
@@ -14347,6 +14510,22 @@
         }
       }
     },
+    "Six new songs, from a slow Pomeriggio waltz to the legendary Mergellina. Listen before you buy, in the shop's Songs section." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Six nouvelles chansons, de la lente valse Pomeriggio à la légendaire Mergellina. Écoutez-les avant d'acheter, dans le rayon Chansons de la boutique."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei nuove canzoni, dal lento valzer Pomeriggio alla leggendaria Mergellina. Ascoltale prima di comprarle, nel reparto Canzoni del negozio."
+          }
+        }
+      }
+    },
     "Six of the ten denari" : {
       "localizations" : {
         "fr" : {
@@ -14535,6 +14714,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spade"
+          }
+        }
+      }
+    },
+    "Spent the wheel's free turn? Watch a short video and spin it once more, every day." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez utilisé le tour gratuit de la roue ? Regardez une courte vidéo et faites-la tourner une fois de plus, chaque jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai usato il giro gratis della ruota? Guarda un breve video e girala ancora una volta, ogni giorno."
           }
         }
       }
@@ -15901,6 +16096,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il tabellone non risponde"
+          }
+        }
+      }
+    },
+    "The campaign teaches one as you travel: the Napola in Napoli, Asso piglia tutto in Sicily, Re bello in Venice and the Scopone in Rome. Each comes with a short lesson the first time." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La campagne vous en apprend une à chaque étape du voyage : la Napola à Naples, l'Asso piglia tutto en Sicile, le Re bello à Venise et le Scopone à Rome. Chacune avec une courte leçon la première fois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La campagna te ne insegna una lungo il viaggio: la Napola a Napoli, l'Asso piglia tutto in Sicilia, il Re bello a Venezia e lo Scopone a Roma. Ognuna con una breve lezione la prima volta."
           }
         }
       }
@@ -18482,6 +18693,22 @@
         }
       }
     },
+    "Under the wheel, what everyone else won today, friends first." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sous la roue, ce que les autres ont gagné aujourd'hui, vos amis en premier."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sotto la ruota, cosa hanno vinto gli altri oggi, prima i tuoi amici."
+          }
+        }
+      }
+    },
     "Unranked" : {
       "localizations" : {
         "fr" : {
@@ -19505,6 +19732,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chi guida il mese in classificata, tra tutti o solo tra i tuoi amici, e quanto spesso vince ciascuno. Prima di una partita, il banner mostra chi affronti, quanto vale una vittoria o una sconfitta, e la tua serie di vittorie."
+          }
+        }
+      }
+    },
+    "Who won at the wheel" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui a gagné à la roue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi ha vinto alla ruota"
           }
         }
       }
@@ -20703,6 +20946,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non è stato possibile salvare i tuoi denari dall'altro dispositivo."
+          }
+        }
+      }
+    },
+    "Your division gift could not be saved." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre cadeau de division n'a pas pu être enregistré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo regalo di divisione non è stato salvato."
           }
         }
       }

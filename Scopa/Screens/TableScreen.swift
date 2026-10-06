@@ -38,6 +38,13 @@ struct TableScreen: View {
     /// When one tap last played a card, so the second half of a double tap made from habit
     /// is not taken for a tap of its own. See `playsOnFirstTap`.
     @State private var playedAt: Date?
+    /// On the way out of a finished game. A second tap on the way out counted the game
+    /// twice and left the table under the ad the first tap had put up.
+    @State private var isLeaving = false
+    /// What takes the sweep or the deal banner down. Replaced, never stacked: two sweeps
+    /// inside two seconds cut the second banner short.
+    @State private var scopaTimer: Task<Void, Never>?
+    @State private var dealTimer: Task<Void, Never>?
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @State private var tableFrames = FrameBox()
     /// Where each card in your own hand sits, for the same reason: a card you lay down
@@ -70,6 +77,8 @@ struct TableScreen: View {
     @State private var deadline: Date?
     /// Who swept, on the banner. Empty when it was you.
     @State private var scopaBy = ""
+    /// The flourish of whoever swept: yours, or the one their seat carries to the table.
+    @State private var scopaFlourish = Flourish.stendardo
     /// The last move anyone made, kept in the corner of the cloth until the next one. The
     /// move itself is played out by the cards: see `CardFlight`.
     @State private var lastMove: TableStore.Play?
@@ -199,12 +208,8 @@ struct TableScreen: View {
     private func banners(_ content: some View) -> some View {
         content
             .overlay { settebelloBanner }
-            // `scopaBy` is empty exactly when the sweep was yours, which is also when your
-            // own flourish is the one to play.
             .overlay {
-                if showsScopa {
-                    ScopaBanner(by: scopaBy, flourish: scopaBy.isEmpty ? store.flourish : .stendardo)
-                }
+                if showsScopa { ScopaBanner(by: scopaBy, flourish: scopaFlourish) }
             }
             .overlay { if showsDeal { DealBanner(hand: dealtHand) } }
             .task {
@@ -351,20 +356,36 @@ struct TableScreen: View {
     }
 
     private func announceScopa(by name: String) {
-        scopaBy = store.lastPlay?.seat == view?.seat ? "" : name
+        let seat = store.lastPlay?.seat
+        scopaBy = seat == view?.seat ? "" : name
+        scopaFlourish = flourish(ofSeat: seat)
         withAnimation(.spring(duration: 0.35)) { showsScopa = true }
-        Task {
+        scopaTimer?.cancel()
+        scopaTimer = Task {
             try? await Task.sleep(for: .seconds(1.9))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { showsScopa = false }
             store.clearNotice()
         }
     }
 
+    /// Your own sweep plays the flourish chosen in this phone's shop, so a change there shows
+    /// at once; anyone else's plays the one their seat brought. A seat from a build that
+    /// sends none, and every bot, gets the plain band.
+    private func flourish(ofSeat seat: Int?) -> Flourish {
+        guard let seat, let view else { return .stendardo }
+        if seat == view.seat { return store.flourish }
+        let worn = view.configuration.players[safe: seat]?.flourish
+        return worn.flatMap(Flourish.init(rawValue:)) ?? .stendardo
+    }
+
     private func announceDeal() {
         dealtHand = view?.handNumber ?? 1
         withAnimation(.spring(duration: 0.4, bounce: 0.28)) { showsDeal = true }
-        Task {
+        dealTimer?.cancel()
+        dealTimer = Task {
             try? await Task.sleep(for: .seconds(1.9))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { showsDeal = false }
             store.clearNotice()
         }
@@ -1086,7 +1107,7 @@ struct TableScreen: View {
     /// below it do not shift when it arrives.
     private func lastMoveRow(_ view: PlayerView) -> some View {
         HStack(spacing: 0) {
-            if let lastMove {
+            if let lastMove, store.showsLastMove {
                 LastMoveTag(play: lastMove, tint: seatTint(lastMove.seat),
                             isMine: lastMove.seat == view.seat, compact: stage.isWide)
                     .fixedSize()
@@ -1344,9 +1365,9 @@ struct TableScreen: View {
             space: Self.tableSpace,
             frames: handFrames,
             tap: { card, time in tapHand(card, at: time, in: view) },
-            pick: { card in pickUpHand(card, in: view) },
+            pick: { card, time in pickUpHand(card, at: time, in: view) },
             hover: { point in hoverTable(at: point, in: view) },
-            drop: { card, point, travel in dropHand(card, at: point, travel: travel, in: view) }
+            drop: { card, point, travel, time in dropHand(card, at: point, travel: travel, time: time, in: view) }
         )
     }
 
@@ -1365,10 +1386,15 @@ struct TableScreen: View {
     /// With one tap set to play, the first tap already does what the second would have.
     /// Whatever it cannot play falls through to all of the above unchanged.
     private func tapHand(_ card: Card, at time: Date, in view: PlayerView) {
+        // A tap right behind the one that played is the tail of the same burst: the hand on
+        // screen has not caught up, and it would pick the played card back up.
+        if let playedAt, time.timeIntervalSince(playedAt) < Self.doubleTap { return }
         if store.oneTapPlays, playsOnFirstTap(card, at: time, in: view) { return }
         let quick = pickedAt.map { time.timeIntervalSince($0) < Self.doubleTap } ?? false
         if quick || voiceOver, selection.tapInHand(card, in: view) == .play {
             commit(in: view)
+            // On the touch's own clock, which is the one the next tap is measured on.
+            playedAt = time
             return
         }
         if quick, !voiceOver, selection.card == card { return }
@@ -1390,11 +1416,11 @@ struct TableScreen: View {
         return true
     }
 
-    private func pickUpHand(_ card: Card, in view: PlayerView) {
+    private func pickUpHand(_ card: Card, at time: Date, in view: PlayerView) {
         liftedByDrag = selection.card != card
         guard liftedByDrag else { return }
         withAnimation(.snappy(duration: 0.18)) { selection.select(card, on: view.table) }
-        pickedAt = .now
+        pickedAt = time
     }
 
     private func hoverTable(at point: CGPoint, in view: PlayerView) {
@@ -1409,7 +1435,8 @@ struct TableScreen: View {
     /// anywhere, and the touch goes back to being the tap it was meant to be.
     private static let wander: CGFloat = 24
 
-    private func dropHand(_ card: Card, at point: CGPoint, travel: CGSize, in view: PlayerView) {
+    /// `time` is the touch's own, the clock every tap on the hand is measured on.
+    private func dropHand(_ card: Card, at point: CGPoint, travel: CGSize, time: Date, in view: PlayerView) {
         let target = tableCard(under: point, in: view)
         hovered = nil
         guard let target else {
@@ -1417,7 +1444,7 @@ struct TableScreen: View {
                 // The card this touch picked up is a first tap and stays picked up; one
                 // that was already up is the second tap, which plays it. With one tap set
                 // to play, a first tap is a tap like any other.
-                if !liftedByDrag || store.oneTapPlays { tapHand(card, at: .now, in: view) }
+                if !liftedByDrag || store.oneTapPlays { tapHand(card, at: time, in: view) }
             } else if travel.height < -60 {
                 throwToTable(card, in: view)
             }
@@ -1511,7 +1538,7 @@ struct TableScreen: View {
         try? await Task.sleep(for: .seconds(wait))
         guard !Task.isCancelled, let view, view.isMyTurn, view.phase == .playing else { return }
         selection.clear()
-        store.playAutomatically()
+        store.playAutomatically(for: view.seat)
     }
 
     /// The things this player can say without typing: five for everybody, more with a pack.
@@ -1653,10 +1680,7 @@ struct TableScreen: View {
                      review: store.review == nil ? nil : { showsReview = true },
                      glance: reviewGlance(),
                      showsTarget: false) {
-            Task {
-                await ads.endOfGame(.ordinary)
-                store.leaveTable()
-            }
+            leave(after: .ordinary)
         }
         .task(id: store.finishedTally?.gameID) {
             guard let tally = store.finishedTally else { return }
@@ -1694,13 +1718,9 @@ struct TableScreen: View {
                      awaitingLadder: store.isAwaitingLadder,
                      again: playAgainIfAllowed,
                      leaveTitle: store.campaignStage == nil ? "Back to the lobby" : "Back to the map") {
-            Task {
-                // Losing a stake is enough for one game: the pacing rules take that ending
-                // off the table rather than charging for it twice.
-                await ads.endOfGame(store.stake != nil && winner != view.mySide
-                                    ? .lostStake : .ordinary)
-                store.leaveTable()
-            }
+            // Losing a stake is enough for one game: the pacing rules take that ending off
+            // the table rather than charging for it twice.
+            leave(after: store.stake != nil && winner != view.mySide ? .lostStake : .ordinary)
         }
         // Paid the moment the summary appears, so the denari are banked by the time anyone
         // taps away. Safe to run twice, because settling is — but the second run pays
@@ -1777,6 +1797,7 @@ struct TableScreen: View {
         // The table and the hand each animate off their own value, so wrapping the whole
         // update in a bouncing spring made the score row overshoot under the status bar.
         store.play(move.card, capturing: move.captures)
+        pickedAt = nil
         withAnimation(.snappy(duration: 0.2)) { selection.clear() }
     }
 
@@ -2029,16 +2050,32 @@ struct TableScreen: View {
         return String(localized: "\(milestone.days) days in a row", locale: locale)
     }
 
+    /// Back to the lobby, with whatever ad the pacing allows on the way. Once per game.
+    private func leave(after ending: GameEnding) {
+        guard !isLeaving else { return }
+        isLeaving = true
+        Task {
+            await ads.endOfGame(ending)
+            store.leaveTable()
+            isLeaving = false
+        }
+    }
+
     /// The button's action, or nothing where this phone cannot deal again.
     private var playAgainIfAllowed: (() -> Void)? {
         store.canPlayAgain ? { playAgain() } : nil
     }
 
-    /// The same seats, a new hand. The game that just ended still counts towards the ad
-    /// pacing; it just had no exit to put an ad on.
+    /// The same seats, a new hand, with whatever ad the pacing allows in between. Players
+    /// who only ever tapped "Play again" never met one, however many games they played.
     private func playAgain() {
-        ads.countFinishedGame()
-        store.playAgain()
+        guard !isLeaving else { return }
+        isLeaving = true
+        Task {
+            await ads.endOfGame(store.stake == nil ? .ordinary : .lostStake)
+            store.playAgain()
+            isLeaving = false
+        }
     }
 
     private func double(_ amount: Denari, gameID: UUID) {

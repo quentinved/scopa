@@ -325,7 +325,7 @@ private enum Stored {
     /// Preferences and the cosmetics in use. Merged one key at a time, latest change wins.
     static let settings: [Setting] = [
         .init("playerName"), .init("assistLevel"), .init("botLevel"), .init("quickTable"),
-        .init("rankedSolo"), .init("oneTapPlays", .flag),
+        .init("rankedSolo"), .init("oneTapPlays", .flag), .init("showsLastMove", .flag),
         .init("cardStyle"), .init("cardSkin"), .init("language"),
         .init("tableFelt"), .init("tapis"), .init("cardBack"), .init("seatMark"),
         .init("companion"), .init("cornice"), .init("livery"), .init("flourish"), .init("cheer"),

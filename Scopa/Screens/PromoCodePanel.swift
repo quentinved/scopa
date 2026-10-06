@@ -28,7 +28,7 @@ struct PromoCodeRow: View {
             .glassPanel(radius: GlassRadius.control, interactive: true)
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $isOpen) { PromoCodePanel(purse: purse, book: book) }
+        .sheet(isPresented: $isOpen) { PromoCodePanel(purse: purse, book: book).coversBanner() }
         .task { await openForScreenshot() }
     }
 

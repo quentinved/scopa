@@ -50,11 +50,12 @@ struct CampaignView: View {
             .animation(.spring(duration: 0.45, bounce: 0.2), value: prize)
             .task { await walkBack(proxy) }
             .task { await meetTheRoad() }
-            .sheet(isPresented: $showsBoard) { CampaignBoardSheet(store: store) }
+            .sheet(isPresented: $showsBoard) { CampaignBoardSheet(store: store).coversBanner() }
             .sheet(item: $lesson, onDismiss: dealAfterLesson) { lesson in
                 HouseRuleLesson(rules: lesson.rules, onFinish: lesson.stage.map { stage in
                     { HouseRuleLessons.learn(lesson.rules); dealsAfterLesson = stage }
                 })
+                .coversBanner()
             }
             .task { showDebugLesson() }
         }

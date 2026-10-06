@@ -16,6 +16,9 @@ struct WagerSheet: View {
     @Environment(\.locale) private var locale
 
     private var isSearching: Bool { store.stake != nil && store.onlineStatus != nil }
+    /// A stake on its way into the purse. Without it a double tap paid two stakes before
+    /// the search that disables the rows had begun.
+    @State private var isStaking = false
 
     var body: some View {
         // No way out while the search runs: the stake is already on the table, and a sheet
@@ -27,7 +30,7 @@ struct WagerSheet: View {
                 ForEach(Stake.allCases) { stake in
                     StakeRow(stake: stake,
                              balance: purse.isReady ? purse.balance : nil,
-                             isBusy: isSearching) { sitDown(stake) }
+                             isBusy: isSearching || isStaking) { sitDown(stake) }
                 }
                 if isSearching {
                     searching.transition(.opacity.combined(with: .move(edge: .top)))
@@ -86,7 +89,10 @@ struct WagerSheet: View {
     }
 
     private func sitDown(_ stake: Stake) {
+        guard !isStaking, !isSearching else { return }
+        isStaking = true
         Task {
+            defer { isStaking = false }
             let game = UUID()
             if await purse.stake(stake, gameID: game) { store.playForStake(stake, gameID: game) }
         }

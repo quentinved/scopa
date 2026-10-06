@@ -21,10 +21,12 @@ public struct Player: Hashable, Sendable, Identifiable {
     /// The colour their seat mark is struck in. Carried like `mark`; nil is the colour of
     /// whichever chair the table sat them in.
     public var livery: String?
+    /// What the table does when they sweep it. Carried like `mark`; nil is the plain band.
+    public var flourish: String?
 
     public init(id: PlayerID, name: String, isBot: Bool = false, mark: String? = nil,
                 partner: String? = nil, honour: String? = nil, cornice: String? = nil,
-                companion: String? = nil, livery: String? = nil) {
+                companion: String? = nil, livery: String? = nil, flourish: String? = nil) {
         self.id = id
         self.name = name
         self.isBot = isBot
@@ -34,12 +36,15 @@ public struct Player: Hashable, Sendable, Identifiable {
         self.cornice = cornice
         self.companion = companion
         self.livery = livery
+        self.flourish = flourish
     }
 }
 
 /// Written by hand so a player sent by an older build, with no `isBot`, still decodes.
 extension Player: Codable {
-    private enum CodingKeys: String, CodingKey { case id, name, isBot, mark, partner, honour, cornice, companion, livery }
+    private enum CodingKeys: String, CodingKey {
+        case id, name, isBot, mark, partner, honour, cornice, companion, livery, flourish
+    }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -52,6 +57,7 @@ extension Player: Codable {
         cornice = try container.decodeIfPresent(String.self, forKey: .cornice)
         companion = try container.decodeIfPresent(String.self, forKey: .companion)
         livery = try container.decodeIfPresent(String.self, forKey: .livery)
+        flourish = try container.decodeIfPresent(String.self, forKey: .flourish)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -65,6 +71,7 @@ extension Player: Codable {
         try container.encodeIfPresent(cornice, forKey: .cornice)
         try container.encodeIfPresent(companion, forKey: .companion)
         try container.encodeIfPresent(livery, forKey: .livery)
+        try container.encodeIfPresent(flourish, forKey: .flourish)
     }
 }
 

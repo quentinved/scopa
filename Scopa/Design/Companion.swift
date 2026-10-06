@@ -119,6 +119,9 @@ struct CompanionView: View {
     /// Stirs about half as often. An opponent's animal: four of them on one table kept
     /// something moving nearly all the time, which costs battery for no one's benefit.
     var calm: Bool = false
+    /// Whether it stirs on its own at all. Off on the shop shelf, where seven of them kept
+    /// the whole sheet recompositing.
+    var idles: Bool = true
 
     /// Mid-stir. True for about half a second at a time, false for the seconds between.
     @State private var stirs = false
@@ -236,7 +239,7 @@ struct CompanionView: View {
             .onChange(of: mood) { _, now in if now == .delighted { cheered() } }
             .allowsHitTesting(interactive && companion != .nessuno)
             .task(id: companion) {
-                guard companion != .nessuno, !reduceMotion else { return }
+                guard idles, companion != .nessuno, !reduceMotion else { return }
                 await idle()
             }
             .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.45), trigger: pokes)

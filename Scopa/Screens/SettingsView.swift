@@ -73,8 +73,8 @@ struct SettingsSheet: View {
         .onAppear { draft = store.playerName }
         // Committed on focus loss too, so leaving by a swipe keeps the name.
         .onChange(of: isTypingName) { _, typing in if !typing { commitName() } }
-        .sheet(isPresented: $showsRules) { RulesView() }
-        .sheet(isPresented: $showsWhatsNew) { WhatsNewSheet() }
+        .sheet(isPresented: $showsRules) { RulesView().coversBanner() }
+        .sheet(isPresented: $showsWhatsNew) { WhatsNewSheet().coversBanner() }
         .confirmation(isPresented: $showsPostbox) {
             Confirmation(Text("What would you like to tell us?"), actions: [
                 .init(title: Text("Something is wrong"), role: .plain) { write(.problem) },
@@ -147,7 +147,13 @@ struct SettingsSheet: View {
                       footnote: "Today's deal and the tables with denari on them are always played against the hard bot: everybody there faces the same one.") {
             AssistPicker(assist: $store.assist)
             Rule()
-            OneTapToggle(isOn: $store.oneTapPlays)
+            SettingsToggle(title: "Play with one tap",
+                           line: "A card with only one move is played on the first tap, not the second",
+                           isOn: $store.oneTapPlays)
+            Rule()
+            SettingsToggle(title: "Show the last move",
+                           line: "A tag in the top corner of the cloth recaps each move",
+                           isOn: $store.showsLastMove)
             Rule()
             BotPicker(level: $store.botLevel)
             Rule()

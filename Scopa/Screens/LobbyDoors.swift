@@ -381,13 +381,16 @@ struct RankedHero: View {
                         .minimumScaleFactor(0.8)
                 }
             }
-            DivisionBar(metal: LeagueMetal.league(rank.standing.league),
-                        progress: Double(rank.standing.progress) / Double(Ranking.pointsPerDivision))
-            Text(verbatim: Ranking.climb(from: rank.rating, locale: locale))
-                .font(.system(size: 11.5 * lift, weight: .semibold))
-                .foregroundStyle(Palette.goldLight.opacity(0.9))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            DivisionRoad(rating: rank.rating, metal: LeagueMetal.league(rank.standing.league))
+            HStack(spacing: 8 * lift) {
+                Text(verbatim: Ranking.climb(from: rank.rating, locale: locale))
+                    .font(.system(size: 11.5 * lift, weight: .semibold))
+                    .foregroundStyle(Palette.goldLight.opacity(0.9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                NextStop(rating: rank.rating)
+            }
         }
     }
 
@@ -411,29 +414,6 @@ struct RankedHero: View {
             .foregroundStyle(Palette.onTable)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-    }
-}
-
-/// A division's bar that takes whatever width it is given, for the ranked door. `LeagueBar`
-/// keeps a fixed width for the chips that must not breathe.
-private struct DivisionBar: View {
-    @Environment(\.lift) private var lift
-    @Environment(\.tableFelt) private var felt
-    let metal: LeagueMetal
-    let progress: Double
-
-    var body: some View {
-        Capsule()
-            .fill(felt.shade(0.45))
-            .overlay(alignment: .leading) {
-                GeometryReader { proxy in
-                    Capsule().fill(metal.sheen)
-                        .frame(width: max(proxy.size.width * min(max(progress, 0), 1), progress > 0 ? 6 : 0))
-                }
-            }
-            .overlay { Capsule().strokeBorder(metal.dark.opacity(0.5), lineWidth: 0.5) }
-            .frame(height: 6 * lift)
-            .animation(.snappy, value: progress)
     }
 }
 

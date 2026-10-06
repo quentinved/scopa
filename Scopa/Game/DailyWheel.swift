@@ -3,7 +3,8 @@ import Observation
 import ScopaCore
 import ScopaRewards
 
-/// The day's wheel: one free turn per local calendar day.
+/// The day's wheel: one free turn per local calendar day, and once it is spent, one more for
+/// watching a video.
 ///
 /// The prize is decided and paid before the wheel moves, so a turn cut short by a closed app
 /// is still a turn taken and still paid. Whether the day is spent is read off the ledger as
@@ -45,14 +46,17 @@ final class DailyWheel {
     static let jackpotDenari: Denari = 2_500
     static let jackpotPack: PackTier = .forziere
 
-    /// Which turn of the day this is. Only the free one exists; another way to turn — an ad,
-    /// say — would be another case with its own key, so the ledger pays each once.
+    /// Which turn of the day this is. Each has its own key, so the ledger pays each once.
     enum Ticket: Hashable {
         case free
+        /// Paid for with a video, after the free one. Its key is outside the Worker's strip,
+        /// which shows only the free turns.
+        case video
 
         func key(on day: String) -> String {
             switch self {
             case .free: "wheel/\(day)"
+            case .video: "wheel/\(day)/video"
             }
         }
     }
@@ -70,19 +74,28 @@ final class DailyWheel {
     }
 
     private static let lastKey = "wheel.last"
+    private static let lastVideoKey = "wheel.lastVideo"
     /// Once per launch: the lobby makes a wheel every time it is rebuilt.
     private static var wasReset = false
     private let defaults: UserDefaults
-    /// The latest turn on this phone, whatever day it was.
+    /// The latest free turn on this phone, whatever day it was.
     private(set) var last: Spin?
+    /// The latest turn paid for with a video.
+    private(set) var lastVideo: Spin?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         if DebugLaunch.resetsWheel, !Self.wasReset {
             Self.wasReset = true
             defaults.removeObject(forKey: Self.lastKey)
+            defaults.removeObject(forKey: Self.lastVideoKey)
         }
-        last = defaults.data(forKey: Self.lastKey).flatMap { try? JSONDecoder().decode(Spin.self, from: $0) }
+        last = Self.read(Self.lastKey, from: defaults)
+        lastVideo = Self.read(Self.lastVideoKey, from: defaults)
+    }
+
+    private static func read(_ key: String, from defaults: UserDefaults) -> Spin? {
+        defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(Spin.self, from: $0) }
     }
 
     /// Whether the free turn is still there today.
@@ -91,8 +104,17 @@ final class DailyWheel {
         return DebugLaunch.resetsWheel || !paid.contains(Ticket.free.key(on: day))
     }
 
-    /// Today's turn on this phone, once taken.
-    func spin(on day: String) -> Spin? { last?.day == day ? last : nil }
+    /// Whether the video turn is there: the free one is spent and this one is not.
+    func isVideoAvailable(on day: String, paid: Set<String>) -> Bool {
+        guard !isAvailable(on: day, paid: paid), lastVideo?.day != day else { return false }
+        return DebugLaunch.resetsWheel || !paid.contains(Ticket.video.key(on: day))
+    }
+
+    /// Today's latest turn on this phone, once taken.
+    func spin(on day: String) -> Spin? {
+        if lastVideo?.day == day { return lastVideo }
+        return last?.day == day ? last : nil
+    }
 
     /// Decides the turn, pays it, and writes it down. Nil when it could not be paid, or when
     /// another device had already taken the day.
@@ -103,7 +125,7 @@ final class DailyWheel {
         guard let fresh = await purse.awardWheel(spin.denari, item: item, key: key(for: ticket, on: day))
         else { return nil }
         guard fresh else { return nil }
-        record(spin)
+        record(spin, ticket)
         spin.tiers.forEach(book.give)
         return spin
     }
@@ -151,9 +173,13 @@ final class DailyWheel {
         DebugLaunch.resetsWheel ? "\(ticket.key(on: day))/debug/\(UUID().uuidString)" : ticket.key(on: day)
     }
 
-    private func record(_ spin: Spin) {
-        last = spin
-        if let data = try? JSONEncoder().encode(spin) { defaults.set(data, forKey: Self.lastKey) }
+    private func record(_ spin: Spin, _ ticket: Ticket) {
+        switch ticket {
+        case .free: last = spin
+        case .video: lastVideo = spin
+        }
+        let key = ticket == .free ? Self.lastKey : Self.lastVideoKey
+        if let data = try? JSONEncoder().encode(spin) { defaults.set(data, forKey: key) }
     }
 
     /// The share of turns that land on each segment, for the odds printed under the wheel.

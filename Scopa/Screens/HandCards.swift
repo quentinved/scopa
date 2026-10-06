@@ -33,17 +33,20 @@ struct HandCards: View {
     /// time is the touch's own, so a redraw after the first tap does not make a quick
     /// second one look slow.
     let tap: (Card, Date) -> Void
-    /// A card picked up by a drag.
-    let pick: (Card) -> Void
+    /// A card picked up by a drag, and when, on the same clock as `tap`.
+    let pick: (Card, Date) -> Void
     /// The finger, with a card under it, somewhere over the table.
     let hover: (CGPoint) -> Void
-    /// The card let go: which, where, and how far the finger carried it. The distance is
+    /// The card let go: which, where, how far the finger carried it, and when. The distance is
     /// handed over rather than read off as a flick here, because a touch that ends where
     /// it started was never a drag at all. See `dropHand`.
-    let drop: (Card, CGPoint, CGSize) -> Void
+    let drop: (Card, CGPoint, CGSize, Date) -> Void
 
     @State private var dragged: Card?
     @State private var dragOffset: CGSize = .zero
+    /// A finger is down on the hand. Unlike `onEnded`, this is let go of when the system
+    /// takes the touch away — a call, Control Center — so a card is never left hanging.
+    @GestureState private var isTouching = false
 
     /// How far a picked card rises out of the hand.
     private static let rise: CGFloat = 14
@@ -63,6 +66,19 @@ struct HandCards: View {
         // without this an insertion could pop in.
         .animation(.spring(duration: 0.55, bounce: 0.25), value: hand)
         .animation(.snappy(duration: 0.22), value: picked)
+        .onChange(of: isTouching) { _, touching in if !touching { settleAbandonedDrag() } }
+        .onChange(of: isMyTurn) { _, mine in if !mine { settleAbandonedDrag() } }
+    }
+
+    /// Puts a carried card back when its drag ended without `onEnded`. A beat later, so a
+    /// drop that did end properly has had its turn first.
+    private func settleAbandonedDrag() {
+        Task {
+            try? await Task.sleep(for: .milliseconds(80))
+            guard dragged != nil, !isTouching || !isMyTurn else { return }
+            dragged = nil
+            withAnimation(.spring(duration: 0.3, bounce: 0.25)) { dragOffset = .zero }
+        }
     }
 
     /// The hand in the order it is held. Ten tucked cards show only their ranks, so they are
@@ -130,7 +146,9 @@ struct HandCards: View {
                 .combined(with: .scale(scale: 0.7))
                 .animation(.spring(duration: 0.62, bounce: 0.32)
                     .delay(Double(index) * (hand.count > 3 ? 0.1 : 0.26))),
-            removal: .scale(scale: 0.7).combined(with: .opacity)
+            // Gone at once: the card flying to the table leaves from this slot, and a
+            // copy shrinking here under it showed the card twice.
+            removal: .opacity.animation(.easeOut(duration: 0.1))
         )
     }
 
@@ -139,12 +157,13 @@ struct HandCards: View {
     /// past the tap's allowance but short of the drag's start counted as neither.
     private func touchGesture(for card: Card) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(space))
+            .updating($isTouching) { _, touching, _ in touching = true }
             .onChanged { value in
                 guard isMyTurn else { return }
                 if dragged != card {
                     guard hypot(value.translation.width, value.translation.height) >= Self.carry else { return }
                     dragged = card
-                    pick(card)
+                    pick(card, value.time)
                 }
                 dragOffset = value.translation
                 hover(value.location)
@@ -158,7 +177,7 @@ struct HandCards: View {
                 }
                 dragged = nil
                 withAnimation(.spring(duration: 0.3, bounce: 0.25)) { dragOffset = .zero }
-                drop(card, value.location, value.translation)
+                drop(card, value.location, value.translation, value.time)
             }
     }
 }

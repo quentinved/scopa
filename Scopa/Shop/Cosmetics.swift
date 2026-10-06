@@ -10,7 +10,8 @@ import SwiftUI
 /// A nil price means free and always owned, and keeps the item out of the shop entirely.
 /// That is how the house deck and house colours stay off the shelves.
 enum Cosmetics {
-    static var catalogue: Catalogue {
+    /// Built once: the shop reads it on every redraw, and nothing in it changes at run time.
+    static let catalogue: Catalogue = {
         Catalogue(CardStyle.options.compactMap(\.shopItem)
                   + CardSkin.options.compactMap(\.shopItem)
                   + TableFelt.allCases.compactMap { item(for: $0) }
@@ -24,7 +25,7 @@ enum Cosmetics {
                   + Cheer.allCases.compactMap { item(for: $0) }
                   + Song.allCases.compactMap { item(for: $0) }
                   + reactionPacks.map(\.item))
-    }
+    }()
 
     // MARK: Decks
 

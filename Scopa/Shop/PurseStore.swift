@@ -296,6 +296,19 @@ final class PurseStore {
         }
     }
 
+    /// Records a ranked division's pack as handed over. True the first time, which is the
+    /// caller's cue to give it; false when it was already given, nil when it could not be saved.
+    func awardDivision(key: String, denari: Denari = .zero) async -> Bool? {
+        do {
+            let fresh = try await wallet.grant(denari, note: "division", key: key)
+            purse = try await wallet.purse()
+            return !fresh.isEmpty
+        } catch {
+            problem = "Your division gift could not be saved."
+            return nil
+        }
+    }
+
     /// Pays for reaching a level. Keyed on the level, so the same level reached on two
     /// devices, or a summary shown twice, pays once. Nil when it was already paid — which is
     /// also how the caller knows whether the milestone pack is still owed.

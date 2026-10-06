@@ -29,11 +29,13 @@ struct ShopJumpBar: View {
     var body: some View {
         ScrollViewReader { reader in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(ShopJump.allCases) { section in
-                        Button { jump(section) } label: { chip(section) }
-                            .buttonStyle(.plain)
-                            .id(section)
+                GlassGroup(spacing: 6) {
+                    HStack(spacing: 6) {
+                        ForEach(ShopJump.allCases) { section in
+                            Button { jump(section) } label: { chip(section) }
+                                .buttonStyle(.plain)
+                                .id(section)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)

@@ -58,9 +58,10 @@ struct OnlineSheet: View {
                 friends = nil
                 store.playRankedDuo(with: friend)
             }
+            .coversBanner()
         }
-        .sheet(isPresented: $showsSeason) { SeasonBoardSheet(store: store) }
-        .sheet(isPresented: $showsRoad) { LadderRoadSheet(store: store) }
+        .sheet(isPresented: $showsSeason) { SeasonBoardSheet(store: store).coversBanner() }
+        .sheet(isPresented: $showsRoad) { LadderRoadSheet(store: store).coversBanner() }
         #if DEBUG
         .task {
             guard DebugLaunch.showsRoad else { return }
@@ -457,16 +458,13 @@ private struct LeaguePanel: View {
         .overlay { RoundedRectangle(cornerRadius: GlassRadius.panel).strokeBorder(metal.base.opacity(0.25), lineWidth: 1) }
     }
 
+    /// The division with its road: the coins on the way and the pack at the end, then what
+    /// the next stop pays.
     private var progressBar: some View {
-        GeometryReader { geometry in
-            let progress = Double(store.rank?.standing.progress ?? 0) / 100
-            ZStack(alignment: .leading) {
-                Capsule().fill(felt.shade(0.45))
-                Capsule().fill(metal.sheen)
-                    .frame(width: max(geometry.size.width * progress, progress > 0 ? 6 : 0))
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            DivisionRoad(rating: store.rank?.rating ?? 0, metal: metal)
+            if store.rank != nil { NextStop(rating: store.rank?.rating ?? 0) }
         }
-        .frame(height: 6)
     }
 
     /// The season so far, then when it ends, each on its own line: the win rate made one

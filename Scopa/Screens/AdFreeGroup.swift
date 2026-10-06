@@ -22,7 +22,7 @@ struct AdFreeGroup: View {
             }
         }
         .animation(.spring(duration: 0.4, bounce: 0.15), value: pass.isOwned)
-        .sheet(isPresented: $showsSheet) { AdFreeSheet(pass: pass) }
+        .sheet(isPresented: $showsSheet) { AdFreeSheet(pass: pass).coversBanner(carries: false) }
     }
 
     private var offer: some View {

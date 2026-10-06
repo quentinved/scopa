@@ -53,7 +53,7 @@ struct PackShelf: View {
                     .foregroundStyle(Palette.terracotta)
             }
         }
-        .sheet(isPresented: $showsOdds) { OddsSheet(shelf: shelf) }
+        .sheet(isPresented: $showsOdds) { OddsSheet(shelf: shelf).coversBanner() }
     }
 
     private func affordable(_ tier: PackTier) -> Bool {
@@ -125,8 +125,10 @@ private struct PackTillModifier: ViewModifier {
         content
             .fullScreenCover(item: $till.opening) { opened in
                 // Drawn in the volume's own deck, whatever the table is dressed in.
+                // No strip over a pack being torn open.
                 PackOpening(opening: opened, name: name)
                     .environment(\.cardTheme, opened.volume.theme)
+                    .coversBanner(carries: false)
             }
             .confirmation(isPresented: Binding(get: { till.buying != nil },
                                                set: { if !$0 { till.buying = nil } })) {

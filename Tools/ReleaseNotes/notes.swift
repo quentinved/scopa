@@ -9,6 +9,56 @@ import Foundation
 // Never mention the passphrases, and leave the rating prompt out.
 
 let releaseNotes: [String: [String: String]] = [
+    "1.2.1": [
+        "en-US": """
+        Thank you for playing Scopa Bella! A smaller one, with a few gifts and a smoother table.
+
+        • The ranked road pays on the way up: denari at three stops inside every division, and a pack in your album at the top of it, once a season. The rank card shows what the next stop pays.
+        • One more turn of the wheel each day, for a short video, after the free one.
+        • A new setting to hide the tag in the corner of the table that recaps each move.
+        • At a table with friends, each sweep now plays the flourish its player chose, not only yours.
+        • The no-ads purchase now shows its price in your own currency.
+        • Ads stay away from your cards, the no-ads page and a pack being opened.
+        • Fixes: a card no longer stays stuck in the air when a call interrupts a drag, quick double taps no longer pick a card back up, count a game twice or put a stake down twice, a tap that lands with the clock no longer plays two moves, and the shop scrolls more smoothly.
+        """,
+
+        "en-GB": """
+        Thank you for playing Scopa Bella! A smaller one, with a few gifts and a smoother table.
+
+        • The ranked road pays on the way up: denari at three stops inside every division, and a pack in your album at the top of it, once a season. The rank card shows what the next stop pays.
+        • One more turn of the wheel each day, for a short video, after the free one.
+        • A new setting to hide the tag in the corner of the table that recaps each move.
+        • At a table with friends, each sweep now plays the flourish its player chose, not only yours.
+        • The no-ads purchase now shows its price in your own currency.
+        • Ads stay away from your cards, the no-ads page and a pack being opened.
+        • Fixes: a card no longer stays stuck in the air when a call interrupts a drag, quick double taps no longer pick a card back up, count a game twice or put a stake down twice, a tap that lands with the clock no longer plays two moves, and the shop scrolls more smoothly.
+        """,
+
+        "fr-FR": """
+        Merci de jouer à Scopa Bella ! Une petite version, avec quelques cadeaux et une table plus fluide.
+
+        • La route du classé paie en chemin : des deniers à trois étapes dans chaque division, et un paquet dans votre album au sommet, une fois par saison. La carte de rang montre ce que paie la prochaine étape.
+        • Un tour de roue de plus chaque jour, contre une courte vidéo, après le tour gratuit.
+        • Un nouveau réglage pour masquer l'étiquette du coin de la table qui rappelle chaque coup.
+        • À une table entre amis, chaque scopa joue désormais l'effet choisi par son joueur, pas seulement le vôtre.
+        • L'achat sans pub affiche maintenant son prix dans votre devise.
+        • Les pubs restent loin de vos cartes, de la page sans pub et d'un paquet qu'on ouvre.
+        • Corrections : une carte ne reste plus suspendue quand un appel interrompt un glissement, les doubles tapes rapides ne reprennent plus une carte, ne comptent plus une partie deux fois et ne misent plus deux fois, une tape qui tombe avec la fin du chrono ne joue plus deux coups, et la boutique défile plus en douceur.
+        """,
+
+        "it": """
+        Grazie di giocare a Scopa Bella! Una versione piccola, con qualche regalo e un tavolo più fluido.
+
+        • La strada della classificata paga lungo la salita: denari a tre tappe dentro ogni divisione, e un pacchetto nell'album in cima, una volta a stagione. La carta del grado mostra quanto paga la prossima tappa.
+        • Un giro di ruota in più ogni giorno, con un breve video, dopo quello gratis.
+        • Una nuova impostazione per nascondere l'etichetta nell'angolo del tavolo che riassume ogni mossa.
+        • A un tavolo con gli amici, ogni scopa ora mostra l'effetto scelto da chi la fa, non solo il tuo.
+        • L'acquisto senza pubblicità ora mostra il prezzo nella tua valuta.
+        • La pubblicità sta lontana dalle tue carte, dalla pagina senza pubblicità e da un pacchetto che si apre.
+        • Correzioni: una carta non resta più sospesa quando una chiamata interrompe un trascinamento, i doppi tocchi veloci non riprendono più una carta, non contano più una partita due volte e non puntano più due volte, un tocco che arriva con lo scadere del tempo non gioca più due mosse, e il negozio scorre più fluido.
+        """,
+    ],
+
     "1.2": [
         "en-US": """
         Thank you for playing Scopa Bella! This one brings Italy's regional rules to the table, and music to play them to.

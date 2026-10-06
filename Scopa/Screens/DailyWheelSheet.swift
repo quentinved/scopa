@@ -2,10 +2,11 @@ import ScopaRewards
 import SwiftUI
 
 /// The day's wheel: one free turn, a few seconds of brass studs clicking under the pointer,
-/// then the prize and the hours until the next one.
+/// then the prize, one more turn for a video, and the hours until the next one.
 struct DailyWheelSheet: View {
     let wheel: DailyWheel
     let purse: PurseStore
+    let ads: AdsStore
     let book: AlbumBook
     let name: String
     let day: String
@@ -37,6 +38,9 @@ struct DailyWheelSheet: View {
     @State private var showsOdds = false
     /// Other players' turns, once the Worker has answered.
     @State private var strip: Ladder.WheelStrip?
+    @State private var isWatching = false
+    /// The last video asked for never came.
+    @State private var noVideo = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -44,9 +48,10 @@ struct DailyWheelSheet: View {
     private static let size: CGFloat = 316
     private static var slice: Double { 360 / Double(DailyWheel.segments.count) }
 
-    init(wheel: DailyWheel, purse: PurseStore, book: AlbumBook, name: String, day: String) {
+    init(wheel: DailyWheel, purse: PurseStore, ads: AdsStore, book: AlbumBook, name: String, day: String) {
         self.wheel = wheel
         self.purse = purse
+        self.ads = ads
         self.book = book
         self.name = name
         self.day = day
@@ -76,6 +81,7 @@ struct DailyWheelSheet: View {
         .sensoryFeedback(.selection, trigger: ticks)
         .sensoryFeedback(Haptic.prize, trigger: landed)
         .task { await turnForDebugging() }
+        .task { ads.prepareReward() }
         .task {
             let found = await WheelTurns.today()
             withAnimation(.easeOut(duration: 0.3)) { strip = found }
@@ -145,10 +151,14 @@ struct DailyWheelSheet: View {
 
     private func start() {
         guard phase == .ready else { return }
+        turn(.free)
+    }
+
+    private func turn(_ ticket: DailyWheel.Ticket) {
         phase = .spinning
         Audio.shared.play(.tap)
         Task {
-            guard let spin = await wheel.take(.free, on: day, purse: purse, book: book) else {
+            guard let spin = await wheel.take(ticket, on: day, purse: purse, book: book) else {
                 withAnimation { phase = .taken }
                 return
             }
@@ -192,6 +202,21 @@ struct DailyWheelSheet: View {
         return times
     }
 
+    /// Turns again once the network says the video was watched to the end.
+    private func watchForTurn() {
+        guard !isWatching, phase != .spinning else { return }
+        isWatching = true
+        noVideo = false
+        Task {
+            defer { isWatching = false }
+            switch await ads.watchRewarded() {
+            case .watched: turn(.video)
+            case .unavailable: noVideo = true
+            case .closedEarly: break
+            }
+        }
+    }
+
     private func reveal(_ spin: DailyWheel.Spin) {
         isFresh = true
         landed += 1
@@ -232,6 +257,7 @@ struct DailyWheelSheet: View {
             VStack(spacing: 18) {
                 WheelPrize(spin: spin, name: name)
                     .transition(.scale(scale: 0.85).combined(with: .opacity))
+                videoTurn
                 comeBack
             }
         case .taken:
@@ -239,8 +265,44 @@ struct DailyWheelSheet: View {
                 Text("Today's turn has been taken.")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Palette.onTable)
+                videoTurn
                 comeBack
             }
+        }
+    }
+
+    /// One more turn for a video, once a day, after the free one.
+    @ViewBuilder private var videoTurn: some View {
+        if ads.adsAreOn, wheel.isVideoAvailable(on: day, paid: purse.purse.keys) {
+            VStack(spacing: 8) {
+                Button(action: watchForTurn) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "play.rectangle")
+                            .font(.system(size: 22))
+                            .foregroundStyle(Palette.goldLight)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("One more turn")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Palette.onTable)
+                            Text("Watch a short ad")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Palette.onTableSoft)
+                        }
+                        Spacer(minLength: 0)
+                        if isWatching { ProgressView().tint(Palette.goldLight) }
+                    }
+                    .padding(14)
+                    .glassPanel(radius: GlassRadius.control, interactive: true)
+                }
+                .buttonStyle(.plain)
+                .disabled(isWatching)
+                if noVideo {
+                    SheetNote("No video to show right now. Try again in a little while.")
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: noVideo)
+            .transition(.opacity)
         }
     }
 

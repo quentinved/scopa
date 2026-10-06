@@ -68,18 +68,20 @@ struct AssistPicker: View {
     }
 }
 
-/// Whether a tap plays a card outright when it has one move only. Drawn like the pickers
-/// around it, title and line under it, so the group reads as one list.
-struct OneTapToggle: View {
+/// An on-off preference, drawn like the pickers around it, title and line under it, so the
+/// group reads as one list.
+struct SettingsToggle: View {
+    let title: LocalizedStringKey
+    let line: LocalizedStringKey
     @Binding var isOn: Bool
 
     var body: some View {
         Toggle(isOn: $isOn) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Play with one tap")
+                Text(title)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Palette.onTable)
-                Text("A card with only one move is played on the first tap, not the second")
+                Text(line)
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.onTableSoft)
                     .fixedSize(horizontal: false, vertical: true)

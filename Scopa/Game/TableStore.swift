@@ -119,6 +119,11 @@ final class TableStore {
         didSet { UserDefaults.standard.set(oneTapPlays, forKey: Self.oneTapKey) }
     }
 
+    /// The tag in the cloth's top corner that recaps the last move. On until turned off.
+    var showsLastMove: Bool {
+        didSet { UserDefaults.standard.set(showsLastMove, forKey: Self.lastMoveKey) }
+    }
+
     /// How hard the bots play at the tables this phone sets up. Today's deal and a wager
     /// ignore it and use `Self.contestLevel`, so everybody plays the same opponent.
     var botLevel: BotLevel {
@@ -196,9 +201,8 @@ final class TableStore {
         didSet { UserDefaults.standard.set(livery.rawValue, forKey: SeatLivery.stored) }
     }
 
-    /// What the table does when you sweep it. Yours alone: the flourish is drawn on the
-    /// phone that swept, because it is a reaction to your own move and not a fact about
-    /// the game the others need told.
+    /// What the table does when you sweep it, on every phone at the table: it travels with
+    /// your seat like the badge frame, so the others see your sweep the way you bought it.
     var flourish: Flourish {
         didSet { UserDefaults.standard.set(flourish.rawValue, forKey: Flourish.stored) }
     }
@@ -350,6 +354,7 @@ final class TableStore {
     private static let nameKey = "playerName"
     private static let assistKey = "assistLevel"
     private static let oneTapKey = "oneTapPlays"
+    private static let lastMoveKey = "showsLastMove"
     private static let botLevelKey = "botLevel"
     private static let quickTableKey = "quickTable"
     private static let rankedSoloKey = "rankedSolo"
@@ -426,6 +431,7 @@ final class TableStore {
         self.playerName = playerName ?? UserDefaults.standard.string(forKey: Self.nameKey) ?? Self.defaultName
         self.assist = assist ?? Self.stored(Self.assistKey, or: .default)
         self.oneTapPlays = UserDefaults.standard.bool(forKey: Self.oneTapKey)
+        self.showsLastMove = UserDefaults.standard.object(forKey: Self.lastMoveKey) as? Bool ?? true
         self.botLevel = Self.stored(Self.botLevelKey, or: .default)
         self.quickTable = Self.stored(Self.quickTableKey, or: .default)
         self.rankedSolo = Self.stored(Self.rankedSoloKey, or: .default)
@@ -461,6 +467,7 @@ final class TableStore {
         playerName = UserDefaults.standard.string(forKey: Self.nameKey) ?? Self.defaultName
         assist = Self.stored(Self.assistKey, or: .default)
         oneTapPlays = UserDefaults.standard.bool(forKey: Self.oneTapKey)
+        showsLastMove = UserDefaults.standard.object(forKey: Self.lastMoveKey) as? Bool ?? true
         botLevel = Self.stored(Self.botLevelKey, or: .default)
         quickTable = Self.stored(Self.quickTableKey, or: .default)
         rankedSolo = Self.stored(Self.rankedSoloKey, or: .default)
@@ -504,7 +511,7 @@ final class TableStore {
     private var localPlayer: Player {
         Player(id: PlayerID(rawValue: Device.id), name: playerName, mark: seatMark.wireValue,
                honour: challenges.honourOnWire, cornice: cornice.wireValue,
-               companion: companion.wireValue, livery: livery.wireValue)
+               companion: companion.wireValue, livery: livery.wireValue, flourish: flourish.wireValue)
     }
 
     // MARK: Hosting
@@ -2101,11 +2108,11 @@ final class TableStore {
     }
 
     /// Used when a turn clock runs out. The host decides the move so every device agrees.
-    func playAutomatically() {
+    func playAutomatically(for seat: Int) {
         Task {
             switch backend {
             case .host(let coordinator): await coordinator.playAutomatically()
-            case .hotSeat(let table): await table.playAutomatically()
+            case .hotSeat(let table): await table.playAutomatically(for: seat)
             case .guest(let client): try? await client.playAutomatically()
             case .none: break
             }

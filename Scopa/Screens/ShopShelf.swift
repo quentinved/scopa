@@ -73,7 +73,8 @@ struct ShopShelf<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             ShelfHeading(title: title, subtitle: subtitle)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 10) { content }
+                // Lazy, so a tile off the side of the shelf is neither drawn nor animated.
+                LazyHStack(alignment: .top, spacing: 10) { content }
                     .padding(.vertical, 4)
             }
             .scrollClipDisabled()

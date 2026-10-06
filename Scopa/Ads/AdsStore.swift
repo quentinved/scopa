@@ -108,13 +108,6 @@ final class AdsStore {
         gateway.preloadInterstitial()
     }
 
-    /// A game ended and another was dealt at once. It counts towards the pacing, but
-    /// there is no exit to put an ad on.
-    func countFinishedGame() {
-        guard adsAreOn else { return }
-        policy.finishedGame()
-    }
-
     /// A game is over and the player is leaving the table. `AdPolicy` decides whether an
     /// ad follows.
     func endOfGame(_ ending: GameEnding) async {
@@ -224,11 +217,14 @@ final class AdsStore {
     }
 }
 
-/// The banner strip under the lobby. Has no height until an ad has arrived, so a failed
-/// load leaves no gap.
+/// The banner strip, under the lobby or under the sheet on top of it. Has no height until
+/// an ad has arrived, so a failed load leaves no gap.
 struct BannerSlot: View {
     let ads: AdsStore
     let isVisible: Bool
+    /// Runs the creative down into the home indicator's band. Off inside a sheet, which on
+    /// an iPad has no such band to run into.
+    var bleedsDown = true
 
     var body: some View {
         Group {
@@ -239,7 +235,7 @@ struct BannerSlot: View {
                     .frame(height: ads.gateway.bannerHeight)
                     // A negative inset lets the creative run down into the home indicator's
                     // band instead of stopping above it.
-                    .padding(.bottom, ads.gateway.bannerHeight > 0 ? -Self.homeIndicator : 0)
+                    .padding(.bottom, bleedsDown && ads.gateway.bannerHeight > 0 ? -Self.homeIndicator : 0)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -260,18 +256,22 @@ struct BannerSlot: View {
 
 // MARK: - What covers the strip
 
-/// How many sheets and covers are up over the lobby. The strip comes down under any of
-/// them: hidden behind one it would go on refreshing ads nobody sees, which earns nothing,
-/// drags down what the unit is bid, and breaks AdMob's policy.
+/// The sheets and covers up over the lobby, in the order they opened. A sheet hides the
+/// lobby's strip, so the strip moves into the topmost one instead; one hidden behind a sheet
+/// would go on refreshing ads nobody sees, which earns nothing, drags down what the unit is
+/// bid, and breaks AdMob's policy.
 @MainActor
 @Observable
 final class BannerCovers {
-    private var count = 0
+    private var stack: [UUID] = []
 
-    var isCovered: Bool { count > 0 }
+    var isCovered: Bool { !stack.isEmpty }
 
-    fileprivate func cover() { count += 1 }
-    fileprivate func uncover() { count = max(0, count - 1) }
+    /// Whether this cover is the one on top, and so the one that shows the strip.
+    func isTop(_ id: UUID) -> Bool { stack.last == id }
+
+    fileprivate func cover(_ id: UUID) { if !stack.contains(id) { stack.append(id) } }
+    fileprivate func uncover(_ id: UUID) { stack.removeAll { $0 == id } }
 }
 
 extension EnvironmentValues {
@@ -281,29 +281,34 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// Marks a sheet or cover that can open over the lobby, so the banner steps aside while
-    /// it is up. Put it on the presented content, outside any navigation stack inside it.
-    func coversBanner() -> some View {
-        modifier(CoversBanner())
+    /// Marks a sheet or cover that can open over the lobby: the lobby's strip steps aside
+    /// while it is up, and, when `carries`, comes back under this sheet while it is the top
+    /// one. Put it on the presented content, outside any navigation stack inside it, and on
+    /// sheets opened from those sheets too, so the strip always knows which is on top.
+    func coversBanner(carries: Bool = true) -> some View {
+        modifier(CoversBanner(carries: carries))
     }
 }
 
 private struct CoversBanner: ViewModifier {
+    let carries: Bool
+
     @Environment(\.bannerCovers) private var covers
-    /// Guards against an appearance being counted twice.
-    @State private var isCounted = false
+    @Environment(AdsStore.self) private var ads: AdsStore?
+    @Environment(TableStore.self) private var store: TableStore?
+    @State private var id = UUID()
+
+    private var showsStrip: Bool {
+        guard carries, let covers, let ads, covers.isTop(id) else { return false }
+        return ads.showsBanner(on: store?.route ?? .lobby)
+    }
 
     func body(content: Content) -> some View {
         content
-            .onAppear {
-                guard !isCounted else { return }
-                isCounted = true
-                covers?.cover()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let ads { BannerSlot(ads: ads, isVisible: showsStrip, bleedsDown: false) }
             }
-            .onDisappear {
-                guard isCounted else { return }
-                isCounted = false
-                covers?.uncover()
-            }
+            .onAppear { covers?.cover(id) }
+            .onDisappear { covers?.uncover(id) }
     }
 }

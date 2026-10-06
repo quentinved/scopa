@@ -56,6 +56,16 @@ final class AdFreePass {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.followTransactions() }
             group.addTask { await self.followStorePromotions() }
+            group.addTask { await self.followStorefront() }
+        }
+    }
+
+    /// The account's country can settle after launch: a first answer given before it has
+    /// is priced in dollars. Priced again whenever the storefront changes.
+    private func followStorefront() async {
+        for await storefront in Storefront.updates {
+            Log.ads.info("Storefront is now \(storefront.countryCode, privacy: .public)")
+            await loadProduct()
         }
     }
 
@@ -76,7 +86,9 @@ final class AdFreePass {
         }
     }
 
-    private func loadProduct() async {
+    /// Asks StoreKit for the price again. Called wherever the price is shown, so a stale
+    /// first answer never lasts past the next look.
+    func loadProduct() async {
         do {
             product = try await Product.products(for: [Self.productID]).first
         } catch {
@@ -107,9 +119,14 @@ final class AdFreePass {
     // MARK: Buying
 
     func buy() async {
-        if product == nil { await loadProduct() }
-        guard let product, state != .buying else { return }
+        // Claimed before the load, so a second tap while it runs cannot open a second sheet.
+        guard state != .buying else { return }
         state = .buying
+        if product == nil { await loadProduct() }
+        guard let product else {
+            state = .idle
+            return
+        }
         do {
             switch try await product.purchase() {
             case .success(.verified(let transaction)):
@@ -129,6 +146,8 @@ final class AdFreePass {
             Log.ads.error("No-ads purchase failed: \(error.localizedDescription, privacy: .public)")
             state = .failed
         }
+        // The purchase sheet has settled the account by now, so the price shown is too.
+        await loadProduct()
     }
 
     /// Asks the App Store for the account's purchases again. Only needed after a reinstall

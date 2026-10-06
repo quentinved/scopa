@@ -11,8 +11,7 @@ import ScopaCore
 struct ScopaBanner: View {
     /// Who swept, or empty when it was you.
     var by: String
-    /// What the room does about it, over and around the band. Only your own sweeps carry
-    /// one: a flourish is bought on this phone and drawn on this phone.
+    /// What the room does about it, over and around the band: the flourish of whoever swept.
     var flourish: Flourish = .stendardo
 
     private let cheer = "Scopa!"

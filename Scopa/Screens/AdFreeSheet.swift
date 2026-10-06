@@ -35,6 +35,7 @@ struct AdFreeSheet: View {
         .animation(.easeInOut(duration: 0.2), value: pass.state)
         .sensoryFeedback(trigger: pass.isOwned) { _, owned in owned ? .success : nil }
         .sound(trigger: pass.isOwned) { _, owned in owned ? .purchase : nil }
+        .task { await pass.loadProduct() }
     }
 
     private var picture: some View {
@@ -213,7 +214,7 @@ struct AdFreeShopRow: View {
                 }
                 .buttonStyle(.plain)
             }
-            .sheet(isPresented: $showsSheet) { AdFreeSheet(pass: ads.pass) }
+            .sheet(isPresented: $showsSheet) { AdFreeSheet(pass: ads.pass).coversBanner(carries: false) }
         }
     }
 }
@@ -235,5 +236,8 @@ struct AdFreePriceTag: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(Capsule().fill(Palette.terracotta))
+        // Priced afresh on every look: a first answer from before the account settled
+        // can be in the wrong currency.
+        .task { await pass.loadProduct() }
     }
 }

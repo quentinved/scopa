@@ -45,6 +45,9 @@ struct RoundSummary: View {
 
     /// How far the telling has got. Zero is the caption and the totals before the round.
     @State private var revealed = 0
+    /// The buttons take taps a beat after they appear, so the tail of a burst of taps
+    /// skipping the count does not land on "Play again" or "Back to the lobby".
+    @State private var isArmed = false
     /// The portrait column's height, so the panel is only as tall as its content and
     /// scrolls when that outgrows a smaller phone.
     @State private var columnHeight: CGFloat?
@@ -399,7 +402,12 @@ struct RoundSummary: View {
         }
         .opacity(revealed >= detailStep ? 1 : 0)
         .animation(.easeOut(duration: 0.3), value: revealed >= detailStep)
-        .allowsHitTesting(revealed >= detailStep)
+        .allowsHitTesting(revealed >= detailStep && isArmed)
+        .task(id: revealed >= detailStep) {
+            guard revealed >= detailStep else { return }
+            try? await Task.sleep(for: .milliseconds(600))
+            isArmed = !Task.isCancelled
+        }
     }
 
     private var buttons: some View {

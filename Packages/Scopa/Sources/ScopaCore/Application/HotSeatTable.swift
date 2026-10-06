@@ -130,8 +130,12 @@ public actor HotSeatTable {
     }
 
     /// Plays the best available move for the seat that ran out of time.
-    public func playAutomatically() async {
-        guard let move = Rules.automaticMove(in: await session.state) else { return }
+    /// Plays the best move for `seat` when its clock runs out. Nothing if the turn has
+    /// moved on meanwhile: a tap landing with the clock would otherwise have the table play
+    /// the next seat's move too.
+    public func playAutomatically(for seat: Int) async {
+        let current = await session.state
+        guard current.round?.turnSeat == seat, let move = Rules.automaticMove(in: current) else { return }
         if let events = try? await session.play(move) { await publish(events) }
         await letBotsPlay()
     }

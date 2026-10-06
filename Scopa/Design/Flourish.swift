@@ -28,6 +28,9 @@ enum Flourish: String, CaseIterable, Codable, Sendable, Identifiable {
 
     static let stored = "flourish"
 
+    /// What goes on the wire for the others at the table. Nil for the plain band.
+    var wireValue: String? { self == .stendardo ? nil : rawValue }
+
     /// The ones the shop sells. `stendardo` is never locked, and the seal is earned.
     static let forSale: [Flourish] = allCases.filter { $0 != .stendardo && $0 != .sigillo }
 

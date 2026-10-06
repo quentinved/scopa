@@ -150,8 +150,9 @@ struct LobbyView: View {
                     .coversBanner()
             }
             .sheet(isPresented: $showsAdFree) {
+                // No ad on the page that sells their removal.
                 AdFreeSheet(pass: ads.pass)
-                    .coversBanner()
+                    .coversBanner(carries: false)
             }
             .sheet(isPresented: $showsLadder) {
                 LeaderboardView(store: store)
@@ -166,7 +167,7 @@ struct LobbyView: View {
                     .coversBanner()
             }
             .sheet(isPresented: $showsWheel) {
-                DailyWheelSheet(wheel: wheel, purse: purse, book: store.albumBook,
+                DailyWheelSheet(wheel: wheel, purse: purse, ads: ads, book: store.albumBook,
                                 name: store.playerName, day: store.today)
                     .coversBanner()
             }

@@ -182,6 +182,8 @@ struct LadderRoadSheet: View {
                      "A loss against someone of your level. Half that in Bronze and Silver, and \(signed(Ranking.houseLoss)) against the house.")
                 rule("\(Ranking.pointsPerDivision)",
                      "Points make a division, three divisions a league. A league once reached is never lost.")
+                rule("+1",
+                     "Pack in the album for each division climbed, once a season.")
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)

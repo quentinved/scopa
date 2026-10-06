@@ -29,8 +29,8 @@ struct ContentView: View {
                 routes
             }
         }
-        // The banner is only shown under the lobby, never under a hand of cards, and
-        // never behind a sheet.
+        // The banner is only shown under the lobby, never under a hand of cards. A sheet
+        // over the lobby carries it instead, see `coversBanner`.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             BannerSlot(ads: ads, isVisible: ads.showsBanner(on: store.route) && !bannerCovers.isCovered)
         }
@@ -51,6 +51,7 @@ struct ContentView: View {
         .environment(\.tapis, store.tapis)
         .environment(toaster)
         .environment(\.bannerCovers, bannerCovers)
+        .environment(ads)
         .environment(friendsOnline)
         // For screens opened without arguments, such as `CampaignView`.
         .environment(store)
@@ -87,6 +88,33 @@ struct ContentView: View {
             }
             .task { await loadPurse() }
             .task(id: store.refusedStake?.id) { await refundRefusedStake() }
+            .onChange(of: store.rank?.rating) { Task { await giveDivisionPacks() } }
+    }
+
+    /// What each stop of the ranked road just passed pays: denari on the way through a
+    /// division, a pack at its top, each with a toast that says what came and where it went.
+    private func giveDivisionPacks() async {
+        guard let rank = store.rank, let season = rank.season else { return }
+        let locale = store.language.locale ?? .autoupdatingCurrent
+        for stop in DivisionGifts.climbed(in: rank) {
+            let reward = DivisionGifts.reward(at: stop)
+            let denari: Denari = if case .denari(let amount) = reward { amount } else { .zero }
+            guard await purse.awardDivision(key: DivisionGifts.key(season: season, stop: stop), denari: denari) == true
+            else { continue }
+            let standing = Ranking.standing(for: stop * DivisionGifts.stride)
+            let title = standing.leagueTitle(locale: locale)
+            switch reward {
+            case .pack(let tier):
+                store.albumBook.give(tier)
+                toaster.post(Toast(symbol: "gift.fill", tint: Palette.gold,
+                                   title: String(localized: "\(title) reached", locale: locale),
+                                   detail: String(localized: "A \(tier.title) pack is waiting in the album", locale: locale)))
+            case .denari(let amount):
+                toaster.post(Toast(symbol: "flag.fill", tint: Palette.gold,
+                                   title: String(localized: "A stop on the way through \(title)", locale: locale),
+                                   detail: String(localized: "+\(amount.coins) denari", locale: locale)))
+            }
+        }
     }
 
     private func audioReactions(_ content: some View) -> some View {

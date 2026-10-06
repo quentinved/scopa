@@ -24,9 +24,14 @@ struct Swatch<Preview: View>: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            preview
-                .opacity(owned ? 1 : 0.75)
-                .saturation(owned ? 1 : 0.6)
+            if owned {
+                preview
+            } else {
+                // Only where it shows: a filter at full strength still costs a pass.
+                preview
+                    .opacity(0.75)
+                    .saturation(0.6)
+            }
             VStack(spacing: 2) {
                 Text(verbatim: title)
                     .font(.system(size: 13, weight: .semibold))
@@ -217,7 +222,7 @@ struct CompanionSwatch: View {
             }
             .overlay(alignment: .trailing) {
                 // Not interactive: a gesture here would swallow the tap on the buying button.
-                CompanionView(companion: companion, size: 40, mood: .watching, interactive: false)
+                CompanionView(companion: companion, size: 40, mood: .watching, interactive: false, idles: false)
                     .offset(x: -3, y: 3)
             }
     }

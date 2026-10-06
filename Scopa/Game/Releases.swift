@@ -9,6 +9,12 @@ import ScopaRewards
 /// a gift if it has one; the lobby does the rest, once per player.
 enum Releases {
     static let all: [Release] = [
+        Release(version: "1.2.1", gift: nil, notes: [
+            ReleaseNote(art: .medals, title: "Paid on the way up",
+                        body: "Ranked pays at three stops inside every division, in denari, and a pack waits in the album at the top of it. Once a season for each. The coins on your rank card show what is next."),
+            ReleaseNote(art: .wheel, title: "One more turn",
+                        body: "Spent the wheel's free turn? Watch a short video and spin it once more, every day."),
+        ]),
         Release(version: "1.2", gift: nil, notes: [
             ReleaseNote(art: .houseRules, title: "Italy's house rules",
                         body: "Scopone, Re bello, Napola and Asso piglia tutto. Mix them at any table with friends, from the House rules row before the cards are dealt."),
