@@ -10,6 +10,14 @@ import ScopaRewards
 enum Releases {
     static let all: [Release] = [
         Release(version: "1.2.1", gift: nil, notes: [
+            ReleaseNote(art: .journey, title: "Piemonte",
+                        body: "Six new tables between Liguria and Napoli, from Torino to the Mole Antonelliana, and the Wine seat mark at the end of the road. Every star you had won is still yours."),
+            ReleaseNote(art: .houseRules, title: "A proper Scopa!",
+                        body: "Sweep the table and a broom crosses the cloth, the word stamps down in gold, and the phone feels it. The settebello, re bello, napola and asso piglia tutto have their moments too."),
+            ReleaseNote(art: .lobby, title: "How far to go",
+                        body: "The ranked card shows your points, and how many more the next division needs."),
+            ReleaseNote(art: .oneTap, title: "Two taps, one card",
+                        body: "Tap a card twice, quickly, and it goes down, even one you had already picked up."),
             ReleaseNote(art: .medals, title: "Paid on the way up",
                         body: "Ranked pays at three stops inside every division, in denari, and a pack waits in the album at the top of it. Once a season for each. The coins on your rank card show what is next."),
             ReleaseNote(art: .wheel, title: "One more turn",

@@ -245,6 +245,22 @@
         }
       }
     },
+    "%@ makes a napola worth %lld points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fait une napola à %2$lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ fa una napola da %2$lld punti"
+          }
+        }
+      }
+    },
     "%@ of %@" : {
       "comment" : "VoiceOver name for a playing card: rank, then suit.",
       "localizations" : {
@@ -306,6 +322,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ ha fatto scopa"
+          }
+        }
+      }
+    },
+    "%@ takes the king of coins" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ prend le roi de deniers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ prende il re di denari"
           }
         }
       }
@@ -464,6 +496,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ vinte"
+          }
+        }
+      }
+    },
+    "%@'s ace takes the whole table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'as de %@ rafle toute la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'asso di %@ prende tutto il tavolo"
           }
         }
       }
@@ -997,6 +1045,22 @@
         }
       }
     },
+    "%lld more for %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore %1$lld pour %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora %1$lld per %2$@"
+          }
+        }
+      }
+    },
     "%lld more to sit down" : {
       "localizations" : {
         "fr" : {
@@ -1165,6 +1229,22 @@
         }
       }
     },
+    "%lld packs are waiting in the album, and %lld denari are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld paquets vous attendent dans l'album, et %2$lld deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld pacchetti ti aspettano nell'album, e %2$lld denari sono nel tuo borsellino."
+          }
+        }
+      }
+    },
     "%lld playing" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1211,6 +1291,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld scope"
+          }
+        }
+      }
+    },
+    "%lld stops on the way through %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld étapes en route dans %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld tappe lungo %2$@"
           }
         }
       }
@@ -1373,6 +1469,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turni da %lld secondi"
+          }
+        }
+      }
+    },
+    "%lld/%lld points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld punti"
           }
         }
       }
@@ -2230,6 +2342,22 @@
         }
       }
     },
+    "A napola worth %lld points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une napola à %lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una napola da %lld punti"
+          }
+        }
+      }
+    },
     "A new lobby" : {
       "localizations" : {
         "fr" : {
@@ -2412,6 +2540,38 @@
         }
       }
     },
+    "A plain table, as in any bar in Naples: no marks, no outlines, no warning before a wrong take." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une table nue, comme dans n'importe quel bar de Naples : ni marques, ni contours, ni avertissement avant une mauvaise prise."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tavolo e basta, come in qualsiasi bar di Napoli: niente segni, niente contorni, nessun avviso prima di una presa sbagliata."
+          }
+        }
+      }
+    },
+    "A point you ended level on is nobody's: leave it unpicked." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un point à égalité n'est à personne : ne choisissez rien."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un punto pari non è di nessuno: lasciatelo vuoto."
+          }
+        }
+      }
+    },
     "A problem, or an idea for the game" : {
       "localizations" : {
         "fr" : {
@@ -2424,6 +2584,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un problema, o un'idea per il gioco"
+          }
+        }
+      }
+    },
+    "A proper Scopa!" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une vraie Scopa !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vera Scopa!"
           }
         }
       }
@@ -2845,6 +3021,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aggiungi qualcuno, o guarda chi gioca già"
+          }
+        }
+      }
+    },
+    "Add the hand" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter la main"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi la mano"
           }
         }
       }
@@ -3731,6 +3923,22 @@
         }
       }
     },
+    "Best for a first game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idéal pour une première partie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ideale per la prima partita"
+          }
+        }
+      }
+    },
     "Best move" : {
       "localizations" : {
         "fr" : {
@@ -4356,6 +4564,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Amichevole"
+          }
+        }
+      }
+    },
+    "Change players" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changer de joueurs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia giocatori"
           }
         }
       }
@@ -6326,6 +6550,22 @@
         }
       }
     },
+    "First to %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le premier à %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi arriva prima a %lld"
+          }
+        }
+      }
+    },
     "Five cards, the best odds there are, nothing common with them" : {
       "localizations" : {
         "fr" : {
@@ -6370,6 +6610,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fiamma"
+          }
+        }
+      }
+    },
+    "Fog on the Po and chocolate in the cup" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brume sur le Pô, chocolat dans la tasse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebbia sul Po e cioccolata in tazza"
           }
         }
       }
@@ -6466,6 +6722,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "per la prima vittoria"
+          }
+        }
+      }
+    },
+    "For those who know Scopa" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour qui connaît déjà la Scopa"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per chi conosce già la Scopa"
           }
         }
       }
@@ -7445,6 +7717,22 @@
         }
       }
     },
+    "Hands played" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mains jouées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mani giocate"
+          }
+        }
+      }
+    },
     "Hard" : {
       "localizations" : {
         "fr" : {
@@ -7603,6 +7891,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Regole della casa"
+          }
+        }
+      }
+    },
+    "How far to go" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combien il reste"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quanto manca"
           }
         }
       }
@@ -7832,6 +8136,22 @@
         }
       }
     },
+    "I can talk you through every hand, or leave you to the cards. Pick one, and change your mind whenever you like." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je peux vous guider à chaque main, ou vous laisser seul face aux cartes. Choisissez, et changez d'avis quand vous voulez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posso guidarti mano per mano, o lasciarti da solo con le carte. Scegli tu, e cambia idea quando vuoi."
+          }
+        }
+      }
+    },
     "I have an idea" : {
       "localizations" : {
         "fr" : {
@@ -7877,6 +8197,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mi piace molto"
+          }
+        }
+      }
+    },
+    "I mark the card to play and the one that costs you, outline what each card can take, and say what the other side just did." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je marque la carte à jouer et celle qui vous coûte, j'entoure ce que chaque carte peut prendre, et je vous dis ce que l'adversaire vient de faire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segno la carta da giocare e quella che ti costa, evidenzio cosa può prendere ogni carta e ti dico cosa ha appena fatto l'avversario."
           }
         }
       }
@@ -9780,6 +10116,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nuovi panni per il tavolo"
+          }
+        }
+      }
+    },
+    "New game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle partie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova partita"
           }
         }
       }
@@ -11972,6 +12324,22 @@
         }
       }
     },
+    "Piemonte" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Piémont"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il Piemonte"
+          }
+        }
+      }
+    },
     "Plain felt. Let the cards do the talking" : {
       "localizations" : {
         "fr" : {
@@ -12344,6 +12712,22 @@
         }
       }
     },
+    "Player %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Joueur %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giocatore %lld"
+          }
+        }
+      }
+    },
     "Players" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12373,6 +12757,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quando giochi da solo"
+          }
+        }
+      }
+    },
+    "Playing in teams? Put both names on one line." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En équipes ? Mettez les deux noms sur une ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A squadre? Scrivete i due nomi su una riga."
+          }
+        }
+      }
+    },
+    "Playing with real cards? The phone keeps the score" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous jouez avec de vraies cartes ? Le téléphone compte les points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giocate con le carte vere? Il telefono tiene il punteggio"
           }
         }
       }
@@ -13696,6 +14112,22 @@
         }
       }
     },
+    "Score pad" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carnet de score"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segnapunti"
+          }
+        }
+      }
+    },
     "Sealed in wax. It's official" : {
       "localizations" : {
         "fr" : {
@@ -14123,6 +14555,22 @@
         }
       }
     },
+    "Shall I sit beside you?" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je m'assois à côté de vous ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mi siedo accanto a te?"
+          }
+        }
+      }
+    },
     "Shared" : {
       "localizations" : {
         "fr" : {
@@ -14526,6 +14974,22 @@
         }
       }
     },
+    "Six new tables between Liguria and Napoli, from Torino to the Mole Antonelliana, and the Wine seat mark at the end of the road. Every star you had won is still yours." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Six nouvelles tables entre la Ligurie et Naples, de Turin à la Mole Antonelliana, et la marque de place Vin au bout de la route. Toutes les étoiles que vous aviez gagnées sont toujours à vous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei nuovi tavoli tra la Liguria e Napoli, da Torino alla Mole Antonelliana, e il segno Vino per il tuo posto alla fine della strada. Tutte le stelle che avevi vinto restano tue."
+          }
+        }
+      }
+    },
     "Six of the ten denari" : {
       "localizations" : {
         "fr" : {
@@ -14815,6 +15279,22 @@
         }
       }
     },
+    "Start counting" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Commencer à compter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inizia a contare"
+          }
+        }
+      }
+    },
     "stays down" : {
       "localizations" : {
         "fr" : {
@@ -15003,6 +15483,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spazza il tavolo %lld volte"
+          }
+        }
+      }
+    },
+    "Sweep the table and a broom crosses the cloth, the word stamps down in gold, and the phone feels it. The settebello, re bello, napola and asso piglia tutto have their moments too." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videz la table et un balai traverse le tapis, le mot s'imprime en or, et le téléphone le sent. Le settebello, le re bello, la napola et l'asso piglia tutto ont aussi leur moment."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spazza il tavolo e una scopa attraversa il panno, la parola si stampa in oro, e il telefono la sente. Anche il settebello, il re bello, la napola e l'asso piglia tutto hanno il loro momento."
           }
         }
       }
@@ -15516,6 +16012,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tocca una carta per giocarla"
+          }
+        }
+      }
+    },
+    "Tap a card twice, quickly, and it goes down, even one you had already picked up." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez une carte deux fois, vite, et elle est jouée, même si vous l'aviez déjà levée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca una carta due volte, in fretta, e va giù, anche se l'avevi già alzata."
           }
         }
       }
@@ -16572,6 +17084,22 @@
         }
       }
     },
+    "The king of coins is yours" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le roi de deniers est à vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il re di denari è tuo"
+          }
+        }
+      }
+    },
     "The king of coins, worth a point like the settebello" : {
       "localizations" : {
         "fr" : {
@@ -17006,6 +17534,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "il punto della primiera"
+          }
+        }
+      }
+    },
+    "The ranked card shows your points, and how many more the next division needs." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carte du classé montre vos points, et combien il en faut encore pour la division suivante."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carta della classificata mostra i tuoi punti, e quanti ne servono ancora per la prossima divisione."
           }
         }
       }
@@ -17771,18 +18315,18 @@
         }
       }
     },
-    "Thirty tables across Italy. Win one to open the road to the next." : {
+    "Thirty-six tables across Italy. Win one to open the road to the next." : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trente tables à travers l'Italie. Gagnez-en une pour ouvrir la route de la suivante."
+            "value" : "Trente-six tables à travers l'Italie. Gagnez-en une pour ouvrir la route de la suivante."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trenta tavoli in giro per l'Italia. Vincine uno per aprire la strada al prossimo."
+            "value" : "Trentasei tavoli in giro per l'Italia. Vincine uno per aprire la strada al prossimo."
           }
         }
       }
@@ -18206,6 +18750,22 @@
         }
       }
     },
+    "To change it later, tap your name at the top of the lobby to open **Settings**, then **At the table › How much help you want**. Beginner sits in between: it outlines your takes, without the talk." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour changer plus tard, touchez votre nom en haut du salon pour ouvrir **Réglages**, puis **À la table › Niveau d'aide**. Entre les deux, Débutant entoure vos prises, sans les commentaires."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per cambiare più avanti, tocca il tuo nome in cima alla sala per aprire **Impostazioni**, poi **Al tavolo › Quanto aiuto vuoi**. In mezzo c'è Principiante: ti evidenzia le prese, senza commenti."
+          }
+        }
+      }
+    },
     "to lose" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -18450,6 +19010,22 @@
         }
       }
     },
+    "Top of the ladder" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au sommet du classement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In cima alla classifica"
+          }
+        }
+      }
+    },
     "Try again" : {
       "localizations" : {
         "fr" : {
@@ -18643,6 +19219,22 @@
         }
       }
     },
+    "Two taps, one card" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deux tapes, une carte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due tocchi, una carta"
+          }
+        }
+      }
+    },
     "Two things off the shelves, nothing common among them" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -18705,6 +19297,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sotto la ruota, cosa hanno vinto gli altri oggi, prima i tuoi amici."
+          }
+        }
+      }
+    },
+    "Undo the last hand" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler la dernière main"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla l'ultima mano"
           }
         }
       }
@@ -20011,6 +20619,22 @@
         }
       }
     },
+    "Wins the game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagne la partie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vince la partita"
+          }
+        }
+      }
+    },
     "With a code" : {
       "localizations" : {
         "fr" : {
@@ -20753,6 +21377,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Non è stato possibile sincronizzare il tuo account al momento."
+          }
+        }
+      }
+    },
+    "Your ace takes the whole table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre as rafle toute la table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo asso prende tutto il tavolo"
           }
         }
       }

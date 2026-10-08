@@ -45,7 +45,11 @@ extension Ladder {
         var more: Int { max(count - faces.count, 0) }
     }
 
+    /// Tells the Worker this app counts the road in thirty-six, Piemonte included.
+    private static let road = 36
+
     private struct CampaignPost: Encodable {
+        let road = Ladder.road
         let stage: Int
         let stars: Int
         let mark: String?
@@ -66,6 +70,7 @@ extension Ladder {
     static func campaignBoard(gamePlayerID: String?) async throws -> CampaignBoard? {
         guard let baseURL else { return nil }
         var url = baseURL.appending(path: "v1/campaign/board")
+        url.append(queryItems: [URLQueryItem(name: "road", value: "\(road)")])
         if let gamePlayerID {
             url.append(queryItems: [URLQueryItem(name: "player", value: gamePlayerID)])
         }
@@ -86,6 +91,7 @@ extension Ladder {
     }
 
     private struct Lookup: Encodable {
+        let road = Ladder.road
         let player: String?
         let friends: [String]
     }

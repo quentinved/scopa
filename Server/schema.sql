@@ -206,13 +206,17 @@ CREATE TABLE IF NOT EXISTS coupon_uses (
 -- only climb. The mark, livery and cornice are what the map draws their face with. See campaign.ts.
 CREATE TABLE IF NOT EXISTS campaign_progress (
   player_id  TEXT PRIMARY KEY REFERENCES players(id),
-  stage      INTEGER NOT NULL CHECK (stage BETWEEN 1 AND 30),   -- the table the road has reached
-  stars      INTEGER NOT NULL CHECK (stars BETWEEN 0 AND 90),
+  stage      INTEGER NOT NULL CHECK (stage BETWEEN 1 AND 36),   -- the table the road has reached
+  stars      INTEGER NOT NULL CHECK (stars BETWEEN 0 AND 108),
   mark       TEXT,                                              -- the seat mark worn, null for the initial
   livery     TEXT,                                              -- the seat colour, null for the table's own
   cornice    TEXT,                                              -- the ring round the mark, null for none
   updated_at TEXT NOT NULL
 );
+
+-- How many tables the stage numbers above count from, so 012 renumbers a board only once.
+CREATE TABLE IF NOT EXISTS campaign_road (tables INTEGER PRIMARY KEY);
+INSERT OR IGNORE INTO campaign_road (tables) VALUES (36);
 
 CREATE INDEX IF NOT EXISTS campaign_by_stars ON campaign_progress (stars DESC, stage DESC, updated_at ASC);
 CREATE INDEX IF NOT EXISTS campaign_by_stage ON campaign_progress (stage, updated_at DESC);

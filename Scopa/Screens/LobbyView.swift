@@ -27,6 +27,8 @@ struct LobbyView: View {
     @State private var showsCampaign = false
     /// Asked once, after the rules on a first launch, if the name is still the stand-in.
     @State private var asksName = false
+    /// Asked once, after the name on a first launch: the coach, or a plain table.
+    @State private var asksCoach = DebugLaunch.showsCoachChoice
     /// The walkthrough ended on "deal me a hand". The table cannot be dealt from under the
     /// sheet that asked for it, so the offer is held until the sheets are out of the way.
     @State private var startsCoached = false
@@ -66,7 +68,7 @@ struct LobbyView: View {
     /// have its turn: the first launch's walkthrough is done, and no card or sheet is up.
     private var isClearForNews: Bool {
         let sheets = [isEditingSettings, showsFriends, showsOnline, showsWager, showsShop, showsRules,
-                      showsLadder, showsWeekly, showsAlbum, asksName, startsCoached, showsWheel]
+                      showsLadder, showsWeekly, showsAlbum, asksName, asksCoach, startsCoached, showsWheel]
         return store.hasSeenRules && finishedSeason == nil && store.finishedChallenge == nil
             && !sheets.contains(true)
     }
@@ -181,9 +183,14 @@ struct LobbyView: View {
                 RulesView(onFinish: store.savedGame == nil ? { startsCoached = true } : nil)
                     .coversBanner()
             }
-            .sheet(isPresented: $asksName, onDismiss: dealCoachedHandIfAsked) {
+            .sheet(isPresented: $asksName, onDismiss: { asksCoach = true }) {
                 NameSheet(store: store)
                     .coversBanner()
+            }
+            .sheet(isPresented: $asksCoach, onDismiss: dealFirstHandIfAsked) {
+                // No strip under a first launch's question: it would crowd the two answers.
+                CoachChoiceSheet(dealsNext: startsCoached) { store.assist = $0 }
+                    .coversBanner(carries: false)
             }
             .sheet(isPresented: $showsOnline, onDismiss: { if store.route == .lobby { store.cancelOnline() } }) {
                 OnlineSheet(store: store)
@@ -200,11 +207,13 @@ struct LobbyView: View {
     }
 
     /// Reading the rules counts however the sheet is left. On a first launch the name
-    /// comes next, and it is that sheet's closing that deals the coached hand.
+    /// comes next, then the coach question, and it is that sheet's closing that deals.
     private func handleRulesDismissed() {
-        if !store.hasSeenRules, store.playerName == TableStore.defaultName { asksName = true }
+        if !store.hasSeenRules {
+            if store.playerName == TableStore.defaultName { asksName = true } else { asksCoach = true }
+        }
         store.hasSeenRules = true
-        if !asksName { dealCoachedHandIfAsked() }
+        if !asksName, !asksCoach { dealCoachedHandIfAsked() }
     }
 
     /// The friends sheet opens online tables too, so leaving it stops a search.
@@ -257,6 +266,10 @@ struct LobbyView: View {
         }
         if DebugLaunch.showsJoinCode {
             friendsPath = [.joinByCode]
+            showsFriends = true
+        }
+        if DebugLaunch.showsScorePad {
+            friendsPath = [.scorePad]
             showsFriends = true
         }
     }
@@ -616,6 +629,13 @@ struct LobbyView: View {
         guard startsCoached else { return }
         startsCoached = false
         store.playCoached()
+    }
+
+    /// The first launch's hand, at the level of help just picked rather than the coach's.
+    private func dealFirstHandIfAsked() {
+        guard startsCoached else { return }
+        startsCoached = false
+        store.playFirstHand()
     }
 
     private func forgetSavedGame() {

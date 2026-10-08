@@ -1901,6 +1901,11 @@ final class TableStore {
     /// it off in one tap.
     func playCoached() {
         assist = .coached
+        playFirstHand()
+    }
+
+    /// The same easy hand, at whatever level of help the player picked on the way in.
+    func playFirstHand() {
         playOnThisDevice(seats: [.person(name: playerName), .bot(name: BotNames.dealer)],
                          teams: false, turnClock: .off, strength: BotLevel.easy.strength)
     }
@@ -2374,7 +2379,8 @@ final class TableStore {
     private func applyDeparture(of id: PlayerID) {
         departed.insert(id)
         notice = .playerLeft(lobby?.players.first { $0.id == id }?.name ?? "A player")
-        if !isHost, id == lobby?.host.id { leaveTable() }
+        // A finished game keeps its summary: the guest leaves by its button, as anyone else does.
+        if !isHost, id == lobby?.host.id, view?.isFinished != true { leaveTable() }
     }
 
     /// Judges every move off the main thread, since a long four-handed game is a few thousand

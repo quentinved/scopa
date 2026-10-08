@@ -30,14 +30,17 @@ struct CampaignLayout {
         return CGPoint(x: x, y: y)
     }
 
-    /// The road from the first table up to `stage`, or all of it.
-    func road(through stage: CampaignStage? = nil) -> Path {
-        let stages = Campaign.stages.prefix { stage == nil || $0.number <= stage!.number }
+    /// The road from the first table, each stretch drawn only when the tables at both ends
+    /// are `reached`, or all of it. A region put in ahead of won tables leaves its own gap.
+    func road(reaching reached: (CampaignStage) -> Bool = { _ in true }) -> Path {
+        let stages = Campaign.stages
         var path = Path()
-        guard let first = stages.first else { return path }
+        guard let first = stages.first, reached(first) else { return path }
         path.move(to: CGPoint(x: centre(of: first).x, y: Self.bannerHeight * 0.7))
         path.addLine(to: centre(of: first))
-        for (from, to) in zip(stages, stages.dropFirst()) { path.addPath(segment(from, to)) }
+        for (from, to) in zip(stages, stages.dropFirst()) where reached(from) && reached(to) {
+            path.addPath(segment(from, to))
+        }
         return path
     }
 
@@ -116,20 +119,17 @@ struct CampaignMap: View {
     /// The whole way dotted faint, the part travelled laid in gold over it, and the stretch
     /// just opened drawn in by the walk-back moment.
     private var road: some View {
-        let reached = travelled
+        // Its shadow is a wider dark stroke laid a point lower, not a blur: a blurred
+        // shadow on a path the map's whole height was recomposited every scroll frame.
+        let travelled = layout.road(reaching: isTravelled)
         return ZStack(alignment: .topLeading) {
             layout.road()
                 .stroke(Palette.cream.opacity(0.4), style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [0.5, 9]))
-            if let reached {
-                // Its shadow is a wider dark stroke laid a point lower, not a blur: a blurred
-                // shadow on a path the map's whole height was recomposited every scroll frame.
-                let travelled = layout.road(through: reached)
-                travelled
-                    .stroke(Palette.ink.opacity(0.22), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .offset(y: 1)
-                travelled
-                    .stroke(Palette.gold, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-            }
+            travelled
+                .stroke(Palette.ink.opacity(0.22), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .offset(y: 1)
+            travelled
+                .stroke(Palette.gold, style: StrokeStyle(lineWidth: 4, lineCap: .round))
             if let next = moment.unlocking, let from = Campaign.stage(number: next.number - 1) {
                 layout.segment(from, next)
                     .trim(from: 0, to: moment.roadDrawn ? 1 : 0)
@@ -140,11 +140,9 @@ struct CampaignMap: View {
         .allowsHitTesting(false)
     }
 
-    /// The last table the gold reaches: the current one, short of a stretch still being drawn.
-    private var travelled: CampaignStage? {
-        let current = book.current
-        guard let unlocking = moment.unlocking, unlocking == current else { return current }
-        return Campaign.stage(number: unlocking.number - 1)
+    /// Whether the gold reaches a table: any open one, short of a stretch still being drawn.
+    private func isTravelled(_ stage: CampaignStage) -> Bool {
+        book.isUnlocked(stage) && moment.unlocking != stage
     }
 
     private func medallion(_ stage: CampaignStage) -> some View {

@@ -4,10 +4,12 @@ import ScopaCore
 /// A terracotta band across the table for a sweep. It only ever says "Scopa!", with who
 /// swept in small type underneath.
 ///
-/// It is the game's biggest moment and it arrives like one: the band is swept in from the
-/// side the way a broom crosses the cloth, the letters drop onto it one after another and
-/// bounce, the broom on it swishes, a gleam runs along it and a few sparkles go off round
-/// the word. It used to fade in and sit there, which read as a notice rather than a win.
+/// It is the game's biggest moment and it arrives like one: a broom of gold bristles
+/// crosses the cloth and sweeps the band in behind it, the letters drop onto it one after
+/// another, and when the last one lands the band takes the weight like a stamp, throwing
+/// a ring and a burst of sparks. Then the band is swept on off the far side, so the cloth
+/// is back in play inside a second and a half. Somebody else's sweep is the same stroke,
+/// thinner, without the sparks.
 struct ScopaBanner: View {
     /// Who swept, or empty when it was you.
     var by: String
@@ -17,8 +19,20 @@ struct ScopaBanner: View {
     private let cheer = "Scopa!"
     /// Long enough for the last letter to settle.
     private static let dropLength: Double = 1.2
+    /// When the last letter first touches the band, which is when the band takes the blow.
+    static let stampTime: Double = 0.47
+    /// When the band is swept on off the cloth.
+    private static let leaveTime: Double = 1.18
+
+    /// How long the table should keep this up: the band alone is gone by a second and a
+    /// half, a bought flourish is let run to its end over a clear cloth.
+    static func length(for flourish: Flourish) -> Double {
+        flourish == .stendardo ? 1.5 : max(1.5, FlourishView.length)
+    }
 
     @State private var arrived = false
+    @State private var stamped = false
+    @State private var leaving = false
     /// Seconds since the band arrived, driven linearly so the letters can run their own
     /// springs off it. See `LetterDrop`.
     @State private var elapsed: Double = 0
@@ -26,17 +40,26 @@ struct ScopaBanner: View {
     @Environment(\.verticalSizeClass) private var heightClass
     @Environment(\.screenSize) private var screenSize
     private var stage: Stage { Stage(heightClass, size: screenSize) }
+    private var mine: Bool { by.isEmpty }
+    private var tilt: Double { stage.pick(tall: -6, wide: -3) }
 
     var body: some View {
         ZStack {
-            Palette.ink.opacity(0.08)
+            Palette.ink.opacity(leaving ? 0 : 0.08)
+            SweepStroke(mine: mine, tilt: tilt)
+            // Out from under the band, so it is the cloth that rings rather than the word.
+            if stamped, mine, !reduceMotion { Shockwave(tint: Palette.goldLight, size: bandHeight * 1.3) }
             GeometryReader { proxy in
                 // Sized from the diagonal so a tilted band still covers the corners.
                 band(width: max(proxy.size.width, proxy.size.height) * 1.4,
                      lettering: proxy.size.width - 40)
-                    .rotationEffect(.degrees(stage.pick(tall: -6, wide: -3)))
-                    .offset(x: arrived ? 0 : -proxy.size.width * 1.3)
+                    .rotationEffect(.degrees(tilt))
+                    .offset(x: arrived ? (leaving ? proxy.size.width * 1.3 : 0) : -proxy.size.width * 1.3)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            }
+            if stamped, mine, !reduceMotion {
+                SparkBurst(sparks: 30, palette: [Palette.goldLight, Palette.cream, .white, Palette.gold],
+                           force: 620, seed: 7)
             }
         }
         // Over the band rather than under it: confetti that fell behind the announcement
@@ -45,10 +68,11 @@ struct ScopaBanner: View {
         .ignoresSafeArea()
         .transition(.opacity)
         .allowsHitTesting(false)
-        .onAppear(perform: arrive)
+        .task { await play() }
     }
 
-    private func arrive() {
+    /// The beats: in, the stamp as the last letter lands, and away.
+    private func play() async {
         guard !reduceMotion else {
             arrived = true
             elapsed = Self.dropLength
@@ -56,6 +80,12 @@ struct ScopaBanner: View {
         }
         withAnimation(.spring(duration: 0.42, bounce: 0.24)) { arrived = true }
         withAnimation(.linear(duration: Self.dropLength)) { elapsed = Self.dropLength }
+        try? await Task.sleep(for: .seconds(Self.stampTime))
+        guard !Task.isCancelled else { return }
+        stamped = true
+        try? await Task.sleep(for: .seconds(Self.leaveTime - Self.stampTime))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeIn(duration: 0.26)) { leaving = true }
     }
 
     /// The slab is given both dimensions and clipped: left to size itself inside a
@@ -70,6 +100,20 @@ struct ScopaBanner: View {
             // the cheer against something the phone can show.
             .overlay { text.frame(maxWidth: lettering) }
             .shadow(color: Palette.terracotta.opacity(0.35), radius: 30, y: 12)
+            .keyframeAnimator(initialValue: Stamp(), trigger: stamped) { slab, stamp in
+                slab.scaleEffect(stamp.scale).offset(y: stamp.drop)
+            } keyframes: { _ in
+                // A blow and a bounce back, lighter for somebody else's sweep.
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(mine ? 1.07 : 1.03, duration: 0.05)
+                    CubicKeyframe(0.98, duration: 0.08)
+                    SpringKeyframe(1, duration: 0.3, spring: .bouncy)
+                }
+                KeyframeTrack(\.drop) {
+                    CubicKeyframe(mine ? 6 : 3, duration: 0.05)
+                    SpringKeyframe(0, duration: 0.32, spring: .bouncy)
+                }
+            }
     }
 
     private var text: some View {
@@ -97,7 +141,7 @@ struct ScopaBanner: View {
                     .offset(y: arrived ? 0 : 6)
                     .animation(.easeOut(duration: 0.3).delay(reduceMotion ? 0 : 0.45), value: arrived)
             }
-            .overlay { if !reduceMotion { Twinkles(trigger: arrived) } }
+            .overlay { if !reduceMotion, mine { Twinkles(trigger: arrived) } }
         }
     }
 
@@ -126,6 +170,12 @@ struct ScopaBanner: View {
     private var bandHeight: CGFloat {
         displaySize * 1.2 + stage.pick(tall: 56, wide: 28)
     }
+}
+
+/// The band's give under the blow of the last letter.
+private struct Stamp {
+    var scale: CGFloat = 1
+    var drop: CGFloat = 0
 }
 
 /// How the cheer is set, whichever way it arrives.
@@ -232,43 +282,6 @@ private struct Twinkles: View {
                     .position(x: spot.at.x * proxy.size.width, y: spot.at.y * proxy.size.height)
             }
         }
-        .allowsHitTesting(false)
-    }
-}
-
-/// The seven of coins taken: a gold plate in the middle of the cloth, smaller and shorter
-/// than a sweep's banner.
-struct SettebelloBanner: View {
-    /// Who took it, or empty when it was you.
-    var by: String
-
-    @Environment(\.verticalSizeClass) private var heightClass
-    @Environment(\.screenSize) private var screenSize
-    private var stage: Stage { Stage(heightClass, size: screenSize) }
-
-    var body: some View {
-        HStack(spacing: stage.pick(tall: 14, wide: 12)) {
-            CardView(card: .settebello, width: stage.pick(tall: 44, wide: 36))
-                .rotationEffect(.degrees(-6))
-            VStack(alignment: .leading, spacing: -2) {
-                Text(verbatim: "Settebello!")
-                    .font(.display(stage.pick(tall: 36, wide: 30)))
-                    .foregroundStyle(Palette.cream)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                Text(by.isEmpty ? "The seven of coins is yours" : "\(by) takes the seven of coins")
-                    .font(.system(size: stage.pick(tall: 13, wide: 12), weight: .semibold))
-                    .foregroundStyle(Palette.cream.opacity(0.9))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-        .glassPanel(radius: GlassRadius.panel, tint: Palette.gold.opacity(0.92))
-        .shadow(color: Palette.goldDeep.opacity(0.45), radius: 24, y: 10)
-        .padding(.horizontal, 24)
-        .transition(.scale(scale: 0.82).combined(with: .opacity))
         .allowsHitTesting(false)
     }
 }

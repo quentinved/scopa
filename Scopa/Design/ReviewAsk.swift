@@ -1,14 +1,15 @@
-import StoreKit
 import SwiftUI
 
-/// The house asking, once in a long while, for a rating. Rating goes on to iOS's sheet;
-/// later just closes it. Every answer that rates reaches Apple, so nothing is filtered.
+/// The house asking, once in a long while, for a rating. Rating opens the App Store's review
+/// page; later just closes it. Every answer that rates reaches Apple, so nothing is filtered.
 ///
 /// `ReviewPrompt` decides when; the lobby lays it over the room on the way back from a win.
 struct ReviewAskCard: View {
     let close: () -> Void
 
-    @Environment(\.requestReview) private var requestReview
+    /// The App Store page rather than iOS's in-app sheet, which shows nothing once its
+    /// yearly quota is spent and never on TestFlight, so a tap on "Rate" looked dead.
+    @Environment(\.openURL) private var openURL
     /// The plate is cut from the cloth, so it changes with the felt.
     @Environment(\.tableFelt) private var felt
 
@@ -64,7 +65,7 @@ struct ReviewAskCard: View {
     private func answer(_ answer: ReviewPrompt.Answer) {
         ReviewPrompt.answered(answer)
         close()
-        if answer == .rated { requestReview() }
+        if answer == .rated { openURL(ReviewPrompt.writeReviewURL) }
     }
 
     // MARK: Pieces

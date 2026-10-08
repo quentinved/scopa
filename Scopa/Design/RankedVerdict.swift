@@ -6,7 +6,8 @@ import ScopaCore
 /// The points count up on the chip while the bar runs from where it stood before the game
 /// towards a faint mark of where it is going, crosses the division if the game crossed it,
 /// and the medal is restruck in the next metal partway through. Points won throw sparks;
-/// a new league hands over to `RankUpCeremony` once the bar has stopped.
+/// a new league hands over to `RankUpCeremony` once the bar has stopped, and the road's
+/// toasts held back during the game are let out after that.
 ///
 /// Everything is worked out from two ratings, before and after. The Worker sends the
 /// rating it settled on and the change it applied, and `Ranking`, the same maths on both
@@ -43,6 +44,8 @@ struct RankedVerdict: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Absent in previews, where no new league is ever celebrated.
     @Environment(LadderCeremony.self) private var ceremony: LadderCeremony?
+    /// Holds the ladder's news while the bar runs. Absent in previews.
+    @Environment(Toaster.self) private var toaster: Toaster?
 
     /// The rating the medal and the title are drawn for. It steps to the new one halfway
     /// through, at the moment the bar runs out of division.
@@ -333,6 +336,8 @@ struct RankedVerdict: View {
         if climbing { land() }
         try? await Task.sleep(for: .milliseconds(900))
         ceremony?.check()
+        // A new league goes first; its ceremony lets the rest out when it closes.
+        if ceremony?.showing == nil { toaster?.releaseHeld() }
     }
 
     /// Inside one division: one run of the bar, with the count keeping pace.

@@ -67,7 +67,23 @@ final class GoogleAds: AdsGateway {
 
     // MARK: The interruption
 
+    /// When the waiting interstitial arrived. AdMob expires one after an hour, and an
+    /// expired ad fails to present, so a stale one is dropped and fetched again.
+    @ObservationIgnored private var interstitialLoadedAt: Date?
+
+    /// Comfortably inside AdMob's one hour.
+    private static let interstitialShelfLife: TimeInterval = 50 * 60
+
+    private var interstitialIsStale: Bool {
+        guard let interstitialLoadedAt else { return false }
+        return Date.now.timeIntervalSince(interstitialLoadedAt) > Self.interstitialShelfLife
+    }
+
     func preloadInterstitial() {
+        if interstitial != nil, interstitialIsStale {
+            Log.ads.info("Interstitial older than its shelf life; fetching a fresh one")
+            interstitial = nil
+        }
         guard hasBegun, interstitial == nil, !isLoadingInterstitial else { return }
         isLoadingInterstitial = true
         Task { [weak self] in
@@ -81,19 +97,34 @@ final class GoogleAds: AdsGateway {
             guard let self else { return }
             isLoadingInterstitial = false
             interstitial = ad
+            interstitialLoadedAt = ad == nil ? nil : .now
         }
     }
 
     @discardableResult
     func showInterstitial() async -> Bool {
+        preloadInterstitial()
         guard let ad = interstitial else {
             // Never stall the player waiting for a load: the game is over and they are
             // leaving the table.
             Log.ads.info("The pacing allowed an interstitial but none was loaded")
-            preloadInterstitial()
             return false
         }
         interstitial = nil
+        let host = await FullScreen.settledHost()
+        do {
+            try ad.canPresent(from: host)
+        } catch {
+            Log.ads.error("Interstitial could not present: \(AdTrouble.words(for: error), privacy: .public)")
+            preloadInterstitial()
+            return false
+        }
+        let shown = await present(ad, from: host)
+        preloadInterstitial()
+        return shown
+    }
+
+    private func present(_ ad: InterstitialAd, from host: UIViewController?) async -> Bool {
         var shown = false
         await withCheckedContinuation { resume in
             let presentation = FullScreen { didShow in
@@ -102,10 +133,10 @@ final class GoogleAds: AdsGateway {
             }
             self.presentation = presentation
             ad.fullScreenContentDelegate = presentation
-            ad.present(from: nil)
+            ad.present(from: host)
         }
         presentation = nil
-        preloadInterstitial()
+        if !shown { Log.ads.error("Interstitial was handed over but never appeared") }
         return shown
     }
 
@@ -181,6 +212,28 @@ private final class FullScreen: NSObject, FullScreenContentDelegate {
         guard let finish else { return }
         self.finish = nil
         finish(didShow)
+    }
+
+    /// The top view controller once nothing is mid-transition, waiting up to a second. A
+    /// sheet still sliding away refuses a new presentation, and the ad is then lost.
+    static func settledHost() async -> UIViewController? {
+        for _ in 0..<10 {
+            guard let top = topController() else { return nil }
+            let moving = top.isBeingDismissed || top.isBeingPresented || top.transitionCoordinator != nil
+            if !moving { return top }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return topController()
+    }
+
+    private static func topController() -> UIViewController? {
+        let window = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }
+        var top = window?.rootViewController
+        while let next = top?.presentedViewController { top = next }
+        return top
     }
 }
 

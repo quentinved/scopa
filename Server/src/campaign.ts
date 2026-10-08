@@ -10,12 +10,33 @@
 
 import { invalidFriends } from "./presence.ts";
 
-/** Thirty tables, three stars each. Mirrors Campaign.swift. */
-export const STAGES = 30;
+/** Thirty-six tables, three stars each. Mirrors Campaign.swift; 012 renumbered the board for it. */
+export const STAGES = 36;
 export const MAX_STARS = STAGES * 3;
 /** Faces sent per table; the map shows these and a count of the rest. */
 export const FACES_PER_STAGE = 3;
 export const BOARD_SIZE = 50;
+/** Tables on the road before 012. Apps that do not send `road` still count this way. */
+export const OLD_STAGES = 30;
+/** Liguria's tables, numbered alike on both roads; Piemonte's six follow them on the new one. */
+const LIGURIA = 6;
+const PIEMONTE = 6;
+
+/** Which road a request counts in: 36 when the app says so, else the old thirty. */
+export function roadOf(value: unknown): number {
+  return value === STAGES ? STAGES : OLD_STAGES;
+}
+
+/** A table on the old road, as numbered on the new one. */
+export function fromRoad(stage: number, road: number): number {
+  return road === STAGES || stage <= LIGURIA ? stage : stage + PIEMONTE;
+}
+
+/** A table on the new road, as an old app numbers it. Piemonte reads as Napoli's first. */
+export function toRoad(stage: number, road: number): number {
+  if (road === STAGES || stage <= LIGURIA) return stage;
+  return Math.max(stage - PIEMONTE, LIGURIA + 1);
+}
 
 /** "medalGold", "iride", "onde": a raw value of one of the app's cosmetic enums. */
 const COSMETIC = /^[A-Za-z0-9]{1,32}$/;
@@ -69,20 +90,22 @@ function isCosmetic(value: unknown): boolean {
 /** Why a progress post is refused, or null when its shape is sound. */
 export function invalidProgress(body: unknown): string | null {
   if (body == null || typeof body !== "object") return "bad body";
-  const { stage, stars, mark, livery, cornice } = body as Fields;
-  if (!Number.isInteger(stage) || (stage as number) < 1 || (stage as number) > STAGES) return "bad stage";
-  if (!Number.isInteger(stars) || (stars as number) < 0 || (stars as number) > MAX_STARS) return "bad stars";
+  const { stage, stars, mark, livery, cornice, road } = body as Fields;
+  const tables = roadOf(road);
+  if (!Number.isInteger(stage) || (stage as number) < 1 || (stage as number) > tables) return "bad stage";
+  if (!Number.isInteger(stars) || (stars as number) < 0 || (stars as number) > tables * 3) return "bad stars";
   // Stars are won at tables already reached, three at most each.
   if ((stars as number) > (stage as number) * 3) return "more stars than tables";
   if (![mark, livery, cornice].every(isCosmetic)) return "bad look";
   return null;
 }
 
-/** The fields kept from a post that passed `invalidProgress`. */
+/** The fields kept from a post that passed `invalidProgress`, its table on the new road. */
 export function progressOf(body: unknown): Progress {
   const fields = body as Fields;
   const text = (value: unknown) => (typeof value === "string" ? value : null);
-  return { stage: fields.stage as number, stars: fields.stars as number, mark: text(fields.mark),
+  const stage = fromRoad(fields.stage as number, roadOf(fields.road));
+  return { stage, stars: fields.stars as number, mark: text(fields.mark),
     livery: text(fields.livery), cornice: text(fields.cornice) };
 }
 
@@ -121,6 +144,11 @@ export async function recordProgress(db: D1Database, playerID: string, progress:
 
 const ROW = `c.player_id AS id, p.name, c.stage, c.stars, c.mark, c.livery, c.cornice`;
 const ORDER = `c.stars DESC, c.stage DESC, c.updated_at ASC`;
+
+/** Board rows with their tables numbered for the reader's road. */
+export function rowsForRoad(rows: BoardRow[], road: number): BoardRow[] {
+  return road === STAGES ? rows : rows.map((row) => ({ ...row, stage: toRoad(row.stage, road) }));
+}
 
 /** The top of the board, most stars first and the furthest road breaking a tie. */
 export async function campaignBoard(db: D1Database, playerID: string | null): Promise<{ top: BoardRow[]; you: Place | null }> {
@@ -186,6 +214,20 @@ export async function stageFaces(db: D1Database, playerID: string | null, friend
     count: n,
     faces: [...faces(ours.results, stage, true), ...faces(others.results, stage, false)].slice(0, FACES_PER_STAGE),
   }));
+}
+
+/** Tables numbered for the reader's road; Piemonte's six fold into one on the old road. */
+export function stagesForRoad(stages: StageFaces[], road: number): StageFaces[] {
+  if (road === STAGES) return stages;
+  const folded = new Map<number, StageFaces>();
+  for (const table of stages) {
+    const stage = toRoad(table.stage, road);
+    const seen = folded.get(stage);
+    folded.set(stage, seen
+      ? { stage, count: seen.count + table.count, faces: [...seen.faces, ...table.faces].slice(0, FACES_PER_STAGE) }
+      : { ...table, stage });
+  }
+  return [...folded.values()];
 }
 
 function faces(rows: FaceRow[], stage: number, friend: boolean): Face[] {

@@ -45,6 +45,10 @@ enum Sound: String, CaseIterable {
     case step
     /// The name at the end of it.
     case reveal
+    /// A good card gathering itself before it turns over out of a pack.
+    case rise
+    /// That card turned over.
+    case shine
     /// A denaro into the purse.
     case denaro
     /// The shop till.
@@ -110,6 +114,8 @@ enum Sound: String, CaseIterable {
         case .victory, .defeat: Duck(depth: 0.16, hold: 3.0)
         case .roundOver, .reveal: Duck(depth: 0.42, hold: 1.4)
         case .purchase: Duck(depth: 0.5, hold: 1.0)
+        case .rise: Duck(depth: 0.45, hold: 1.2)
+        case .shine: Duck(depth: 0.4, hold: 1.3)
         case .sweep: Duck(depth: 0.6, hold: 0.7)
         default: nil
         }

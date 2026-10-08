@@ -21,9 +21,23 @@ struct Toast: Identifiable, Equatable {
 final class Toaster {
     private(set) var current: Toast?
     private var queue: [Toast] = []
+    /// News kept back until the screen it would land on has finished telling its own.
+    private var held: [Toast] = []
 
     func post(_ toast: Toast) {
         if current == nil { current = toast } else { queue.append(toast) }
+    }
+
+    /// Keeps a toast back until `releaseHeld` is called.
+    func hold(_ toast: Toast) {
+        held.append(toast)
+    }
+
+    /// Posts whatever was held, in the order it came.
+    func releaseHeld() {
+        let news = held
+        held = []
+        news.forEach(post)
     }
 
     /// The toast on screen has had its time, or was tapped away.

@@ -188,7 +188,7 @@ on trust like the weekly challenge: only the post is signed, and both numbers on
 A face is the seat mark, livery and cornice the player wears, as the app's raw values.
 
 - `POST /v1/campaign` — `{stage, stars, mark?, livery?, cornice?, identity}`. `stage` is the
-  table reached (1–30), `stars` the total (at most three per table reached). Returns the
+  table reached (1–36), `stars` the total (at most three per table reached). Returns the
   player's place, `{played, rank, percentile}`.
 - `GET /v1/campaign/board?player=` — `{top, you}`: fifty rows of `{id, name, stage, stars,
   mark, livery, cornice}`, most stars first, then the furthest road, then who got there first.
@@ -199,6 +199,14 @@ A face is the seat mark, livery and cornice the player wears, as the app's raw v
 
 ```sh
 wrangler d1 execute scopa --remote --file migrations/010-campaign.sql   # once
+```
+
+Piemonte made the road thirty-six tables, with every table from Napoli on six further along.
+`migrations/012-campaign-piemonte.sql` renumbers the rows already posted and widens the
+checks; run it with the app release that brings Piemonte:
+
+```sh
+wrangler d1 execute scopa --remote --file migrations/012-campaign-piemonte.sql   # once
 ```
 
 ### Tables

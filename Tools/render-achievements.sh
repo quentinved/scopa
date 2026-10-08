@@ -1,5 +1,5 @@
 #!/bin/sh
-# Redraws the twelve Game Center badges from Scopa/Design/AchievementArtwork.swift.
+# Redraws the Game Center badges from Scopa/Design/AchievementArtwork.swift.
 #
 # Each PNG is named after its App Store Connect achievement id, so uploading is a matter of
 # matching names: App Store Connect -> Scopa -> Game Center -> the achievement -> its

@@ -14,7 +14,7 @@ import { RankedQueue } from "./queue.ts";
 import { BEAT_SECONDS, fingerprint, friendSet, invalidFriends, WINDOW_SECONDS } from "./presence.ts";
 import { FriendCodeRow, giftOf, normaliseFriendCode } from "./friendcodes.ts";
 import { deviceOf, normaliseCoupon, redeemCoupon } from "./coupons.ts";
-import { campaignBoard, friendsCampaignBoard, invalidLookup, invalidProgress, progressOf, recordProgress, stageFaces } from "./campaign.ts";
+import { campaignBoard, friendsCampaignBoard, invalidLookup, invalidProgress, progressOf, recordProgress, roadOf, rowsForRoad, stageFaces, stagesForRoad } from "./campaign.ts";
 import { wheelStrip } from "./wheel.ts";
 
 export { RankedQueue, Room };
@@ -77,7 +77,7 @@ const routes: Route[] = [
   { method: "POST", path: /^\/v1\/coupons\/redeem$/, handle: ({ request, env }) => postCoupon(request, env) },
   // The campaign's board. Only the progress post is signed, like the other boards.
   { method: "POST", path: /^\/v1\/campaign$/, handle: ({ request, env }) => postCampaign(request, env) },
-  { method: "GET", path: /^\/v1\/campaign\/board$/, handle: ({ url, env }) => getCampaignBoard(url.searchParams.get("player"), env) },
+  { method: "GET", path: /^\/v1\/campaign\/board$/, handle: ({ url, env }) => getCampaignBoard(url.searchParams.get("player"), Number(url.searchParams.get("road")), env) },
   { method: "POST", path: /^\/v1\/campaign\/board\/friends$/, handle: ({ request, env }) => postCampaignFriends(request, env) },
   { method: "POST", path: /^\/v1\/campaign\/stages$/, handle: ({ request, env }) => postCampaignStages(request, env) },
   // The wheel as everyone else turned it, read off the ledger. Unsigned like the boards.
@@ -283,25 +283,28 @@ async function postCampaign(request: Request, env: Env): Promise<Response> {
   return json(await recordProgress(env.DB, identity.gamePlayerID, progressOf(body)));
 }
 
-async function getCampaignBoard(playerID: string | null, env: Env): Promise<Response> {
+async function getCampaignBoard(playerID: string | null, road: number, env: Env): Promise<Response> {
   if (playerID != null && invalidFriends([playerID])) return json({ error: "bad player" }, 400);
-  return json(await campaignBoard(env.DB, playerID));
+  const board = await campaignBoard(env.DB, playerID);
+  return json({ ...board, top: rowsForRoad(board.top, roadOf(road)) });
 }
 
 /// The ids come from the phone, as on the season's friends board.
 async function postCampaignFriends(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json().catch(() => null)) as { player?: string; friends: string[] } | null;
+  const body = (await request.json().catch(() => null)) as { player?: string; friends: string[]; road?: number } | null;
   const problem = invalidLookup(body, true);
   if (problem) return json({ error: problem }, 400);
-  return json(await friendsCampaignBoard(env.DB, body!.player ?? null, body!.friends));
+  const board = await friendsCampaignBoard(env.DB, body!.player ?? null, body!.friends);
+  return json({ ...board, top: rowsForRoad(board.top, roadOf(body!.road)) });
 }
 
 /// Who sits at each table of the map, friends first. `friends` may be left out.
 async function postCampaignStages(request: Request, env: Env): Promise<Response> {
-  const body = (await request.json().catch(() => null)) as { player?: string; friends?: string[] } | null;
+  const body = (await request.json().catch(() => null)) as { player?: string; friends?: string[]; road?: number } | null;
   const problem = invalidLookup(body, false);
   if (problem) return json({ error: problem }, 400);
-  return json({ stages: await stageFaces(env.DB, body!.player ?? null, body!.friends ?? []) });
+  const stages = await stageFaces(env.DB, body!.player ?? null, body!.friends ?? []);
+  return json({ stages: stagesForRoad(stages, roadOf(body!.road)) });
 }
 
 // MARK: - The wheel

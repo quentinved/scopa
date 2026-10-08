@@ -4,8 +4,8 @@ import Foundation
 /// for "scopa", so the ask comes at the kindest moment there is: back in the lobby after a
 /// win, at the end of a long sitting, from someone who has played enough to have an opinion.
 ///
-/// The ask is our own card first (`ReviewAskCard`); only a yes goes on to iOS's sheet, which
-/// iOS shows at most three times a year whatever is asked.
+/// The ask is our own card first (`ReviewAskCard`); only a yes goes on, to the App Store's
+/// review page. iOS's own sheet shows at most three times a year, and never on TestFlight.
 @MainActor
 enum ReviewPrompt {
     // MARK: The dials
@@ -25,7 +25,7 @@ enum ReviewPrompt {
     /// After a yes or a no, a new version and this long.
     static let answeredWait: TimeInterval = 90 * 86_400
 
-    /// Where Settings sends someone who wants to write a review.
+    /// Where Settings and the card's "Rate" send someone who wants to write a review.
     static let writeReviewURL = URL(string: "https://apps.apple.com/app/id6810455597?action=write-review")!
 
     // MARK: The sitting, in memory only

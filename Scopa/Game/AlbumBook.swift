@@ -229,7 +229,10 @@ final class AlbumBook {
     /// drawn without it would hand over a felt somebody already has.
     private func open(tier: PackTier, owned: Set<ShopItem.ID>) -> Opening {
         var generator = SystemRandomNumberGenerator()
-        let pack = Pack.draw(tier, using: &generator)
+        var pack = Pack.draw(tier, using: &generator)
+        if let rigged = DebugLaunch.packCards {
+            pack = Pack(cards: rigged, tier: tier, cosmetics: pack.cosmetics)
+        }
         let volume = openVolume
         var collected = album(volume)
         let opened = collected.open(pack)
@@ -252,6 +255,11 @@ final class AlbumBook {
             }
             taken.insert(item.id)
             won.append(.item(item))
+        }
+        if let finale = DebugLaunch.packFinale {
+            let suit = Suit.allCases.first { "\($0)" == finale }
+            return Opening(volume: volume, tier: tier, found: opened.found,
+                           suits: suit.map { [$0] } ?? [], deck: finale == "deck", won: won)
         }
         return Opening(volume: volume, tier: tier, found: opened.found, suits: suits, deck: deck, won: won)
     }

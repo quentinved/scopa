@@ -67,6 +67,9 @@ struct CardFlight: Identifiable {
     static let stagger: TimeInterval = 0.06
     /// A sweep is worth stopping on.
     static let sweepPause: TimeInterval = 0.3
+    /// How long a sweep's card lies crosswise on the pile, face up, before it goes in:
+    /// the marker a scopa leaves in a real pile.
+    static let markerHold: TimeInterval = 0.5
     /// How long a card laid down is held up in the middle before it settles into the row.
     static let rest: TimeInterval = 0.5
     /// And how long that settling takes.
@@ -85,7 +88,8 @@ struct CardFlight: Identifiable {
     /// was laid down.
     var duration: TimeInterval {
         if laysDown { return travel + hold + Self.settle }
-        return departure + Self.fly + Self.stagger * Double(max(taken.count - 1, 0))
+        let marker = sweeps && played != nil ? Self.markerHold : 0
+        return departure + Self.fly + Self.stagger * Double(max(taken.count - 1, 0)) + marker
     }
 
     /// The moment the fan leaves the cloth, which is when the phone should thump.
@@ -221,18 +225,27 @@ struct CardFlightLayer: View {
     }
 
     /// The card that was played. It comes in from the player who laid it, face down, turns
-    /// over on the way and then leads the fan across to whoever won it.
+    /// over on the way and then leads the fan across to whoever won it. A sweep's card
+    /// lands crosswise on the pile and lies there face up a moment, as the marker would.
     private func playedCard(_ card: Card) -> some View {
         flipping(card)
             .shadow(color: Palette.ink.opacity(0.45), radius: 12, y: 6)
             .rotationEffect(.degrees(playedAngle))
             .scaleEffect(playedScale)
-            .opacity(gone && !flight.laysDown ? 0 : (landed || flight.origin != nil ? 1 : 0))
             .position(playedPoint)
             .animation(.spring(duration: flight.travel, bounce: 0.24), value: landed)
             .animation(.spring(duration: flight.laysDown ? CardFlight.settle : CardFlight.gather,
                                bounce: 0.2), value: gathered)
-            .animation(.spring(duration: CardFlight.fly, bounce: 0.12), value: gone)
+            .animation(.spring(duration: CardFlight.fly, bounce: flight.sweeps ? 0.3 : 0.12), value: gone)
+            .opacity(gone && !flight.laysDown ? 0 : (landed || flight.origin != nil ? 1 : 0))
+            .animation(.spring(duration: flight.travel, bounce: 0.24), value: landed)
+            .animation(goneFade, value: gone)
+    }
+
+    /// An ordinary card fades as it flies; a sweep's stays until it has lain on the pile.
+    private var goneFade: Animation {
+        guard flight.sweeps else { return .spring(duration: CardFlight.fly, bounce: 0.12) }
+        return .easeIn(duration: 0.2).delay(CardFlight.fly + CardFlight.markerHold - 0.2)
     }
 
     /// The card turning over as it crosses. Your own card is already face up, so only a
@@ -289,13 +302,14 @@ struct CardFlightLayer: View {
             guard gathered, let resting = flight.restingWidth else { return 1 }
             return resting / flight.cardWidth
         }
-        if gone { return 0.3 * (fanWidth / flight.cardWidth) }
+        if gone { return (flight.sweeps ? 0.5 : 0.3) * (fanWidth / flight.cardWidth) }
         return gathered ? fanWidth / flight.cardWidth : 1
     }
 
     private var playedAngle: Double {
         guard landed else { return -8 }
-        return gathered && !gone ? fanAngle(0) : 0
+        if gone { return flight.sweeps ? 90 : 0 }
+        return gathered ? fanAngle(0) : 0
     }
 }
 

@@ -4,7 +4,8 @@ import ScopaCore
 /// The campaign's launch flags.
 ///
 /// `-campaign` opens the map. `-campaignStage 9` plants the road as won up to stage nine,
-/// in memory only. `-campaignReturn 6` plays the walk back from a three-star win at stage
+/// in memory only. `-campaignOld 21` plants it as a build from before Piemonte left it, won
+/// up to its stage 21, to check a region put in behind a player. `-campaignReturn 6` plays the walk back from a three-star win at stage
 /// six — a finale, so the region's prize card follows; `-campaignReturn 6 1` from a
 /// one-star win, `-campaignReturn 6 0` from a loss. `-campaignCard 7` opens stage seven's
 /// card. `-campaignPlay 4` sits straight down at stage four; with `-autoPlay` it walks back
@@ -22,6 +23,7 @@ extension DebugLaunch {
     }
 
     static var campaignStage: Int? { number(after: "-campaignStage") }
+    static var campaignOld: Int? { number(after: "-campaignOld") }
     static var campaignReturn: Int? { number(after: "-campaignReturn") }
     /// `-campaignReturn 1 2`: the stars that win earned, three when left out; 0 plays a loss.
     static var campaignReturnStars: Int {
@@ -80,6 +82,7 @@ extension DebugLaunch {
         #if DEBUG
         let book = store.campaignBook
         if let number = campaignStage { book.pretend(reached: number) }
+        if let number = campaignOld { book.pretendBeforePiemonte(reached: number) }
         if let number = campaignReturn { book.pretendReturn(from: number, stars: campaignReturnStars) }
         if showsCampaign || showsCampaignFaces { book.showsMap = true }
         if let number = campaignPlay, let stage = Campaign.stage(number: number) { store.playCampaign(stage) }

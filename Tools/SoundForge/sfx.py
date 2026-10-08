@@ -315,6 +315,36 @@ def settebello() -> np.ndarray:
     return _finish(parts, 2.3, wet=0.34, decay=2.4, peak=0.9, stereo=True)
 
 
+def rise() -> np.ndarray:
+    """A good card about to turn over out of a pack: bells climbing the A major chord,
+    closer and closer together, over a shimmer that brightens as they go. It stops on
+    the top note, with nothing resolved, because the card turning over is the answer.
+    """
+    rng = _rng(131)
+    parts = [(0.0, inst.sweepnoise(rng, 1.15, 1800.0, 8500.0, level=0.1), 0.0)]
+    at, gap = 0.0, 0.2
+    for i, note in enumerate((69, 73, 76, 81, 85, 88, 93, 97)):
+        parts.append((at, inst.handbell(dsp.midi_hz(note), 0.7, level=0.08 + 0.016 * i),
+                      -0.5 + 0.14 * i))
+        at += gap
+        gap *= 0.78
+    parts.append((0.55, inst.crackle(rng, 0.6, sparks=26, level=0.1), 0.0))
+    return _stage(parts, 1.5, wet=0.22, decay=1.4, peak=0.62)
+
+
+def shine() -> np.ndarray:
+    """A good card turned over: glitter thrown off it and the chord it climbed to, rung
+    together. Bright and short, so the settebello's own bells can sit on top of it.
+    """
+    rng = _rng(137)
+    parts = [(0.0, inst.crackle(rng, 1.0, sparks=60, level=0.2), 0.0),
+             (0.0, inst.coin(rng, level=0.22, freq=3200.0), 0.0)]
+    for i, note in enumerate((81, 85, 88, 93)):
+        parts.append((i * 0.018, inst.handbell(dsp.midi_hz(note), 1.3, level=0.16), -0.3 + 0.2 * i))
+    parts.append((0.02, inst.vibes(93, 1.2, level=0.1), 0.0))
+    return _stage(parts, 1.5, wet=0.24, decay=1.6, peak=0.74)
+
+
 # MARK: Metal
 
 
@@ -425,6 +455,8 @@ CATALOGUE = {
     "sfx_cheer_oro": cheer_oro,
     "sfx_deal": deal,
     "sfx_settebello": settebello,
+    "sfx_rise": rise,
+    "sfx_shine": shine,
     "sfx_denaro": denaro,
     "sfx_purchase": purchase,
     "sfx_tap": tap,

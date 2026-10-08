@@ -91,30 +91,13 @@ struct ContentView: View {
             .onChange(of: store.rank?.rating) { Task { await giveDivisionPacks() } }
     }
 
-    /// What each stop of the ranked road just passed pays: denari on the way through a
-    /// division, a pack at its top, each with a toast that says what came and where it went.
+    /// What the stops of the ranked road just passed pay, told in one toast. Never over a
+    /// result still being told: at the table it waits for the verdict, or for the way out.
     private func giveDivisionPacks() async {
-        guard let rank = store.rank, let season = rank.season else { return }
+        guard let rank = store.rank else { return }
         let locale = store.language.locale ?? .autoupdatingCurrent
-        for stop in DivisionGifts.climbed(in: rank) {
-            let reward = DivisionGifts.reward(at: stop)
-            let denari: Denari = if case .denari(let amount) = reward { amount } else { .zero }
-            guard await purse.awardDivision(key: DivisionGifts.key(season: season, stop: stop), denari: denari) == true
-            else { continue }
-            let standing = Ranking.standing(for: stop * DivisionGifts.stride)
-            let title = standing.leagueTitle(locale: locale)
-            switch reward {
-            case .pack(let tier):
-                store.albumBook.give(tier)
-                toaster.post(Toast(symbol: "gift.fill", tint: Palette.gold,
-                                   title: String(localized: "\(title) reached", locale: locale),
-                                   detail: String(localized: "A \(tier.title) pack is waiting in the album", locale: locale)))
-            case .denari(let amount):
-                toaster.post(Toast(symbol: "flag.fill", tint: Palette.gold,
-                                   title: String(localized: "A stop on the way through \(title)", locale: locale),
-                                   detail: String(localized: "+\(amount.coins) denari", locale: locale)))
-            }
-        }
+        guard let toast = await DivisionPayout.settle(rank, store: store, purse: purse, locale: locale) else { return }
+        if store.route == .table { toaster.hold(toast) } else { toaster.post(toast) }
     }
 
     private func audioReactions(_ content: some View) -> some View {
@@ -157,7 +140,11 @@ struct ContentView: View {
             .task(id: store.isSignedIn) { await friendsOnline.refreshAccess() }
             .task(id: beatsForFriends) { await beatForFriends() }
             // Held while a hand is being played; told on the way back out.
-            .onChange(of: store.route) { _, route in if route != .table { announceFriends() } }
+            .onChange(of: store.route) { _, route in
+                guard route != .table else { return }
+                announceFriends()
+                toaster.releaseHeld()
+            }
     }
 
     // MARK: Handlers

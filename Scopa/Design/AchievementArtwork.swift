@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The twelve Game Center badges, drawn rather than painted so the whole set can be
+/// The Game Center badges, drawn rather than painted so the whole set can be
 /// re-rendered at any size and stays one family.
 ///
 /// Every badge is the same tile, bottle green under a gold ring, and only the motif
@@ -26,12 +26,13 @@ struct AchievementArtwork: View {
         case streak7 = "daily_streak_7"
         case streak30 = "daily_streak_30"
         case firstOnlineWin = "first_online_win"
+        case treSette = "tre_sette"
 
         /// What the badge is worth, which is also what it is made of.
         var tier: Tier {
             switch self {
             case .firstScopa, .firstSettebello, .firstWin, .firstDaily: .cream
-            case .fiftyScope, .settebello25, .firstCappotto, .wins25, .streak7, .firstOnlineWin: .gold
+            case .fiftyScope, .settebello25, .firstCappotto, .wins25, .streak7, .firstOnlineWin, .treSette: .gold
             case .wins100, .streak30: .bright
             }
         }
@@ -170,6 +171,7 @@ struct AchievementArtwork: View {
         case .streak7: weekArc
         case .streak30: monthRing
         case .firstOnlineWin: crowned(reach: 700) { duel }
+        case .treSette: treSetteMotif
         }
     }
 
@@ -205,6 +207,38 @@ struct AchievementArtwork: View {
                 settebello(width: 220 * unit)
             }
             numeral("25", scale: 150)
+        }
+    }
+
+    /// Three sevens held as a hand, fanned from the wrist so each corner shows.
+    private var treSetteMotif: some View {
+        let inks: [Color] = [Self.seatBlue, Self.terracotta, Self.wood]
+        return ZStack {
+            ForEach(0..<3, id: \.self) { index in
+                seven(width: 270 * unit, ink: inks[index])
+                    .rotationEffect(.degrees(Double(index - 1) * 22), anchor: UnitPoint(x: 0.5, y: 1.5))
+            }
+        }
+        .offset(y: 30 * unit)
+    }
+
+    /// A seven of no suit in particular: the numeral in the corner a held card shows, a pip below.
+    private func seven(width: CGFloat, ink: Color) -> some View {
+        let fill = LinearGradient(colors: [ink.opacity(0.8), ink], startPoint: .top, endPoint: .bottom)
+        return plate(width: width, rim: true) {
+            ZStack(alignment: .topLeading) {
+                Color.clear
+                Text(verbatim: "7")
+                    .font(.system(size: width * 0.42, weight: .heavy, design: .serif))
+                    .foregroundStyle(fill)
+                    .padding(.leading, width * 0.12)
+                    .padding(.top, width * 0.06)
+                Rectangle().fill(fill)
+                    .frame(width: width * 0.24, height: width * 0.24)
+                    .rotationEffect(.degrees(45))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .offset(y: width * 0.18)
+            }
         }
     }
 

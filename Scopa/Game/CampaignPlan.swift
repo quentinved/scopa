@@ -3,16 +3,17 @@ import ScopaCore
 /// The road itself, region by region. Ids are written down against the stars, so a stage
 /// keeps its id for good once shipped; places and names may change freely.
 ///
-/// Difficulty climbs one pip about every six tables: Liguria teaches, Napoli and Sicilia
-/// ask for the normal bot's full attention, Venezia brings in the search, Roma never lets
-/// it go. The twists are tables the engine already deals — three or four chairs, a
-/// partner, a clock, the classic primiera, a longer game — and each region past Liguria
-/// teaches one house rule of its own: the napola in Napoli, asso piglia tutto in Sicilia,
-/// re bello in Venezia, and the scopone in Roma.
+/// Difficulty climbs one pip about every six tables: Liguria teaches, Piemonte holds the
+/// easy bot a little longer while the twists arrive, Napoli and Sicilia ask for the normal
+/// bot's full attention, Venezia brings in the search, Roma never lets it go. The twists
+/// are tables the engine already deals: three or four chairs, a partner, a clock, the
+/// classic primiera, a longer game. Piemonte, put in after the rest had shipped, keeps the
+/// classic rules; each region after it teaches one house rule of its own: the napola in
+/// Napoli, asso piglia tutto in Sicilia, re bello in Venezia, and the scopone in Roma.
 extension CampaignRegion {
     typealias Plan = CampaignStage.Plan
 
-    static let plan: [[Plan]] = [ligurian, neapolitan, sicilian, venetian, roman]
+    static let plan: [[Plan]] = [ligurian, piedmontese, neapolitan, sicilian, venetian, roman]
 
     private static let ligurian: [Plan] = [
         Plan(id: "genova", place: "Genova", opponent: "Laurence", difficulty: 1, target: 7),
@@ -21,6 +22,16 @@ extension CampaignRegion {
         Plan(id: "vernazza", place: "Vernazza", opponent: "Alexis", difficulty: 2, target: 11, seating: .three),
         Plan(id: "sanremo", place: "Sanremo", opponent: "Arthur", difficulty: 2, target: 11, seating: .teams),
         Plan(id: "portovenere", place: "Portovenere", opponent: "Hugo", difficulty: 3, target: 16),
+    ]
+
+    // Turin and its hills: four chairs, a clock at the Palio town, the old count at Barolo.
+    private static let piedmontese: [Plan] = [
+        Plan(id: "torino", place: "Torino", opponent: "Arthur", difficulty: 2, target: 11),
+        Plan(id: "langhe", place: "Langhe", opponent: "Timothée", difficulty: 2, target: 11, seating: .four),
+        Plan(id: "asti", place: "Asti", opponent: "Camille", difficulty: 2, target: 11, clock: .relaxed),
+        Plan(id: "barolo", place: "Barolo", opponent: "Loïc", difficulty: 3, target: 11, primiera: .classic),
+        Plan(id: "murazzi", place: "Murazzi del Po", opponent: "Alexis", difficulty: 3, target: 11, seating: .teams),
+        Plan(id: "mole", place: "Mole Antonelliana", opponent: "Hugo", difficulty: 3, target: 16),
     ]
 
     private static let neapolitan: [Plan] = [

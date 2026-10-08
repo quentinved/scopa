@@ -11,11 +11,9 @@ struct TableScreen: View {
     @State private var selection = HandSelection()
     @Environment(\.locale) private var locale
     @State private var showsScopa = false
-    /// The seven of coins, taken. Never shown at the same time as a sweep: a scopa that
-    /// happens to take it keeps the floor.
-    @State private var showsSettebello = false
-    /// Who took it, on that banner. Empty when it was you.
-    @State private var settebelloBy = ""
+    /// A take worth a plate: the seven of coins, or a house rule's moment. Never shown at
+    /// the same time as a sweep: a scopa that happens to take one keeps the floor.
+    @State private var highlight: HighlightMoment?
     @State private var showsDeal = false
     @State private var dealtHand = 1
     /// What a ranked table is worth, over the opening deal. Nil on every other table, and
@@ -38,6 +36,8 @@ struct TableScreen: View {
     /// When one tap last played a card, so the second half of a double tap made from habit
     /// is not taken for a tap of its own. See `playsOnFirstTap`.
     @State private var playedAt: Date?
+    /// The card a tap last put back down, and when, so a quick tap after it plays it. See `tapHand`.
+    @State private var putDownAt: (card: Card, time: Date)?
     /// On the way out of a finished game. A second tap on the way out counted the game
     /// twice and left the table under the ad the first tap had put up.
     @State private var isLeaving = false
@@ -162,6 +162,16 @@ struct TableScreen: View {
         if case .finished = view?.phase { true } else { false }
     }
 
+    /// How the game that just ended left this player, for the ad pacing. Nil while it is on.
+    private var ending: GameEnding? {
+        guard let view else { return nil }
+        switch view.phase {
+        case .finished(let winner): return store.stake != nil && winner != view.mySide ? .lostStake : .ordinary
+        case .roundOver where store.isDailyDeal: return .ordinary
+        default: return nil
+        }
+    }
+
     /// The table and what sits on it, then everything that reacts to it. Kept in separate
     /// expressions because one chain of forty modifiers is more than the type checker will
     /// take in reasonable time.
@@ -207,18 +217,12 @@ struct TableScreen: View {
     /// Everything laid over the cloth: the callouts, the sheets and the way out.
     private func banners(_ content: some View) -> some View {
         content
-            .overlay { settebelloBanner }
+            .overlay { highlightPlate }
             .overlay {
                 if showsScopa { ScopaBanner(by: scopaBy, flourish: scopaFlourish) }
             }
             .overlay { if showsDeal { DealBanner(hand: dealtHand) } }
-            .task {
-                guard DebugLaunch.repeatsSweep else { return }
-                while !Task.isCancelled {
-                    announceScopa(by: "")
-                    try? await Task.sleep(for: .seconds(3))
-                }
-            }
+            .task { await repeatMoments() }
             .overlay { stakesBanner }
             .onChange(of: stakes == nil) { _, gone in if gone, stakesTold { holdForStakes(false) } }
             .overlay(alignment: .topTrailing) { ReactionBubbles(store: store) }
@@ -238,18 +242,33 @@ struct TableScreen: View {
             .overlay { passCurtain }
     }
 
-    /// Placed rather than centred: see `settebelloHeight`. The reader stays outside the `if`
-    /// so the banner itself is the view being inserted and its own transition runs.
-    private var settebelloBanner: some View {
+    /// Placed rather than centred: see `highlightHeight`. The reader stays outside the `if`
+    /// so the plate itself is the view being inserted and its own transition runs.
+    private var highlightPlate: some View {
         GeometryReader { proxy in
-            if showsSettebello {
-                SettebelloBanner(by: settebelloBy)
+            if let highlight {
+                HighlightPlate(highlight: highlight.kind, by: highlight.by)
+                    .id(highlight.id)
                     .frame(width: proxy.size.width)
                     .position(x: proxy.size.width / 2,
-                              y: proxy.size.height * settebelloHeight)
+                              y: proxy.size.height * highlightHeight)
             }
         }
         .allowsHitTesting(false)
+    }
+
+    /// `-sweep` and `-highlight` play their moment every few seconds, `-theirs` as an
+    /// opponent's, so it can be watched without waiting for a real one.
+    private func repeatMoments() async {
+        let sweeps = DebugLaunch.repeatsSweep
+        let kind = DebugLaunch.highlight
+        guard sweeps || kind != nil else { return }
+        let by = DebugLaunch.showsTheirMoment ? "Lucia" : ""
+        while !Task.isCancelled {
+            if sweeps { announceScopa(by: by) }
+            if let kind { showHighlight(kind, by: by) }
+            try? await Task.sleep(for: .seconds(1.9))
+        }
     }
 
     /// Placed high rather than centred: the bot is already thinking by the time this comes
@@ -306,7 +325,7 @@ struct TableScreen: View {
             .onChange(of: store.leftovers) { _, leftovers in handleLeftovers(leftovers) }
             .task(id: flight?.id) { await runFlight() }
             .task(id: pilePop?.id) { await fadePilePop() }
-            .task(id: showsSettebello) { await fadeSettebello() }
+            .task(id: highlight?.id) { await fadeHighlight() }
             .sensoryFeedback(trigger: store.lastPlay?.id) { _, _ in playFeedback() }
             .sensoryFeedback(trigger: selection.card) { _, picked in picked == nil ? nil : Haptic.pick }
             .onChange(of: view?.isMyTurn == true && !gameIsOver) { was, now in feelTurn(was: was, now: now) }
@@ -332,7 +351,11 @@ struct TableScreen: View {
             .task(id: view?.turnSeat) { await playForMe() }
             .task(id: view?.phase) { await dealForMe() }
             .task(id: handAndTurn) { await selectFirstCard() }
+            .onChange(of: view?.hand, initial: true) { _, hand in noticeSevens(hand) }
             .task { warmAds() }
+            // Again at every round's end: a load that failed or went stale gets another try
+            // while the summary is still telling the round.
+            .onChange(of: view?.phase == .playing) { _, playing in if !playing { ads.prepareForEndOfGame() } }
             .task(id: store.view?.configuration.players.map(\.id)) { await loadRanks() }
             .sheet(isPresented: $showsPile) { if let view = store.view { PileSheet(view: view) } }
             .onChange(of: store.view?.isFinished) { _, finished in clearEarnings(finished: finished) }
@@ -361,8 +384,9 @@ struct TableScreen: View {
         scopaFlourish = flourish(ofSeat: seat)
         withAnimation(.spring(duration: 0.35)) { showsScopa = true }
         scopaTimer?.cancel()
+        let length = ScopaBanner.length(for: scopaFlourish)
         scopaTimer = Task {
-            try? await Task.sleep(for: .seconds(1.9))
+            try? await Task.sleep(for: .seconds(length))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { showsScopa = false }
             store.clearNotice()
@@ -404,9 +428,8 @@ struct TableScreen: View {
         // cards this play took are still where the layout put them.
         sendFlight(for: play, in: view)
         feel(play, in: view)
-        if play.tookSettebello, !play.sweeps {
-            settebelloBy = play.seat == view.seat ? "" : play.name
-            withAnimation(.spring(duration: 0.32, bounce: 0.3)) { showsSettebello = true }
+        if let kind = TableHighlight.of(play, in: view) {
+            showHighlight(kind, by: play.seat == view.seat ? "" : play.name)
         }
         withAnimation(.spring(duration: 0.38, bounce: 0.22)) { lastMove = play }
         if play.seat == view.seat { popPile(for: play) } else { readCoach(on: play, in: view) }
@@ -500,13 +523,18 @@ struct TableScreen: View {
         withAnimation(.easeOut(duration: 0.3)) { pilePop = nil }
     }
 
-    /// Shorter than the sweep's banner: the seven is worth stopping for, not worth
+    private func showHighlight(_ kind: TableHighlight, by name: String) {
+        withAnimation(.spring(duration: 0.32, bounce: 0.3)) { highlight = HighlightMoment(kind: kind, by: name) }
+        kind.feel(mine: name.isEmpty)
+    }
+
+    /// Shorter than the sweep's banner: a prize is worth stopping for, not worth
     /// stopping the game for.
-    private func fadeSettebello() async {
-        guard showsSettebello else { return }
-        try? await Task.sleep(for: .seconds(1.5))
+    private func fadeHighlight() async {
+        guard let moment = highlight else { return }
+        try? await Task.sleep(for: .seconds(moment.kind.length(mine: moment.by.isEmpty)))
         guard !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.3)) { showsSettebello = false }
+        withAnimation(.easeOut(duration: 0.3)) { highlight = nil }
     }
 
     // MARK: - Haptics
@@ -516,8 +544,9 @@ struct TableScreen: View {
     private func playFeedback() -> SensoryFeedback? {
         guard let play = store.lastPlay, let view else { return nil }
         if play.sweeps { return nil }
-        if play.tookSettebello { return Haptic.settebello }
         let mine = play.seat == view.seat
+        // Your own seven is the prize pattern `TableHighlight.feel` plays.
+        if play.tookSettebello { return mine ? nil : Haptic.settebello }
         if play.captures.isEmpty { return mine ? Haptic.play : Haptic.pick }
         return mine ? nil : Haptic.theirTake
     }
@@ -575,6 +604,12 @@ struct TableScreen: View {
         try? await Task.sleep(for: .milliseconds(120))
         guard !Task.isCancelled, selection.isEmpty, let card = view.hand.first else { return }
         selection.select(card, on: view.table)
+    }
+
+    /// Three sevens in a hand held by a person on this phone, at a table that counts for achievements.
+    private func noticeSevens(_ hand: [Card]?) {
+        guard let hand, let view, store.tally != nil, store.reviewableSeats.contains(view.seat) else { return }
+        Achievements.hold(hand)
     }
 
     /// Warmed on arrival: the first round can already end the game, so the ad cannot wait
@@ -837,7 +872,14 @@ struct TableScreen: View {
 
     private var leaveButton: some View {
         Button {
-            if leaving != nil { confirmsLeave = true } else { store.leaveTable() }
+            // A finished game leaves the way the summary's button does, ad pacing and all.
+            if let ending {
+                leave(after: ending)
+            } else if leaving != nil {
+                confirmsLeave = true
+            } else {
+                store.leaveTable()
+            }
         } label: {
             Image(systemName: "xmark")
                 .font(.system(size: 16, weight: .semibold))
@@ -1383,6 +1425,9 @@ struct TableScreen: View {
     /// double tap failing. VoiceOver's activations are never quick, so there every second
     /// tap counts, and one that cannot play puts the card down.
     ///
+    /// A double tap on a card already up puts it down on the first tap, so the quick second
+    /// one plays it as if it had been picked fresh, or lifts it again when there is a choice.
+    ///
     /// With one tap set to play, the first tap already does what the second would have.
     /// Whatever it cannot play falls through to all of the above unchanged.
     private func tapHand(_ card: Card, at time: Date, in view: PlayerView) {
@@ -1398,8 +1443,17 @@ struct TableScreen: View {
             return
         }
         if quick, !voiceOver, selection.card == card { return }
+        if !voiceOver, putDown(card, before: time), playsOnFirstTap(card, at: time, in: view) { return }
+        let wasUp = selection.card == card
         withAnimation(.snappy(duration: 0.22)) { selection.select(card, on: view.table) }
         pickedAt = selection.card == nil ? nil : time
+        putDownAt = wasUp && selection.card == nil ? (card, time) : nil
+    }
+
+    /// Whether the last tap put this card down a moment ago, which makes this tap a double tap's second half.
+    private func putDown(_ card: Card, before time: Date) -> Bool {
+        guard let putDownAt, putDownAt.card == card else { return false }
+        return time.timeIntervalSince(putDownAt.time) < Self.doubleTap
     }
 
     /// Plays the card when it has one move only, and says whether the tap is spent. A tap
@@ -1444,7 +1498,10 @@ struct TableScreen: View {
                 // The card this touch picked up is a first tap and stays picked up; one
                 // that was already up is the second tap, which plays it. With one tap set
                 // to play, a first tap is a tap like any other.
-                if !liftedByDrag || store.oneTapPlays { tapHand(card, at: time, in: view) }
+                // A card lifted again just after a tap put it down is a double tap's second half too.
+                if !liftedByDrag || store.oneTapPlays || putDown(card, before: time) {
+                    tapHand(card, at: time, in: view)
+                }
             } else if travel.height < -60 {
                 throwToTable(card, in: view)
             }
@@ -1813,17 +1870,17 @@ struct TableScreen: View {
             : String(localized: "Them", locale: locale)
     }
 
-    /// Where the settebello banner sits, as a fraction of the table's height.
+    /// Where a highlight's plate sits, as a fraction of the table's height.
     ///
-    /// Not centred: the seven is on its way to somebody's pile, so the banner sits on that
+    /// Not centred: the prize is on its way to somebody's pile, so the banner sits on that
     /// side of the table. An opponent's rides up over their end, covering the last-play chip.
     /// Yours stays down between the table and the status row, covering the stock count
     /// whole, since your hand must not be covered at the moment the seven is called.
     ///
     /// Landscape sits both a little higher: the table comes out of about 390 points there
     /// instead of 850, so the same fraction is much further down the cloth.
-    private var settebelloHeight: CGFloat {
-        settebelloBy.isEmpty
+    private var highlightHeight: CGFloat {
+        highlight?.by.isEmpty ?? true
             ? stage.pick(tall: 0.485, wide: 0.45)
             : stage.pick(tall: 0.22, wide: 0.18)
     }
@@ -2072,7 +2129,7 @@ struct TableScreen: View {
         guard !isLeaving else { return }
         isLeaving = true
         Task {
-            await ads.endOfGame(store.stake == nil ? .ordinary : .lostStake)
+            await ads.endOfGame(ending ?? .ordinary)
             store.playAgain()
             isLeaving = false
         }

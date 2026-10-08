@@ -458,12 +458,15 @@ private struct LeaguePanel: View {
         .overlay { RoundedRectangle(cornerRadius: GlassRadius.panel).strokeBorder(metal.base.opacity(0.25), lineWidth: 1) }
     }
 
-    /// The division with its road: the coins on the way and the pack at the end, then what
-    /// the next stop pays.
+    /// The division with its road: the coins on the way and the pack at the end, then the
+    /// points in it and to the next one, then what the next stop pays.
     private var progressBar: some View {
         VStack(alignment: .leading, spacing: 4) {
             DivisionRoad(rating: store.rank?.rating ?? 0, metal: metal)
-            if store.rank != nil { NextStop(rating: store.rank?.rating ?? 0) }
+            if let rank = store.rank {
+                DivisionPoints(rating: rank.rating)
+                NextStop(rating: rank.rating)
+            }
         }
     }
 

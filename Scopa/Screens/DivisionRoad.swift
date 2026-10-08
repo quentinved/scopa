@@ -15,7 +15,8 @@ struct DivisionRoad: View {
         Double(Ranking.standing(for: rating).progress) / Double(Ranking.pointsPerDivision)
     }
 
-    private var atTop: Bool { rating >= Ranking.top }
+    /// The last division has no pack at its end: the ladder stops a point short of it.
+    private var atTop: Bool { (Ranking.standing(for: rating).step + 1) * Ranking.pointsPerDivision > Ranking.top }
 
     var body: some View {
         GeometryReader { proxy in
@@ -83,8 +84,37 @@ struct NextStop: View {
     }
 
     private var next: (Int, DivisionGifts.Reward)? {
-        guard rating < Ranking.top else { return nil }
         let stop = DivisionGifts.stop(for: rating) + 1
+        guard stop * DivisionGifts.stride <= Ranking.top else { return nil }
         return (stop * DivisionGifts.stride - max(rating, 0), DivisionGifts.reward(at: stop))
+    }
+}
+
+/// The division in plain numbers: the points in it out of a hundred, and how many more the
+/// next division wants. At the very top there is no next one, and it says so.
+struct DivisionPoints: View {
+    @Environment(\.lift) private var lift
+    @Environment(\.locale) private var locale
+    let rating: Int
+
+    var body: some View {
+        HStack(spacing: 6 * lift) {
+            Text("\(Ranking.standing(for: rating).progress)/\(Ranking.pointsPerDivision) points")
+                .foregroundStyle(Palette.onTable)
+            Spacer(minLength: 0)
+            Text(verbatim: ahead)
+                .foregroundStyle(Palette.onTableSoft)
+        }
+        .font(.system(size: 11.5 * lift, weight: .semibold))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+
+    private var ahead: String {
+        let next = (Ranking.standing(for: rating).step + 1) * Ranking.pointsPerDivision
+        guard next <= Ranking.top else { return String(localized: "Top of the ladder", locale: locale) }
+        let title = Ranking.standing(for: next).leagueTitle(locale: locale)
+        return String(localized: "\(next - max(rating, 0)) more for \(title)", locale: locale)
     }
 }

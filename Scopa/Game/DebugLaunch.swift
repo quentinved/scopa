@@ -172,6 +172,33 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-scorePad` opens the score pad for a game played with real cards. `-scorePad board`
+    /// opens it on three hands already counted.
+    static var showsScorePad: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-scorePad")
+        #else
+        false
+        #endif
+    }
+
+    static var scorePadSample: ScorePad? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.firstIndex(of: "-scorePad").flatMap({ arguments[safe: $0 + 1] }) == "board" else { return nil }
+        var pad = ScorePad(sides: ["Quentin", "Giulia", "Marco"])
+        for (cards, coins, settebello, primiera, scope) in [(0, 1, 0, 2, [1, 0, 0]), (1, 1, 2, 1, [0, 2, 0]),
+                                                             (2, 0, 1, 0, [0, 0, 1])] {
+            var hand = ScorePad.Hand(sides: 3)
+            (hand.cards, hand.coins, hand.settebello, hand.primiera, hand.scope) = (cards, coins, settebello, primiera, scope)
+            pad.add(hand)
+        }
+        return pad
+        #else
+        nil
+        #endif
+    }
+
     /// `-online` opens the Online sheet, where the league panel lives. Pair it with `-rank`.
     static var showsOnlineSheet: Bool {
         #if DEBUG
@@ -334,6 +361,32 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-highlight settebello` puts that plate on the cloth every few seconds, as `-sweep`
+    /// does the band. Also `reBello`, `napola` and `asso`.
+    static var highlight: TableHighlight? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        switch arguments.firstIndex(of: "-highlight").flatMap({ arguments[safe: $0 + 1] }) {
+        case "settebello": return .settebello
+        case "reBello": return .reBello
+        case "napola": return .napola(points: 4)
+        case "asso": return .assoPigliaTutto(Card(.ace, of: .cups))
+        default: return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-theirs` plays `-sweep` and `-highlight` as an opponent's, the smaller version.
+    static var showsTheirMoment: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-theirs")
+        #else
+        false
+        #endif
+    }
+
     /// `-tapis velluto` lays that cloth on the table without buying it, so a cloth can be
     /// judged at the size it is actually drawn at rather than in a swatch.
     static var tapis: Tapis? {
@@ -405,6 +458,15 @@ enum DebugLaunch {
     static var startsCoached: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains("-coach")
+        #else
+        false
+        #endif
+    }
+
+    /// `-coachChoice` puts up the first launch's Coached-or-Normal question over the lobby.
+    static var showsCoachChoice: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-coachChoice")
         #else
         false
         #endif
@@ -545,6 +607,65 @@ enum DebugLaunch {
         return arguments.firstIndex(of: "-packStep").flatMap { arguments[safe: $0 + 1] }
         #else
         return nil
+        #endif
+    }
+
+    /// `-packHold` keeps a `-packStep` card face down, gathering itself, so the wait before
+    /// a rare card turns over can be looked at. `-packHold 8.5` turns it over that many
+    /// seconds after launch instead, for catching the sparks in a timed screenshot.
+    static var packHolds: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-packHold")
+        #else
+        false
+        #endif
+    }
+
+    static var packHoldSeconds: Double? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-packHold").flatMap { arguments[safe: $0 + 1] }.flatMap(Double.init)
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-packCards 7d,Kc,3s` rigs the next pack opened to hold exactly those cards, named
+    /// the way `Card.description` writes them, so the settebello can be seen turning over
+    /// without opening thirty packs for it.
+    static var packCards: [Card]? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let list = arguments.firstIndex(of: "-packCards").flatMap({ arguments[safe: $0 + 1] })
+        else { return nil }
+        let cards = list.split(separator: ",").compactMap { name in
+            Deck.standard.first { $0.description == name }
+        }
+        return cards.isEmpty ? nil : cards
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-packFinale cups` has the next pack opened finish that suit, whatever it held, and
+    /// `-packFinale deck` the whole deck, so the ending can be looked at. Nothing is paid
+    /// for it: only the opening is told.
+    static var packFinale: String? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-packFinale").flatMap { arguments[safe: $0 + 1] }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-packAutoplay` taps through an opening by itself every 2.2 seconds and starts it
+    /// again once it is counted, so a reveal can be measured for minutes without hands.
+    static var packAutoplay: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-packAutoplay")
+        #else
+        false
         #endif
     }
 

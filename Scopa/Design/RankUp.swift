@@ -69,6 +69,7 @@ private struct LadderCeremonyHost: ViewModifier {
     @Bindable var store: TableStore
     @State private var ceremony = LadderCeremony()
     @State private var showsRoad = false
+    @Environment(Toaster.self) private var toaster: Toaster?
 
     func body(content: Content) -> some View {
         content
@@ -86,6 +87,8 @@ private struct LadderCeremonyHost: ViewModifier {
             .task { await arrive() }
             .onChange(of: store.rank) { if store.route == .lobby { ceremony.check() } }
             .onChange(of: store.route) { _, route in if route == .lobby { ceremony.checkSoon() } }
+            // News held for the end of a ranked result comes after the ceremony, not over it.
+            .onChange(of: ceremony.showing == nil) { _, closed in if closed { toaster?.releaseHeld() } }
     }
 
     /// Picks up a league cached by a build older than the prizes, then checks.

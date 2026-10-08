@@ -160,6 +160,17 @@ let catalogue: [Badge] = [
                       before: "Vinci una partita online.",
                       after: "Vinta contro un avversario vero."),
     ]),
+    Badge(id: "tre_sette", reference: "Three Sevens", points: 25, words: [
+        "en-US": Wording(title: "Tre Sette",
+                         before: "Hold three sevens in your hand at once.",
+                         after: "Three sevens in one hand."),
+        "fr-FR": Wording(title: "Tre Sette",
+                         before: "Ayez trois sept en main en même temps.",
+                         after: "Trois sept dans la même main."),
+        "it": Wording(title: "Tre Sette",
+                      before: "Tieni in mano tre sette insieme.",
+                      after: "Tre sette in una mano sola."),
+    ]),
 ]
 
 // MARK: Setup

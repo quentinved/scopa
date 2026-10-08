@@ -2,7 +2,7 @@ import SwiftUI
 import ScopaCore
 import ScopaRewards
 
-/// The solo campaign: thirty tables across Italy, region by region, each a little harder
+/// The solo campaign: thirty-six tables across Italy, region by region, each a little harder
 /// than the last.
 ///
 /// Every stage is a table the engine already deals — a seat count, a target, a clock, a
@@ -15,11 +15,19 @@ enum Campaign {
 
     /// Counted from one, as the map prints it.
     static func stage(number: Int) -> CampaignStage? { stages[safe: number - 1] }
+
+    /// The table after the furthest one won, the first when none is, the last once it is won.
+    /// A region put in ahead of won tables leaves a gap, and this still stands past it.
+    static func frontier(won: (CampaignStage) -> Bool) -> CampaignStage {
+        guard let furthest = stages.last(where: won) else { return stages[0] }
+        return stage(number: furthest.number + 1) ?? furthest
+    }
 }
 
 /// One stretch of the road, with its own ground on the map and its own prize at the end.
 enum CampaignRegion: String, CaseIterable, Identifiable {
-    case liguria, napoli, sicilia, venezia, roma
+    // Shown in this order. Stars are kept by stage id, so a region can be put in anywhere.
+    case liguria, piemonte, napoli, sicilia, venezia, roma
 
     var id: String { rawValue }
 
@@ -27,6 +35,7 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .liguria: "Liguria"
+        case .piemonte: "Piemonte"
         case .napoli: "Napoli"
         case .sicilia: "Sicilia"
         case .venezia: "Venezia"
@@ -34,13 +43,14 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
         }
     }
 
-    var numeral: String { ["I", "II", "III", "IV", "V"][index] }
+    var numeral: String { ["I", "II", "III", "IV", "V", "VI"][index] }
 
     var index: Int { Self.allCases.firstIndex(of: self) ?? 0 }
 
     var tagline: LocalizedStringKey {
         switch self {
         case .liguria: "Lemon terraces and harbour cafés"
+        case .piemonte: "Fog on the Po and chocolate in the cup"
         case .napoli: "Coffee, noise and quick hands"
         case .sicilia: "Sun, salt and long games"
         case .venezia: "Lamplight on the canals"
@@ -48,10 +58,11 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The house rule the region teaches. Liguria plays the classic game, so nobody is lost.
+    /// The house rule the region teaches. Liguria and Piemonte play the classic game, so
+    /// nobody is lost.
     var rule: HouseRule? {
         switch self {
-        case .liguria: nil
+        case .liguria, .piemonte: nil
         case .napoli: .napola
         case .sicilia: .assoPigliaTutto
         case .venezia: .reBello
@@ -63,6 +74,7 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
     var ground: (light: Color, deep: Color) {
         switch self {
         case .liguria: (Color(red: 0.20, green: 0.42, blue: 0.47), Color(red: 0.08, green: 0.25, blue: 0.30))
+        case .piemonte: (Color(red: 0.40, green: 0.20, blue: 0.29), Color(red: 0.21, green: 0.08, blue: 0.15))
         case .napoli: (Color(red: 0.47, green: 0.27, blue: 0.20), Color(red: 0.27, green: 0.13, blue: 0.10))
         case .sicilia: (Color(red: 0.55, green: 0.40, blue: 0.16), Color(red: 0.33, green: 0.21, blue: 0.07))
         case .venezia: (Color(red: 0.19, green: 0.21, blue: 0.38), Color(red: 0.08, green: 0.09, blue: 0.20))
@@ -73,7 +85,7 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
     /// The pack waiting in the album once the region's last table is won.
     var pack: PackTier {
         switch self {
-        case .liguria, .napoli: .bottega
+        case .liguria, .piemonte, .napoli: .bottega
         case .sicilia, .venezia: .velluto
         case .roma: .reliquia
         }
@@ -89,6 +101,7 @@ enum CampaignRegion: String, CaseIterable, Identifiable {
     var prize: Prize {
         switch self {
         case .liguria: .mark(.sail)
+        case .piemonte: .mark(.wine)
         case .napoli: .mark(.espresso)
         case .sicilia: .tapis(.maiolica)
         case .venezia: .cornice(.onde)

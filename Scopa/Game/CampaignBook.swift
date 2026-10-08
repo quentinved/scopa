@@ -65,8 +65,9 @@ final class CampaignBook {
     }
 
     /// The first table is always open; every other one opens on a win at the table before.
+    /// A table already won stays open, even when a region was put in ahead of it since.
     func isUnlocked(_ stage: CampaignStage) -> Bool {
-        guard let previous = Campaign.stage(number: stage.number - 1) else { return true }
+        guard !isCleared(stage), let previous = Campaign.stage(number: stage.number - 1) else { return true }
         return isCleared(previous)
     }
 
@@ -117,6 +118,15 @@ final class CampaignBook {
     func pretend(reached number: Int) {
         for stage in Campaign.stages where stage.number < number {
             stars[stage.id] = max(stars[stage.id] ?? 0, 1 + (stage.number * 7) % 3)
+        }
+    }
+
+    /// Plants the road as a build from before Piemonte left it: won up to, not including,
+    /// stage `number` of the thirty it counted then, and nothing in Piemonte. Memory only.
+    func pretendBeforePiemonte(reached number: Int) {
+        let old = Campaign.stages.filter { $0.region != .piemonte }
+        for (offset, stage) in old.prefix(max(number - 1, 0)).enumerated() {
+            stars[stage.id] = max(stars[stage.id] ?? 0, 1 + (offset * 7) % 3)
         }
     }
 

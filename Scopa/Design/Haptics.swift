@@ -24,6 +24,8 @@ enum Haptic {
     static let tear: SensoryFeedback = .impact(weight: .heavy, intensity: 0.85)
     /// An ordinary card turned over out of a pack.
     static let turn: SensoryFeedback = .impact(flexibility: .soft, intensity: 0.5)
+    /// A court or a rare thing going over out of a pack: firmer than a numeral.
+    static let flip: SensoryFeedback = .impact(weight: .medium, intensity: 0.8)
     /// Something out of a pack that was worth waiting for.
     static let prize: SensoryFeedback = .success
     /// NEW landing on something out of a pack that you did not have.

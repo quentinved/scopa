@@ -278,6 +278,9 @@ extension EnvironmentValues {
     /// Set once at the root. Optional, since a default instance would be built off the
     /// main actor.
     @Entry var bannerCovers: BannerCovers? = nil
+    /// The height of the strip under this sheet. A page pushed inside the sheet's navigation
+    /// stack is not given the strip's inset, so it pads itself with this.
+    @Entry var bannerClearance: CGFloat = 0
 }
 
 extension View {
@@ -305,6 +308,7 @@ private struct CoversBanner: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .environment(\.bannerClearance, showsStrip && ads?.interrupts == true ? ads?.gateway.bannerHeight ?? 0 : 0)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if let ads { BannerSlot(ads: ads, isVisible: showsStrip, bleedsDown: false) }
             }

@@ -6,7 +6,7 @@ import ScopaRewards
 /// Game Center achievements, by the ids set up in App Store Connect.
 ///
 /// The counts live on the device rather than being read back from Game Center, so a game
-/// played signed out still counts once the player signs in. Every report sends all twelve and
+/// played signed out still counts once the player signs in. Every report sends them all and
 /// Game Center keeps whichever value is higher.
 enum Achievements {
     /// The ids, exactly as they must be entered in App Store Connect.
@@ -23,9 +23,10 @@ enum Achievements {
         static let streak7 = "daily_streak_7"
         static let streak30 = "daily_streak_30"
         static let firstOnlineWin = "first_online_win"
+        static let treSette = "tre_sette"
 
         static let all = [firstScopa, fiftyScope, firstSettebello, settebello25, firstCappotto, firstWin,
-                          wins25, wins100, firstDaily, streak7, streak30, firstOnlineWin]
+                          wins25, wins100, firstDaily, streak7, streak30, firstOnlineWin, treSette]
     }
 
     private enum Key {
@@ -36,6 +37,8 @@ enum Achievements {
         static let losses = "achievements.losses"
         static let daily = "achievements.daily"
         static let onlineWins = "achievements.onlineWins"
+        /// One once a hand has held three sevens at once.
+        static let treSette = "achievements.treSette"
         /// The last game counted, so a summary that appears twice is not two games.
         static let lastGame = "achievements.lastGame"
     }
@@ -98,8 +101,18 @@ enum Achievements {
             ID.streak7: percent(streak, of: 7),
             ID.streak30: percent(streak, of: 30),
             ID.firstOnlineWin: percent(onlineWins, of: 1),
+            ID.treSette: percent(UserDefaults.standard.integer(forKey: Key.treSette), of: 1),
         ]
         GameCenter.report(progress.filter { $0.value > 0 })
+    }
+
+    /// A hand on the table, for three sevens held at once. Reported the first time only, so the
+    /// banner comes with the deal; every finished game sends it again for a phone signed out then.
+    static func hold(_ hand: [Card]) {
+        guard hand.filter({ $0.rank == .seven }).count >= 3,
+              UserDefaults.standard.integer(forKey: Key.treSette) == 0 else { return }
+        UserDefaults.standard.set(1, forKey: Key.treSette)
+        GameCenter.report([ID.treSette: 100])
     }
 
     #if DEBUG

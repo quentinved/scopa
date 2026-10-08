@@ -42,6 +42,16 @@ struct PackOpening: View {
     @State private var act: Act = .sealed
     /// How far the pack has been dragged open, 0 to 1.
     @State private var pull: CGFloat = 0
+    /// Whether the thing in the middle has gone over yet. Each one lands face down and
+    /// waits as long as its fanfare says, or until a tap hurries it.
+    @State private var faceUp = false
+    @State private var turning: Task<Void, Never>?
+    /// Counted up to fire the room's own flash and shake, which belong to the screen and
+    /// not to the card.
+    @State private var flares = 0
+    @State private var shakes = 0
+    /// The pack has been torn, and what is best inside it is showing through the tear.
+    @State private var torn = false
 
     /// The cards in the order they are shown, which is not the order they were drawn.
     ///
@@ -63,8 +73,23 @@ struct PackOpening: View {
             .map(\.element)
     }
 
-    /// How many things there are to turn over: the cards, then anything off the shelves.
-    private var steps: Int { running.count + opening.won.count }
+    /// One thing to turn over: a card, something off the shelves, or — once everything
+    /// is up — a suit or the whole deck finished by this pack.
+    private enum Step {
+        case card(Album.Found)
+        case won(AlbumBook.Won)
+        case finale(SuitFinale.Kind)
+    }
+
+    /// The cards, then anything off the shelves, then what they finished.
+    private var sequence: [Step] {
+        running.map(Step.card) + opening.won.map(Step.won)
+            + opening.suits.map { .finale(.suit($0)) } + (opening.deck ? [.finale(.deck)] : [])
+    }
+
+    private var steps: Int { sequence.count }
+
+    private func step(at place: Int) -> Step { sequence[place] }
 
     /// The cloth under it, so what it drops is the table's own shadow.
     @Environment(\.tableFelt) private var felt
@@ -72,16 +97,24 @@ struct PackOpening: View {
     var body: some View {
         ZStack {
             ground
+            dimmer
             content
+                .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakes) { view, x in
+                    view.offset(x: x)
+                } keyframes: { _ in Self.shake }
+            if torn, best > .quiet { tearLight }
             skipHint
+            flare
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(TableGround())
         .contentShape(.rect)
         .onTapGesture(perform: advance)
         .sensoryFeedback(trigger: act) { _, act in feedback(for: act) }
+        .sensoryFeedback(trigger: faceUp) { _, up in up ? turnFeedback : nil }
         .statusBarHidden()
         .task { jump() }
+        .task { await autoplay() }
     }
 
     // MARK: The room
@@ -89,16 +122,22 @@ struct PackOpening: View {
     /// A wash of the pack's own colour behind everything, so a reliquia does not open on
     /// the same green a mazzetto does.
     private var ground: some View {
-        RadialGradient(colors: [PackLook.accent(opening.tier).opacity(glow), .clear],
+        RadialGradient(colors: [groundTint.opacity(glow), .clear],
                        center: .center, startRadius: 0, endRadius: 420)
             .ignoresSafeArea()
             .animation(.easeOut(duration: 0.6), value: act)
     }
 
+    /// The pack's colour, except through the tear: what comes out of it first is the
+    /// light of the best card inside, so a gold tear means a gold card.
+    private var groundTint: Color {
+        act == .tearing && best > .quiet ? bestTint : PackLook.accent(opening.tier)
+    }
+
     private var glow: Double {
         switch act {
         case .sealed: 0.10
-        case .tearing: 0.26
+        case .tearing: best >= .grand ? 0.42 : 0.26
         case .turning: 0.18
         case .counted: 0.12
         }
@@ -219,13 +258,21 @@ struct PackOpening: View {
 
     private func open() {
         withAnimation(.easeIn(duration: 0.4)) { act = .tearing }
+        torn = true
         Audio.shared.play(.deal)
         Task {
-            try? await Task.sleep(for: .milliseconds(420))
+            try? await Task.sleep(for: .milliseconds(best >= .grand ? 560 : 420))
             guard !Task.isCancelled else { return }
-            withAnimation(.spring(duration: 0.5, bounce: 0.24)) { act = .turning(place: 0) }
-            say(at: 0)
+            show(0)
         }
+    }
+
+    /// Sparks out of the tear, in the colour of the best thing in the pack. Nothing for a
+    /// pack of numerals: a pack of numerals should open like one.
+    private var tearLight: some View {
+        SparkBurst(sparks: best.sparks / 2, coins: best.coins / 3,
+                   palette: [bestTint, .white, bestTint], force: 300, seed: 7)
+            .offset(y: -125)
     }
 
     // MARK: Turning them over
@@ -236,10 +283,12 @@ struct PackOpening: View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
             ZStack {
-                if place < running.count {
-                    foundCard(running[place], place: place)
-                } else {
-                    wonTile(opening.won[place - running.count])
+                switch step(at: place) {
+                case .card(let found): foundCard(found, place: place)
+                case .won(let won): wonTile(won)
+                case .finale(let kind):
+                    SuitFinale(kind: kind, volume: opening.volume, name: name, crowned: faceUp,
+                               note: kind == .deck ? prizeNote : nil)
                 }
             }
             .id(place)
@@ -254,35 +303,46 @@ struct PackOpening: View {
         .padding(.vertical, 24)
     }
 
-    /// A card, turned over, with its rarity behind it and what it was under it.
+    /// A card, face down until it goes over, with its rarity behind it and what it was
+    /// under it.
     private func foundCard(_ found: Album.Found, place: Int) -> some View {
         let rarity = found.card.rarity
         return VStack(spacing: 18) {
-            ZStack {
-                RarityBurst(count: Rarities.rays(rarity), tint: Rarities.tint(rarity), size: 330)
-                CardView(card: found.card, width: 168)
+            RevealStage(fanfare: Fanfare(rarity), tint: Rarities.tint(rarity), faceUp: faceUp,
+                        isNew: found.isNew, rays: Rarities.rays(rarity), width: 168,
+                        radius: 168 * 0.09) {
+                cardFace(found)
+            } back: {
+                CardBack(width: 168)
                     .shadow(color: felt.shade(0.5), radius: 22, y: 12)
-                    .overlay {
-                        if rarity == .settebello {
-                            RoundedRectangle(cornerRadius: 168 * 0.09)
-                                .strokeBorder(Palette.goldLight, lineWidth: 2.5)
-                                .shadow(color: Palette.goldLight.opacity(0.9), radius: 10)
-                        }
-                    }
-                    .overlay(alignment: .topTrailing) {
-                        if found.isNew {
-                            NewStamp(sound: found.card == .settebello ? .play : .purchase)
-                                .offset(x: 20, y: -14)
-                        }
-                    }
-                    .rotation3DEffect(.degrees(reduceMotion ? 0 : 8), axis: (x: 1, y: -0.4, z: 0))
             }
+            .rotation3DEffect(.degrees(reduceMotion ? 0 : 8), axis: (x: 1, y: -0.4, z: 0))
             .frame(height: 330)
             VStack(spacing: 10) {
                 RarityTag(rarity, locale: locale, size: 12, filled: rarity > .plain)
                 foundTag(found)
             }
+            .opacity(faceUp ? 1 : 0)
+            .offset(y: faceUp ? 0 : 10)
         }
+    }
+
+    private func cardFace(_ found: Album.Found) -> some View {
+        CardView(card: found.card, width: 168)
+            .shadow(color: felt.shade(0.5), radius: 22, y: 12)
+            .overlay {
+                if found.card == .settebello {
+                    RoundedRectangle(cornerRadius: 168 * 0.09)
+                        .strokeBorder(Palette.goldLight, lineWidth: 2.5)
+                        .shadow(color: Palette.goldLight.opacity(0.9), radius: 10)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if found.isNew, faceUp {
+                    NewStamp(sound: found.card == .settebello ? .play : .purchase)
+                        .offset(x: 20, y: -14)
+                }
+            }
     }
 
     /// What the card was: missing until now, or one more of something already in there.
@@ -305,24 +365,30 @@ struct PackOpening: View {
         }
     }
 
-    /// Something off the shelves, which is the moment a dear pack was bought for.
+    /// Something off the shelves, which is the moment a dear pack was bought for. It lands
+    /// face down too, edged in its grade, and goes over the way a card does.
     private func wonTile(_ won: AlbumBook.Won) -> some View {
-        VStack(spacing: 18) {
-            ZStack {
-                RarityBurst(count: won.item.map { $0.grade == .leggendario ? 28 : 18 } ?? 0,
-                            tint: Rarities.tint(won.item?.grade ?? .comune), size: 330)
+        let grade = won.item?.grade ?? .comune
+        return VStack(spacing: 18) {
+            RevealStage(fanfare: won.item.map { Fanfare($0.grade) } ?? .quiet,
+                        tint: Rarities.tint(grade), faceUp: faceUp, isNew: won.item != nil,
+                        rays: won.item.map { $0.grade == .leggendario ? 28 : 18 } ?? 0,
+                        width: 236, radius: GlassRadius.panel) {
                 Group {
                     if let item = won.item {
                         // The shelves only hand over what you do not own, so it is always new.
                         WonItemCard(item: item, name: name)
                             .overlay(alignment: .topTrailing) {
-                                NewStamp(sound: .purchase).offset(x: 12, y: -14)
+                                if faceUp { NewStamp(sound: .purchase).offset(x: 12, y: -14) }
                             }
                     } else {
                         insteadCard(won.denari)
                     }
                 }
                 .shadow(color: felt.shade(0.5), radius: 22, y: 12)
+            } back: {
+                ShelfBack(tint: Rarities.tint(grade), sheen: Rarities.sheen(grade))
+                    .shadow(color: felt.shade(0.5), radius: 22, y: 12)
             }
             .frame(height: 330)
             if let item = won.item {
@@ -332,6 +398,8 @@ struct PackOpening: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Palette.onTableSoft)
                 }
+                .opacity(faceUp ? 1 : 0)
+                .offset(y: faceUp ? 0 : 10)
             }
         }
     }
@@ -359,7 +427,8 @@ struct PackOpening: View {
         HStack(spacing: 7) {
             ForEach(0..<steps, id: \.self) { index in
                 Capsule()
-                    .fill(index <= place ? Palette.goldLight : Palette.onTableSoft.opacity(0.3))
+                    .fill(index < place || (index == place && faceUp)
+                          ? tint(at: index) : Palette.onTableSoft.opacity(index == place ? 0.7 : 0.3))
                     .frame(width: index == place ? 20 : 7, height: 7)
             }
         }
@@ -520,7 +589,7 @@ struct PackOpening: View {
     // MARK: Moving it along
 
     @ViewBuilder private var skipHint: some View {
-        if case .turning(let place) = act, place < steps - 1 {
+        if case .turning(let place) = act, place < steps - 1, faceUp {
             VStack {
                 Spacer()
                 Text("Tap for the next one")
@@ -539,9 +608,10 @@ struct PackOpening: View {
             open()
         case .tearing:
             break
+        case .turning(let place) where !faceUp:
+            turnOver(place)
         case .turning(let place) where place + 1 < steps:
-            withAnimation(.spring(duration: 0.42, bounce: 0.22)) { act = .turning(place: place + 1) }
-            say(at: place + 1)
+            show(place + 1)
         case .turning:
             finish()
         case .counted:
@@ -556,17 +626,134 @@ struct PackOpening: View {
         }
     }
 
-    /// The sound a thing makes as it lands. Something new only lands here: the till waits
-    /// for its stamp. The seven of coins has had its own since the first game shipped, and
-    /// this is the other place it is worth hearing.
+    /// Puts the next thing down face down, and sets it going over once it has waited.
+    private func show(_ place: Int) {
+        turning?.cancel()
+        faceUp = false
+        withAnimation(.spring(duration: 0.42, bounce: 0.22)) { act = .turning(place: place) }
+        Audio.shared.play(.pick)
+        let fanfare = fanfare(at: place)
+        // The settebello sits in the dark a moment before the bells start climbing, so the
+        // rise ends as it goes over.
+        let lead: Duration = fanfare == .crowning && !reduceMotion ? .milliseconds(700) : .zero
+        turning = Task {
+            try? await Task.sleep(for: lead)
+            guard !Task.isCancelled else { return }
+            if fanfare >= .grand, !reduceMotion { Audio.shared.play(.rise) }
+            try? await Task.sleep(for: fanfare.gathering - lead)
+            guard !Task.isCancelled else { return }
+            turnOver(place)
+        }
+    }
+
+    /// Turns the thing at this place over, now: its wait is up, or somebody tapped.
+    private func turnOver(_ place: Int) {
+        guard !faceUp, act == .turning(place: place) else { return }
+        turning?.cancel()
+        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.3)) {
+            faceUp = true
+        }
+        say(at: place)
+        let fanfare = fanfare(at: place)
+        guard fanfare >= .grand else { return }
+        flares += 1
+        if fanfare == .crowning, !reduceMotion { shakes += 1 }
+    }
+
+    /// The sound a thing makes as it goes over. Something new only lands here: the till
+    /// waits for its stamp. The seven of coins has had its own since the first game
+    /// shipped, and this is the other place it is worth hearing; anything from a court up
+    /// throws glitter under whatever it says.
     private func say(at place: Int) {
         guard place < steps else { return }
-        if place < running.count, running[place].card == .settebello, running[place].isNew {
-            Audio.shared.play(.settebello)
-        } else if isNew(at: place) {
-            Audio.shared.play(.play)
-        } else {
-            Audio.shared.play(place < running.count ? .denaro : .purchase)
+        if fanfare(at: place) > .quiet { Audio.shared.play(.shine) }
+        switch step(at: place) {
+        case .card(let found) where found.card == .settebello: Audio.shared.play(.settebello)
+        case .card(let found) where found.isNew:
+            if fanfare(at: place) == .quiet { Audio.shared.play(.play) }
+        case .card: Audio.shared.play(.denaro)
+        case .won(let won) where won.item != nil: break
+        case .won, .finale: Audio.shared.play(.purchase)
+        }
+    }
+
+    // MARK: How big each one is
+
+    private func fanfare(at place: Int) -> Fanfare {
+        switch step(at: place) {
+        case .card(let found): Fanfare(found.card.rarity)
+        case .won(let won): won.item.map { Fanfare($0.grade) } ?? .quiet
+        case .finale: .crowning
+        }
+    }
+
+    private func tint(at place: Int) -> Color {
+        switch step(at: place) {
+        // A numeral's own colour is the table's soft text, which reads as "not yet".
+        case .card(let found):
+            found.card.rarity == .plain ? Palette.goldLight : Rarities.tint(found.card.rarity)
+        case .won(let won): won.item.map { Rarities.tint($0.grade) } ?? Palette.goldLight
+        case .finale: Palette.goldLight
+        }
+    }
+
+    /// The best thing in the pack, which is the light through the tear.
+    /// Only what was in the wrapper: a suit it finishes is not in there to shine through.
+    private var drawn: Range<Int> { 0..<(running.count + opening.won.count) }
+
+    private var best: Fanfare {
+        drawn.map(fanfare(at:)).max() ?? .quiet
+    }
+
+    private var bestTint: Color {
+        drawn.max { fanfare(at: $0) < fanfare(at: $1) }.map(tint(at:)) ?? Palette.goldLight
+    }
+
+    // MARK: The room
+
+    /// The room darkens round a seven, and goes nearly dark round the settebello, while
+    /// it waits face down. Lifted the moment it goes over.
+    private var dimmer: some View {
+        Color.black
+            .opacity(dimming)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .animation(faceUp ? .easeOut(duration: 0.35) : .easeIn(duration: 0.9), value: dimming)
+    }
+
+    private var dimming: Double {
+        guard case .turning(let place) = act, !faceUp else { return 0 }
+        switch fanfare(at: place) {
+        case .crowning: return 0.5
+        case .grand: return 0.22
+        default: return 0
+        }
+    }
+
+    /// White across the whole screen as a seven or better goes over.
+    private var flare: some View {
+        Color.white
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .keyframeAnimator(initialValue: 0.0, trigger: flares) { view, value in
+                view.opacity(value)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    LinearKeyframe(0.55, duration: 0.05)
+                    CubicKeyframe(0, duration: 0.6)
+                }
+            }
+    }
+
+    /// The screen knocked sideways by the settebello landing, and settling.
+    private static var shake: some Keyframes<CGFloat> {
+        KeyframeTrack {
+            CubicKeyframe(-10, duration: 0.05)
+            CubicKeyframe(9, duration: 0.06)
+            CubicKeyframe(-6, duration: 0.06)
+            CubicKeyframe(4, duration: 0.06)
+            CubicKeyframe(-2, duration: 0.06)
+            CubicKeyframe(0, duration: 0.08)
         }
     }
 
@@ -577,17 +764,46 @@ struct PackOpening: View {
         switch act {
         case .sealed: nil
         case .tearing: Haptic.tear
-        case .turning(let place):
-            place >= running.count && !isNew(at: place) ? Haptic.prize : Haptic.turn
+        case .turning: Haptic.turn
         case .counted: nil
+        }
+    }
+
+    /// What the phone does as the thing in the middle goes over: harder the rarer it is.
+    /// Something new also gets its stamp's thump a moment later.
+    private var turnFeedback: SensoryFeedback? {
+        guard case .turning(let place) = act else { return nil }
+        switch fanfare(at: place) {
+        case .quiet:
+            if case .won = step(at: place), !isNew(at: place) { return Haptic.prize }
+            return isNew(at: place) ? nil : Haptic.turn
+        case .bright: return Haptic.flip
+        case .grand: return Haptic.prize
+        case .crowning: return Haptic.settebello
         }
     }
 
     /// Whether the thing at this place was not yours before: a card missing from the album,
     /// or anything off the shelves, which only hand over what you do not own.
     private func isNew(at place: Int) -> Bool {
-        guard place < running.count else { return opening.won[place - running.count].item != nil }
-        return running[place].isNew
+        switch step(at: place) {
+        case .card(let found): found.isNew
+        case .won(let won): won.item != nil
+        case .finale: true
+        }
+    }
+
+    /// `-packAutoplay`: the opening tapped through on a timer, round and round.
+    private func autoplay() async {
+        guard DebugLaunch.packAutoplay else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(2200))
+            guard act == .counted else { advance(); continue }
+            act = .sealed
+            faceUp = false
+            torn = false
+            pull = 0
+        }
     }
 
     /// `-packStep`: starts the opening part way through, already turned over.
@@ -601,7 +817,14 @@ struct PackOpening: View {
         }
         guard let place, place < steps else { return }
         act = .turning(place: place)
-        say(at: place)
+        faceUp = !DebugLaunch.packHolds
+        if faceUp { say(at: place) }
+        if let seconds = DebugLaunch.packHoldSeconds {
+            turning = Task {
+                try? await Task.sleep(for: .seconds(seconds))
+                turnOver(place)
+            }
+        }
     }
 }
 
@@ -663,118 +886,5 @@ private struct NewStamp: View {
         Audio.shared.play(sound)
         guard !reduceMotion else { return }
         withAnimation(.easeOut(duration: 0.55).delay(0.06)) { rung = true }
-    }
-}
-
-/// A thing off the shelves, drawn at the size a card is drawn at so a pack of cards and a
-/// felt read as the same kind of prize.
-///
-/// The preview is the real cosmetic wherever there is one to draw — the actual felt, the
-/// actual badge, the actual deck — because a name on a plate is a receipt and the thing
-/// itself is a reward.
-struct WonItemCard: View {
-    let item: ShopItem
-    /// Whose it now is, so a won mark or livery is previewed wearing their own initial
-    /// rather than a placeholder.
-    var name: String = "?"
-
-    /// The cloth under it, so the glass is tinted with the table's own shadow.
-    @Environment(\.tableFelt) private var felt
-
-    var body: some View {
-        VStack(spacing: 14) {
-            preview
-                .frame(height: 104)
-            VStack(spacing: 3) {
-                Text(verbatim: item.title)
-                    .font(.display(26))
-                    .foregroundStyle(Palette.onTable)
-                Text(Cosmetics.title(of: item.kind))
-                    .font(.system(size: 12, weight: .medium))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Palette.onTableSoft)
-            }
-        }
-        .padding(22)
-        .frame(width: 236)
-        // All but opaque: the rays are behind this card, and at anything translucent they
-        // show through the tile and turn the prize into a smear.
-        .background {
-            RoundedRectangle(cornerRadius: GlassRadius.panel)
-                .fill(felt.shade(0.96))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: GlassRadius.panel)
-                .strokeBorder(Rarities.sheen(item.grade), lineWidth: 2)
-        }
-    }
-
-    @ViewBuilder private var preview: some View {
-        switch item.kind {
-        case .felt:
-            if let felt = Cosmetics.felt(of: item.id) { FeltSwatch(felt: felt) }
-        case .tapis:
-            if let tapis = Tapis.allCases.first(where: { Cosmetics.item(for: $0)?.id == item.id }) {
-                TapisSwatch(tapis: tapis, felt: .riviera, height: 112)
-            }
-        case .mark:
-            if let mark = Cosmetics.mark(of: item.id) {
-                SeatBadge(name: name, tint: Palette.seat(0), size: 72, mark: mark)
-            }
-        case .cornice:
-            if let cornice = Cornice.allCases.first(where: { Cosmetics.item(for: $0)?.id == item.id }) {
-                SeatBadge(name: name, tint: Palette.seat(0), size: 60, cornice: cornice)
-            }
-        case .companion:
-            if let companion = Companion.allCases.first(where: { Cosmetics.item(for: $0)?.id == item.id }) {
-                CompanionSwatch(companion: companion, felt: .riviera)
-            }
-        case .livery:
-            if let livery = Cosmetics.livery(of: item.id) {
-                SeatBadge(name: name, tint: Palette.seat(0), size: 72, livery: livery)
-            }
-        case .cardBack:
-            if let back = CardBackPattern.allCases.first(where: { Cosmetics.item(for: $0)?.id == item.id }) {
-                CardBack(width: 68).environment(\.cardBack, back)
-            }
-        case .cardTheme, .cardSkin:
-            deckPreview
-        case .flourish:
-            if let flourish = Cosmetics.flourish(of: item.id) {
-                FlourishSwatch(flourish: flourish, felt: .riviera)
-            }
-        case .cheer:
-            Image(systemName: Cosmetics.cheer(of: item.id)?.symbol ?? "speaker.wave.2.fill")
-                .font(.system(size: 66, weight: .semibold))
-                .foregroundStyle(Rarities.tint(item.grade))
-        case .song:
-            Image(systemName: "music.note")
-                .font(.system(size: 66, weight: .semibold))
-                .foregroundStyle(Rarities.tint(item.grade))
-        case .reactions:
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 62, weight: .semibold))
-                .foregroundStyle(Rarities.tint(item.grade))
-        }
-    }
-
-    /// The won deck, drawn in its own art rather than in whatever is equipped.
-    @ViewBuilder private var deckPreview: some View {
-        let theme = wonTheme
-        HStack(spacing: -22) {
-            CardView(card: Card(.knight, of: .coins), width: 60)
-            CardBack(width: 60).rotationEffect(.degrees(8))
-        }
-        .environment(\.cardTheme, theme)
-    }
-
-    private var wonTheme: CardTheme {
-        if let style = CardStyle.options.first(where: { $0.shopItem?.id == item.id }) {
-            return CardTheme(style: style, skin: .riviera)
-        }
-        if let skin = CardSkin.options.first(where: { $0.shopItem?.id == item.id }) {
-            return CardTheme(style: .moderna, skin: skin)
-        }
-        return CardTheme(style: .moderna, skin: .riviera)
     }
 }

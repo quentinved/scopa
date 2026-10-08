@@ -19,10 +19,12 @@ struct FriendsSheet: View {
     enum Page: Hashable {
         case thisPhone
         case joinByCode
+        case scorePad
     }
 
     /// The cloth in play, so the colour goes with the table.
     @Environment(\.tableFelt) private var felt
+    @Environment(\.bannerClearance) private var bannerClearance
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -43,7 +45,7 @@ struct FriendsSheet: View {
                 .animation(.easeInOut(duration: 0.2), value: store.onlineStatus)
             }
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Page.self, destination: destination)
+            .navigationDestination(for: Page.self) { destination($0).safeAreaPadding(.bottom, bannerClearance) }
         }
         .presentationDetents([.medium, .large], selection: $detent)
     }
@@ -58,6 +60,8 @@ struct FriendsSheet: View {
             }
         case .joinByCode:
             JoinTablePage(store: store)
+        case .scorePad:
+            ScorePadPage(you: store.playerName)
         }
     }
 
@@ -124,6 +128,11 @@ struct FriendsSheet: View {
         NavigationLink(value: Page.thisPhone) {
             SheetChoiceLabel(symbol: "iphone.gen3", tint: felt.accent,
                              title: "Pass the phone", detail: "Friends and bots take turns on this one")
+        }
+        .buttonStyle(.plain)
+        NavigationLink(value: Page.scorePad) {
+            SheetChoiceLabel(symbol: "list.number", tint: Palette.gold,
+                             title: "Score pad", detail: "Playing with real cards? The phone keeps the score")
         }
         .buttonStyle(.plain)
     }

@@ -11,51 +11,75 @@ import Foundation
 let releaseNotes: [String: [String: String]] = [
     "1.2.1": [
         "en-US": """
-        Thank you for playing Scopa Bella! A smaller one, with a few gifts and a smoother table.
+        Thank you for playing Scopa Bella! A new region on the road, and a table that celebrates with you.
 
-        • The ranked road pays on the way up: denari at three stops inside every division, and a pack in your album at the top of it, once a season. The rank card shows what the next stop pays.
+        • Piemonte joins the campaign: six tables from Torino to the Mole Antonelliana, between Liguria and Napoli, and the Wine seat mark at the end. Every star you had won is kept.
+        • A proper "Scopa!": a broom sweeps the cloth, the word stamps down in gold, and the phone feels it. The settebello, re bello, napola and asso piglia tutto get their own moments too.
+        • A new Game Center achievement, Tre Sette: hold three sevens in one hand.
+        • The ranked card shows your points and how many more the next division needs.
+        • The ranked road pays on the way up: denari at three stops inside every division, and a pack in your album at the top of it, once a season. Its message now comes once, after the game's result.
+        • Tap a card twice to play it, even one you had already picked up.
+        • New players choose between the coach and a plain table on their first visit.
         • One more turn of the wheel each day, for a short video, after the free one.
         • A new setting to hide the tag in the corner of the table that recaps each move.
         • At a table with friends, each sweep now plays the flourish its player chose, not only yours.
         • The no-ads purchase now shows its price in your own currency.
         • Ads stay away from your cards, the no-ads page and a pack being opened.
-        • Fixes: a card no longer stays stuck in the air when a call interrupts a drag, quick double taps no longer pick a card back up, count a game twice or put a stake down twice, a tap that lands with the clock no longer plays two moves, and the shop scrolls more smoothly.
+        • Fixes: a card no longer stays stuck in the air when a call interrupts a drag, quick taps no longer count a game twice or put a stake down twice, a tap that lands with the clock no longer plays two moves, and the shop scrolls more smoothly.
         """,
 
         "en-GB": """
-        Thank you for playing Scopa Bella! A smaller one, with a few gifts and a smoother table.
+        Thank you for playing Scopa Bella! A new region on the road, and a table that celebrates with you.
 
-        • The ranked road pays on the way up: denari at three stops inside every division, and a pack in your album at the top of it, once a season. The rank card shows what the next stop pays.
+        • Piemonte joins the campaign: six tables from Torino to the Mole Antonelliana, between Liguria and Napoli, and the Wine seat mark at the end. Every star you had won is kept.
+        • A proper "Scopa!": a broom sweeps the cloth, the word stamps down in gold, and the phone feels it. The settebello, re bello, napola and asso piglia tutto get their own moments too.
+        • A new Game Center achievement, Tre Sette: hold three sevens in one hand.
+        • The ranked card shows your points and how many more the next division needs.
+        • The ranked road pays on the way up: denari at three stops inside every division, and a pack in your album at the top of it, once a season. Its message now comes once, after the game's result.
+        • Tap a card twice to play it, even one you had already picked up.
+        • New players choose between the coach and a plain table on their first visit.
         • One more turn of the wheel each day, for a short video, after the free one.
         • A new setting to hide the tag in the corner of the table that recaps each move.
         • At a table with friends, each sweep now plays the flourish its player chose, not only yours.
         • The no-ads purchase now shows its price in your own currency.
         • Ads stay away from your cards, the no-ads page and a pack being opened.
-        • Fixes: a card no longer stays stuck in the air when a call interrupts a drag, quick double taps no longer pick a card back up, count a game twice or put a stake down twice, a tap that lands with the clock no longer plays two moves, and the shop scrolls more smoothly.
+        • Fixes: a card no longer stays stuck in the air when a call interrupts a drag, quick taps no longer count a game twice or put a stake down twice, a tap that lands with the clock no longer plays two moves, and the shop scrolls more smoothly.
         """,
 
         "fr-FR": """
-        Merci de jouer à Scopa Bella ! Une petite version, avec quelques cadeaux et une table plus fluide.
+        Merci de jouer à Scopa Bella ! Une nouvelle région sur la route, et une table qui fête avec vous.
 
-        • La route du classé paie en chemin : des deniers à trois étapes dans chaque division, et un paquet dans votre album au sommet, une fois par saison. La carte de rang montre ce que paie la prochaine étape.
+        • Le Piémont rejoint la campagne : six tables de Turin à la Mole Antonelliana, entre la Ligurie et Naples, et la marque de place Vin au bout. Toutes les étoiles que vous aviez gagnées sont gardées.
+        • Une vraie « Scopa ! » : un balai traverse le tapis, le mot s'imprime en or, et le téléphone le sent. Le settebello, le re bello, la napola et l'asso piglia tutto ont aussi leur moment.
+        • Un nouveau succès Game Center, Tre Sette : avoir trois sept en main.
+        • La carte du classé montre vos points et combien il en faut encore pour la division suivante.
+        • La route du classé paie en chemin : des deniers à trois étapes dans chaque division, et un paquet dans votre album au sommet, une fois par saison. Son message arrive maintenant une seule fois, après le résultat de la partie.
+        • Touchez une carte deux fois pour la jouer, même si vous l'aviez déjà levée.
+        • Les nouveaux joueurs choisissent entre le coach et une table nue dès leur première visite.
         • Un tour de roue de plus chaque jour, contre une courte vidéo, après le tour gratuit.
         • Un nouveau réglage pour masquer l'étiquette du coin de la table qui rappelle chaque coup.
         • À une table entre amis, chaque scopa joue désormais l'effet choisi par son joueur, pas seulement le vôtre.
         • L'achat sans pub affiche maintenant son prix dans votre devise.
         • Les pubs restent loin de vos cartes, de la page sans pub et d'un paquet qu'on ouvre.
-        • Corrections : une carte ne reste plus suspendue quand un appel interrompt un glissement, les doubles tapes rapides ne reprennent plus une carte, ne comptent plus une partie deux fois et ne misent plus deux fois, une tape qui tombe avec la fin du chrono ne joue plus deux coups, et la boutique défile plus en douceur.
+        • Corrections : une carte ne reste plus suspendue quand un appel interrompt un glissement, les tapes rapides ne comptent plus une partie deux fois et ne misent plus deux fois, une tape qui tombe avec la fin du chrono ne joue plus deux coups, et la boutique défile plus en douceur.
         """,
 
         "it": """
-        Grazie di giocare a Scopa Bella! Una versione piccola, con qualche regalo e un tavolo più fluido.
+        Grazie di giocare a Scopa Bella! Una nuova regione sulla strada, e un tavolo che festeggia con te.
 
-        • La strada della classificata paga lungo la salita: denari a tre tappe dentro ogni divisione, e un pacchetto nell'album in cima, una volta a stagione. La carta del grado mostra quanto paga la prossima tappa.
+        • Il Piemonte entra nella campagna: sei tavoli da Torino alla Mole Antonelliana, tra la Liguria e Napoli, e il segno Vino per il tuo posto alla fine. Tutte le stelle che avevi vinto restano tue.
+        • Una vera «Scopa!»: una scopa attraversa il panno, la parola si stampa in oro, e il telefono la sente. Anche il settebello, il re bello, la napola e l'asso piglia tutto hanno il loro momento.
+        • Un nuovo obiettivo Game Center, Tre Sette: tieni in mano tre sette insieme.
+        • La carta della classificata mostra i tuoi punti e quanti ne servono ancora per la prossima divisione.
+        • La strada della classificata paga lungo la salita: denari a tre tappe dentro ogni divisione, e un pacchetto nell'album in cima, una volta a stagione. Il suo messaggio ora arriva una volta sola, dopo il risultato della partita.
+        • Tocca una carta due volte per giocarla, anche se l'avevi già alzata.
+        • I nuovi giocatori scelgono tra il coach e un tavolo semplice alla prima visita.
         • Un giro di ruota in più ogni giorno, con un breve video, dopo quello gratis.
         • Una nuova impostazione per nascondere l'etichetta nell'angolo del tavolo che riassume ogni mossa.
         • A un tavolo con gli amici, ogni scopa ora mostra l'effetto scelto da chi la fa, non solo il tuo.
         • L'acquisto senza pubblicità ora mostra il prezzo nella tua valuta.
         • La pubblicità sta lontana dalle tue carte, dalla pagina senza pubblicità e da un pacchetto che si apre.
-        • Correzioni: una carta non resta più sospesa quando una chiamata interrompe un trascinamento, i doppi tocchi veloci non riprendono più una carta, non contano più una partita due volte e non puntano più due volte, un tocco che arriva con lo scadere del tempo non gioca più due mosse, e il negozio scorre più fluido.
+        • Correzioni: una carta non resta più sospesa quando una chiamata interrompe un trascinamento, i tocchi veloci non contano più una partita due volte e non puntano più due volte, un tocco che arriva con lo scadere del tempo non gioca più due mosse, e il negozio scorre più fluido.
         """,
     ],
 

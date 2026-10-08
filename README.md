@@ -51,7 +51,7 @@ dependency-free Swift packages, and a small Cloudflare Worker handles the online
   day, and a monthly season has leagues and divisions.
 - **Denari**, an in-game currency earned by playing and spent on card styles, cloths and
   reactions. No real-money purchases.
-- **Twelve Game Center achievements**, three languages (English, French, Italian), and all
+- **Thirteen Game Center achievements**, three languages (English, French, Italian), and all
   music and sound effects synthesised from code.
 
 ## Tech stack

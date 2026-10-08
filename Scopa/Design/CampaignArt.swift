@@ -32,6 +32,8 @@ struct RegionEngraving: Shape {
     func path(in rect: CGRect) -> Path {
         switch region {
         case .liguria: Engraving.terraces(rect) + Engraving.waves(rect, from: 0.62) + Engraving.sail(rect)
+        case .piemonte: Engraving.alps(rect) + Engraving.vineyards(rect) + Engraving.mole(rect)
+            + Engraving.river(rect, at: 0.88)
         case .napoli: Engraving.volcano(rect, at: 0.78, smoke: true) + Engraving.waves(rect, from: 0.7)
         case .sicilia: Engraving.sun(rect) + Engraving.volcano(rect, at: 0.24, smoke: false) + Engraving.waves(rect, from: 0.82)
         case .venezia: Engraving.arcade(rect, at: 0.18, pointed: true) + Engraving.waves(rect, from: 0.5)
@@ -100,6 +102,86 @@ private enum Engraving {
         path.addLine(to: CGPoint(x: base.x, y: base.y - 58))
         path.addLine(to: CGPoint(x: base.x + 24, y: base.y - 8))
         path.addLine(to: CGPoint(x: base.x, y: base.y - 8))
+        return path
+    }
+
+    /// A saw of snowy peaks along the top of the plate, the Alps behind Turin.
+    static func alps(_ rect: CGRect) -> Path {
+        let peaks: [(x: CGFloat, y: CGFloat)] = [(0, 0.22), (0.09, 0.165), (0.17, 0.2), (0.27, 0.15), (0.37, 0.195),
+                                                 (0.47, 0.16), (0.58, 0.205), (0.69, 0.155), (0.8, 0.19), (0.9, 0.15),
+                                                 (1, 0.2)]
+        let points = peaks.map { CGPoint(x: rect.minX + rect.width * $0.x, y: rect.minY + rect.height * $0.y) }
+        var path = Path()
+        path.addLines(points)
+        // A snow line under every summit.
+        for (index, peak) in points.enumerated() where index > 0 && index < points.count - 1
+            && peak.y < points[index - 1].y && peak.y < points[index + 1].y {
+            path.move(to: CGPoint(x: peak.x - 12, y: peak.y + 14))
+            path.addLine(to: CGPoint(x: peak.x - 4, y: peak.y + 9))
+            path.addLine(to: CGPoint(x: peak.x + 3, y: peak.y + 15))
+            path.addLine(to: CGPoint(x: peak.x + 11, y: peak.y + 11))
+        }
+        return path
+    }
+
+    /// Three rounded hills of the Langhe down the left, combed with rows of vines.
+    static func vineyards(_ rect: CGRect) -> Path {
+        var path = Path()
+        for (index, foot) in [0.36, 0.45, 0.54].enumerated() {
+            let y = rect.minY + rect.height * foot
+            let start = CGPoint(x: rect.minX - 12, y: y)
+            let end = CGPoint(x: rect.minX + rect.width * (0.44 - CGFloat(index) * 0.06), y: y)
+            let control = CGPoint(x: (start.x + end.x) / 2, y: y - 72)
+            path.move(to: start)
+            path.addQuadCurve(to: end, control: control)
+            for step in 2...8 {
+                let t = CGFloat(step) / 10
+                let x = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * control.x + t * t * end.x
+                let top = (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * control.y + t * t * end.y
+                path.move(to: CGPoint(x: x, y: top + 5))
+                path.addLine(to: CGPoint(x: x, y: min(top + 22, y)))
+            }
+        }
+        return path
+    }
+
+    /// The Mole Antonelliana: a temple base, the tall square dome, the lantern and its needle.
+    static func mole(_ rect: CGRect) -> Path {
+        let x = rect.minX + rect.width * 0.86
+        let foot = rect.minY + rect.height * 0.74
+        let shoulder = foot - 46, neck = foot - 150
+        var path = Path()
+        path.addRect(CGRect(x: x - 26, y: shoulder, width: 52, height: 46))
+        for column in stride(from: -18.0, through: 18.0, by: 9.0) {
+            path.move(to: CGPoint(x: x + column, y: shoulder + 6))
+            path.addLine(to: CGPoint(x: x + column, y: foot - 6))
+        }
+        path.move(to: CGPoint(x: x - 24, y: shoulder))
+        path.addQuadCurve(to: CGPoint(x: x - 7, y: neck), control: CGPoint(x: x - 23, y: neck + 36))
+        path.addLine(to: CGPoint(x: x + 7, y: neck))
+        path.addQuadCurve(to: CGPoint(x: x + 24, y: shoulder), control: CGPoint(x: x + 23, y: neck + 36))
+        path.addRect(CGRect(x: x - 7, y: neck - 22, width: 14, height: 22))
+        path.addRect(CGRect(x: x - 4, y: neck - 36, width: 8, height: 14))
+        path.move(to: CGPoint(x: x, y: neck - 36))
+        path.addLine(to: CGPoint(x: x, y: neck - 104))
+        path.addEllipse(in: CGRect(x: x - 3, y: neck - 110, width: 6, height: 6))
+        return path
+    }
+
+    /// The Po, two banks winding across the foot of the plate together.
+    static func river(_ rect: CGRect, at fraction: CGFloat) -> Path {
+        var path = Path()
+        for bank: CGFloat in [0, 12] {
+            let y = rect.minY + rect.height * fraction + bank
+            var x = rect.minX - 20
+            var bend: CGFloat = 16
+            path.move(to: CGPoint(x: x, y: y))
+            while x < rect.maxX {
+                path.addQuadCurve(to: CGPoint(x: x + 84, y: y), control: CGPoint(x: x + 42, y: y + bend))
+                x += 84
+                bend = -bend
+            }
+        }
         return path
     }
 

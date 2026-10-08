@@ -350,7 +350,7 @@ private enum Stored {
     static let counters = [
         "achievements.scope", "achievements.settebelli", "achievements.cappotti",
         "achievements.wins", "achievements.losses", "achievements.daily", "achievements.onlineWins",
-        "experience.total",
+        "achievements.treSette", "experience.total",
     ] + CampaignBook.counterKeys
 
     static let paidSuits = "album.paidSuits"

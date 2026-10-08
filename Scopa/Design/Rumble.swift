@@ -67,45 +67,75 @@ final class Rumble {
              fallback: [.soft])
     }
 
-    /// A sweep: a brush that builds, a crack where the table comes up empty, and a roll
+    /// A sweep: a brush that builds, a crack where the table comes up empty, a run of taps
+    /// climbing with the letters as they drop, the stamp as the last one lands, and a roll
     /// that fades. Nothing else in the game builds, so it is known before the banner is
-    /// read. Somebody else's is the same stroke at half weight, without the roll.
+    /// read. Somebody else's is the brush and the crack at half weight, nothing more.
     func sweep(mine: Bool) {
-        let level: Float = mine ? 1 : 0.45
+        guard mine else { return theirSweep() }
         var beats: [Beat] = [
-            .swell(from: 0, duration: Self.brush, intensity: 0.8 * level, sharpness: 0.2),
-            .transient(at: Self.crack, intensity: level, sharpness: 0.85),
+            .swell(from: 0, duration: Self.brush, intensity: 0.8, sharpness: 0.2),
+            .transient(at: Self.crack, intensity: 1, sharpness: 0.85),
         ]
-        if mine {
-            beats.append(.swell(from: Self.roll, duration: Self.rollLength,
-                                intensity: 0.55, sharpness: 0.1))
+        for (index, time) in Self.letters.enumerated() {
+            beats.append(.transient(at: time, intensity: 0.4 + Float(index) * 0.12, sharpness: 0.7))
         }
-        let fallback: [UIImpactFeedbackGenerator.FeedbackStyle] = mine
-            ? [.light, .medium, .heavy]
-            : [.light, .soft]
+        beats.append(.transient(at: Self.stamp, intensity: 1, sharpness: 0.35))
+        beats.append(.swell(from: Self.roll, duration: Self.rollLength, intensity: 0.55, sharpness: 0.1))
         play(beats, curves: [Self.sweepIntensity, Self.sweepSharpness],
-             fallback: fallback, gap: .milliseconds(90))
+             fallback: [.light, .medium, .light, .light, .heavy], gap: .milliseconds(90))
     }
 
-    /// Where a sweep's three parts sit. Half a second end to end, so it is over before
-    /// the next card is played.
+    private func theirSweep() {
+        let beats: [Beat] = [
+            .swell(from: 0, duration: Self.brush, intensity: 0.36, sharpness: 0.2),
+            .transient(at: Self.crack, intensity: 0.45, sharpness: 0.85),
+        ]
+        play(beats, curves: [Self.theirIntensity], fallback: [.light, .soft], gap: .milliseconds(90))
+    }
+
+    /// Where a sweep's parts sit, matched to `ScopaBanner`: the band lands at the crack,
+    /// the letters touch down after it and the stamp is the last of them. Under a second
+    /// end to end, so it is over before the next card is played.
     private static let brush: TimeInterval = 0.24
     private static let crack: TimeInterval = 0.25
-    private static let roll: TimeInterval = 0.3
-    private static let rollLength: TimeInterval = 0.2
+    private static let letters: [TimeInterval] = [0.31, 0.365, 0.42]
+    /// `ScopaBanner.stampTime`.
+    private static let stamp: TimeInterval = 0.47
+    private static let roll: TimeInterval = 0.5
+    private static let rollLength: TimeInterval = 0.3
 
     /// The rise and fall of a sweep. Core Haptics dynamic parameters are not per event,
-    /// so one curve has to cover the brush, the crack and the roll together.
+    /// so one curve has to cover the brush, the crack, the letters and the roll together.
     private static var sweepIntensity: CHHapticParameterCurve {
         curve(.hapticIntensityControl,
               [(0, 0), (0.1, 0.3), (0.19, 0.8), (crack, 1), (roll, 1), (roll + rollLength, 0)])
     }
 
-    /// Dull under the brush, bright at the crack, dull again for the roll. Sharpness is
-    /// what makes the crack read as an edge rather than a louder thump.
+    /// Dull under the brush, bright at the crack and the letters, dull again for the
+    /// stamp and the roll. Sharpness is what makes the crack read as an edge.
     private static var sweepSharpness: CHHapticParameterCurve {
         curve(.hapticSharpnessControl,
-              [(0, -0.4), (0.19, 0.2), (crack, 0.3), (roll + 0.04, -0.6), (roll + rollLength, -0.6)])
+              [(0, -0.4), (0.19, 0.2), (crack, 0.3), (0.43, 0.2), (stamp, -0.2),
+               (roll + 0.04, -0.6), (roll + rollLength, -0.6)])
+    }
+
+    /// The brush and crack on their own, fading out as soon as the crack is done.
+    private static var theirIntensity: CHHapticParameterCurve {
+        curve(.hapticIntensityControl, [(0, 0), (0.1, 0.3), (0.19, 0.8), (crack, 1), (0.3, 0)])
+    }
+
+    /// A prize taken: a bright tick and a fuller one on top of it, metal rather than
+    /// paper. `coins` adds a tick for each card of a napola, climbing, before the ring.
+    func prize(coins: Int = 0) {
+        var beats: [Beat] = (0..<coins).map { index in
+            .transient(at: Double(index) * 0.08, intensity: 0.4 + Float(index) * 0.1, sharpness: 0.75)
+        }
+        let ring = Double(coins) * 0.08
+        beats.append(.transient(at: ring, intensity: 0.6, sharpness: 0.9))
+        beats.append(.transient(at: ring + 0.09, intensity: 0.95, sharpness: 0.6))
+        play(beats, fallback: Array(repeating: .light, count: coins) + [.medium, .heavy],
+             gap: .milliseconds(80))
     }
 
     private static func curve(_ parameter: CHHapticDynamicParameter.ID,

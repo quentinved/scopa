@@ -40,7 +40,7 @@ struct CampaignView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            SheetScaffold(title: "Campaign", subtitle: "Thirty tables across Italy. Win one to open the road to the next.",
+            SheetScaffold(title: "Campaign", subtitle: "Thirty-six tables across Italy. Win one to open the road to the next.",
                           close: close, bleeds: true, accessory: AnyView(boardButton)) {
                 content(proxy)
             } bottom: {
@@ -206,7 +206,10 @@ struct CampaignView: View {
             proxy.scrollTo(CampaignLayout.anchor((shown ?? book.current).id), anchor: shown == nil ? .center : Self.overCard)
             return
         }
-        let next = outcome.firstClear ? Campaign.stage(number: outcome.stage.number + 1) : nil
+        // No road to draw to a table won before, as after a region put in ahead of it.
+        let next = outcome.firstClear ? Campaign.stage(number: outcome.stage.number + 1).flatMap {
+            book.isCleared($0) ? nil : $0
+        } : nil
         moment = CampaignMoment(outcome: outcome, struck: outcome.before, unlocking: next)
         proxy.scrollTo(CampaignLayout.anchor(outcome.stage.id), anchor: .center)
         guard outcome.won else {
