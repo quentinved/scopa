@@ -51,10 +51,14 @@ struct ScopaBanner: View {
             if stamped, mine, !reduceMotion { Shockwave(tint: Palette.goldLight, size: bandHeight * 1.3) }
             GeometryReader { proxy in
                 // Sized from the diagonal so a tilted band still covers the corners.
-                band(width: max(proxy.size.width, proxy.size.height) * 1.4,
-                     lettering: proxy.size.width - 40)
+                let width = max(proxy.size.width, proxy.size.height) * 1.4
+                // Its own half and the screen's, so it starts and ends wholly off the cloth:
+                // a fraction of the screen's width left most of the slab parked on screen.
+                let travel = (proxy.size.width + width) / 2 + bandHeight
+                band(width: width, lettering: proxy.size.width - 40)
                     .rotationEffect(.degrees(tilt))
-                    .offset(x: arrived ? (leaving ? proxy.size.width * 1.3 : 0) : -proxy.size.width * 1.3)
+                    .offset(x: arrived ? (leaving ? travel : 0) : -travel)
+                    .opacity(leaving ? 0 : 1)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
             }
             if stamped, mine, !reduceMotion {

@@ -7,8 +7,9 @@ import StoreKit
 ///
 /// A non-consumable, so it is bought once, belongs to the Apple account and comes back on
 /// every device signed in to it. It takes away the banner and the full screen ad; the
-/// opt-in video stays, since it is only ever asked for. It never touches the purse: denari
-/// are earned, never bought, which keeps the album packs and any stake free of real money.
+/// opt-in video stays, since it is only ever asked for. Since 2026-10-08 it also pays
+/// `Boost.passGift` once and half again on every game (`Boost.passPercent`), at the owner's
+/// request, so denari now come with real money: see `Boost` before turning stakes back on.
 @MainActor
 @Observable
 final class AdFreePass {

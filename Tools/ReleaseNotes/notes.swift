@@ -9,6 +9,48 @@ import Foundation
 // Never mention the passphrases, and leave the rating prompt out.
 
 let releaseNotes: [String: [String: String]] = [
+    "1.3": [
+        "en-US": """
+        Thank you for playing Scopa Bella! A brighter icon, and more denari from every game.
+
+        • Going ad free now pays you too: 2,000 denari once, and half as much again on every game you finish, for good. Already bought it? Your 2,000 are waiting.
+        • New in the shop, Double winnings: for 250 denari, your next 10 games pay twice. Buy another run and they add up.
+        • A brighter emerald icon on your home screen, with the name written bigger.
+        • The Platinum medal has a touch of teal, so it no longer looks like Silver.
+        • Fix: the red "Scopa!" band no longer stays on the table after a sweep.
+        """,
+
+        "en-GB": """
+        Thank you for playing Scopa Bella! A brighter icon, and more denari from every game.
+
+        • Going ad free now pays you too: 2,000 denari once, and half as much again on every game you finish, for good. Already bought it? Your 2,000 are waiting.
+        • New in the shop, Double winnings: for 250 denari, your next 10 games pay twice. Buy another run and they add up.
+        • A brighter emerald icon on your home screen, with the name written bigger.
+        • The Platinum medal has a touch of teal, so it no longer looks like Silver.
+        • Fix: the red "Scopa!" band no longer stays on the table after a sweep.
+        """,
+
+        "fr-FR": """
+        Merci de jouer à Scopa Bella ! Une icône plus vive, et plus de deniers à chaque partie.
+
+        • L'achat sans pub vous rapporte aussi : 2\u{202F}000 deniers une fois, puis moitié plus à chaque partie terminée, pour de bon. Déjà acheté ? Vos 2\u{202F}000 deniers vous attendent.
+        • Nouveau dans la boutique, Gains doublés : pour 250 deniers, vos 10 prochaines parties paient deux fois. Achetez-en une autre série et elles s'ajoutent.
+        • Une icône vert émeraude plus vive sur votre écran d'accueil, avec le nom écrit plus grand.
+        • La médaille Platine prend une touche de bleu-vert, pour ne plus ressembler à l'Argent.
+        • Correction : le bandeau rouge « Scopa ! » ne reste plus sur la table après une scopa.
+        """,
+
+        "it": """
+        Grazie di giocare a Scopa Bella! Un'icona più viva, e più denari da ogni partita.
+
+        • L'acquisto senza pubblicità ora ti ripaga anche: 2.000 denari una volta, poi metà in più a ogni partita finita, per sempre. L'avevi già comprato? I tuoi 2.000 denari ti aspettano.
+        • Novità nel negozio, Vincite doppie: con 250 denari le tue prossime 10 partite pagano il doppio. Comprane un'altra serie e si sommano.
+        • Un'icona verde smeraldo più viva nella schermata Home, con il nome scritto più grande.
+        • La medaglia Platino prende un tocco di verde acqua, così non sembra più d'Argento.
+        • Correzione: la fascia rossa «Scopa!» non resta più sul tavolo dopo una scopa.
+        """,
+    ],
+
     "1.2.1": [
         "en-US": """
         Thank you for playing Scopa Bella! A new region on the road, and a table that celebrates with you.

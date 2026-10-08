@@ -150,6 +150,36 @@ public actor Wallet {
         ])
     }
 
+    /// Buys a run of doubled games. Runs stack: a second one bought early adds its games.
+    @discardableResult
+    public func buyBoost(on date: Date = .now) async throws -> Purse {
+        try await loadIfNeeded()
+        guard current.canAffordBoost else { throw PurchaseError.tooDear(short: Boost.price - current.balance) }
+        try await credit([
+            LedgerEntry(date: date, amount: -Boost.price, reason: .granted(Boost.note), key: Boost.purchaseKey())
+        ])
+        return current
+    }
+
+    /// The extras on what a game earned: half again for the no-ads pass, the same again
+    /// while a bought run has games left. Keyed on the game, so a second settle pays and
+    /// uses up nothing.
+    @discardableResult
+    public func boost(_ earned: Denari, gameID: UUID, withPass: Bool, on date: Date = .now) async throws -> [LedgerEntry] {
+        try await loadIfNeeded()
+        guard earned.isCredit else { return [] }
+        var entries: [LedgerEntry] = []
+        if withPass {
+            entries.append(LedgerEntry(date: date, amount: Boost.passBonus(on: earned),
+                                       reason: .granted(Boost.passNote), key: Boost.passKey(gameID)))
+        }
+        if current.boostedGamesLeft > 0 {
+            entries.append(LedgerEntry(date: date, amount: earned, reason: .granted(Boost.note),
+                                       key: Boost.gameKey(gameID)))
+        }
+        return try await credit(entries)
+    }
+
     /// A gift or an adjustment: a welcome balance, an apology, something a server hands out.
     /// `key` is what stops it being handed out twice.
     @discardableResult

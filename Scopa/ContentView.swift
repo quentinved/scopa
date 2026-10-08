@@ -131,6 +131,14 @@ struct ContentView: View {
             .task { await ads.start() }
             // Settles the no-ads pass, then follows the App Store for the life of the app.
             .task { await ads.pass.watch() }
+            // The pass's denari, once per account, as soon as it is owned and the purse read.
+            .task(id: ads.pass.isOwned && purse.isReady) {
+                guard ads.pass.isOwned, purse.isReady, await purse.grantPassGift() else { return }
+                let locale = store.language.locale ?? .autoupdatingCurrent
+                toaster.post(Toast(symbol: "gift.fill", tint: Palette.gold,
+                                   title: String(localized: "\(Boost.passGift.coins) denari for you", locale: locale),
+                                   detail: String(localized: "Thank you for going ad free", locale: locale)))
+            }
             .task { store.listenForInvites() }
             .task { await showDebugAdIfAsked() }
             // The account waits for both: Game Center to say who this is, and the ledger to

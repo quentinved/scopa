@@ -36,10 +36,10 @@ struct LeagueMetal: Hashable {
                                     base: Color(red: 0.68, green: 0.71, blue: 0.75),
                                     light: Color(red: 0.95, green: 0.96, blue: 0.98))
     static let gold = LeagueMetal(dark: Palette.goldDeep, base: Palette.gold, light: Palette.goldLight)
-    /// Colder and whiter than silver, which it is only a shade from on a phone.
-    static let platinum = LeagueMetal(dark: Color(red: 0.42, green: 0.48, blue: 0.55),
-                                      base: Color(red: 0.80, green: 0.85, blue: 0.89),
-                                      light: Color(red: 0.98, green: 0.99, blue: 1.00))
+    /// Washed with teal, the Platinum icon's ground. A paler grey read as silver on a phone.
+    static let platinum = LeagueMetal(dark: Color(red: 0.17, green: 0.40, blue: 0.43),
+                                      base: Color(red: 0.56, green: 0.80, blue: 0.80),
+                                      light: Color(red: 0.89, green: 0.99, blue: 0.97))
     /// White metal and ice, so the stone carries the medal.
     static let diamond = LeagueMetal(dark: Color(red: 0.38, green: 0.52, blue: 0.62),
                                      base: Color(red: 0.82, green: 0.90, blue: 0.95),

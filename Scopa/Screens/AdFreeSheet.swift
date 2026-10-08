@@ -1,4 +1,5 @@
 import StoreKit
+import ScopaRewards
 import SwiftUI
 
 /// The no-ads purchase on a page of its own: the picture, what it takes away and what it
@@ -64,6 +65,8 @@ struct AdFreeSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             perk("rectangle.slash.fill", Palette.terracotta, "No banner under the lobby")
             perk("play.slash.fill", Palette.terracotta, "No ad between games")
+            perk("sparkles", Palette.gold, "\(Boost.passGift.coins) denari, straight into your purse")
+            perk("arrow.up.right", Palette.gold, "Half as much again on every game you finish")
             perk("gift.fill", Palette.gold, "The videos that pay denari stay, for when you want them")
             perk("infinity", Palette.steel, "Pay once. Yours for good, on all your devices")
         }
@@ -130,7 +133,7 @@ struct AdFreeSheet: View {
                     Text("Tutto pulito!")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Palette.cream)
-                    Text("The ads are gone. Thank you for keeping the table going.")
+                    Text("The ads are gone and every game pays half again. Thank you for keeping the table going.")
                         .font(.system(size: 14))
                         .foregroundStyle(Palette.cream.opacity(0.85))
                         .fixedSize(horizontal: false, vertical: true)
@@ -183,7 +186,7 @@ struct NoAdsButton: View {
 }
 
 /// The offer in the shop, under the video row. Real money, so it says its price in the
-/// player's currency and never in denari.
+/// player's currency and never in denari, though it hands some over.
 struct AdFreeShopRow: View {
     let ads: AdsStore
 
@@ -202,7 +205,7 @@ struct AdFreeShopRow: View {
                             Text("Scopa without ads")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundStyle(Palette.onTable)
-                            Text("No banner, no ad between games")
+                            Text("No ads, \(Boost.passGift.coins) denari, and half again every game")
                                 .font(.system(size: 13))
                                 .foregroundStyle(Palette.onTableSoft)
                         }

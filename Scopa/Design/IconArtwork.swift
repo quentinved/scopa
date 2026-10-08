@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The app icon, drawn rather than painted, so it can be re-rendered at any size.
 ///
-/// Bottle green under a gold frame, a burst of rays, three cards fanned above a gold
+/// Emerald under a gold frame, a burst of rays, three cards fanned above a gold
 /// broom, and the name on a glass plaque.
 ///
 /// The colours are written out rather than taken from `Palette`, so the icon does not
@@ -77,9 +77,9 @@ struct IconArtwork: View {
 
     private var finishRank: Int { Finish.allCases.firstIndex(of: finish) ?? 0 }
 
-    private static let deepGreen = Color(red: 0.055, green: 0.180, blue: 0.114)
-    private static let green = Color(red: 0.153, green: 0.310, blue: 0.204)
-    private static let lightGreen = Color(red: 0.278, green: 0.451, blue: 0.302)
+    private static let deepGreen = Color(red: 0.020, green: 0.250, blue: 0.137)
+    private static let green = Color(red: 0.055, green: 0.447, blue: 0.247)
+    private static let lightGreen = Color(red: 0.200, green: 0.620, blue: 0.353)
     private static let cream = Color(red: 0.988, green: 0.973, blue: 0.933)
     private static let stock = Color(red: 0.937, green: 0.906, blue: 0.827)
     private static let terracotta = Color(red: 0.788, green: 0.310, blue: 0.220)
@@ -105,8 +105,8 @@ struct IconArtwork: View {
                 fan
                 broom
             }
-            .scaleEffect(0.86)
-            .offset(y: -84 * unit)
+            .scaleEffect(0.84)
+            .offset(y: -112 * unit)
             wordmark
         }
         .frame(width: size, height: size)
@@ -118,7 +118,7 @@ struct IconArtwork: View {
 
     // MARK: Ground
 
-    /// Bottle green lit from the top left — banked down for the dark icon, and taken to
+    /// Emerald lit from the top left — banked down for the dark icon, and taken to
     /// black for the tinted one so the cards and the broom are what the tint lands on.
     private var ground: some View {
         ZStack {
@@ -329,16 +329,16 @@ struct IconArtwork: View {
     /// the bristles behind them.
     private var wordmark: some View {
         letters
-            .padding(.horizontal, 54 * unit)
-            .padding(.vertical, 20 * unit)
+            .padding(.horizontal, 44 * unit)
+            .padding(.vertical, 10 * unit)
             .background { plaque }
-            .offset(y: 330 * unit)
+            .offset(y: 318 * unit)
     }
 
     private var letters: some View {
         Text(verbatim: "SCOPA")
-            .font(.system(size: 126 * unit, weight: .heavy, design: .serif))
-            .tracking(13 * unit)
+            .font(.system(size: 172 * unit, weight: .black, design: .serif))
+            .tracking(8 * unit)
             .foregroundStyle(LinearGradient(colors: [tones.metalLight, tones.metal, tones.metalDeep],
                                             startPoint: .top, endPoint: .bottom))
             .shadow(color: tones.groundDeep.opacity(0.7), radius: 6 * unit, y: 4 * unit)

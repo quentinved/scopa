@@ -2006,7 +2006,9 @@ struct TableScreen: View {
 
     /// Today's deal, paid: the deal itself, and the mark on the run if this one reached it.
     private func settleDaily(_ tally: RewardTally) async -> [PayoutLine] {
-        var paid = await purse.settle(tally).map { PayoutLine($0, locale: locale) }
+        let awards = await purse.settle(tally)
+        var paid = awards.map { PayoutLine($0, locale: locale) }
+        paid += await boosts(on: awards, gameID: tally.gameID)
         if let milestone = store.streakMilestone, let day = store.dailyDay,
            let credited = await purse.award(milestone, day: day) {
             paid.append(PayoutLine(id: "streak", title: streakTitle(milestone), value: credited))
@@ -2162,7 +2164,8 @@ struct TableScreen: View {
     /// already gone, so a loss is shown as the loss it was rather than as nothing.
     private func settle(_ tally: RewardTally, won: Bool, players: Int) async -> [PayoutLine] {
         guard let stake = store.stake else {
-            return await purse.settle(tally).map { PayoutLine($0, locale: locale) }
+            let awards = await purse.settle(tally)
+            return awards.map { PayoutLine($0, locale: locale) } + (await boosts(on: awards, gameID: tally.gameID))
         }
         if won, let pot = await purse.payOut(stake, players: players, gameID: store.wagerID) {
             return [PayoutLine(id: "pot", title: String(localized: "The pot", locale: locale), value: pot)]
@@ -2171,6 +2174,21 @@ struct TableScreen: View {
             return [PayoutLine(id: "stake", title: String(localized: "Stake lost", locale: locale), value: -stake.amount)]
         }
         return []
+    }
+
+    /// The no-ads pass's half again and a bought run's double, on what the game itself just
+    /// paid. Nothing when it paid nothing fresh, so a summary drawn twice adds no line.
+    private func boosts(on awards: [Award], gameID: UUID) async -> [PayoutLine] {
+        let earned = awards.reduce(Denari.zero) { $0 + $1.value }
+        return await purse.boost(earned, gameID: gameID, withPass: ads.pass.isOwned).map { entry in
+            guard case .granted(Boost.note) = entry.reason else {
+                return PayoutLine(id: Boost.passNote, title: String(localized: "Ad-free bonus", locale: locale),
+                                  value: entry.amount)
+            }
+            let left = purse.purse.boostedGamesLeft
+            return PayoutLine(id: Boost.note, title: String(localized: "Double winnings · \(left) left", locale: locale),
+                              value: entry.amount)
+        }
     }
 
     /// Who won the game, said to whoever is holding the phone.

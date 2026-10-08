@@ -864,6 +864,54 @@
         }
       }
     },
+    "%lld denari for you" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld deniers pour vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld denari per te"
+          }
+        }
+      }
+    },
+    "%lld denari, straight into your purse" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld deniers, directement dans votre bourse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld denari, dritti nel borsellino"
+          }
+        }
+      }
+    },
+    "%lld doubled games left" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore %lld parties doublées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora %lld partite doppie"
+          }
+        }
+      }
+    },
     "%lld hours left" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2939,6 +2987,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ADV"
+          }
+        }
+      }
+    },
+    "Ad free, and paid for it" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans pub, et payé pour ça"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senza pubblicità, e pure pagato"
+          }
+        }
+      }
+    },
+    "Ad-free bonus" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonus sans pub"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonus senza pubblicità"
           }
         }
       }
@@ -5571,6 +5651,7 @@
       }
     },
     "Denari are never sold for money, and nothing here changes how the cards fall." : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -5826,6 +5907,54 @@
         }
       }
     },
+    "Double winnings" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gains doublés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincite doppie"
+          }
+        }
+      }
+    },
+    "Double winnings · %lld left" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gains doublés · encore %lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vincite doppie · ancora %lld"
+          }
+        }
+      }
+    },
+    "Double your next %lld games?" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doubler vos %lld prochaines parties ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raddoppiare le prossime %lld partite?"
+          }
+        }
+      }
+    },
     "down %lld" : {
       "localizations" : {
         "fr" : {
@@ -6063,6 +6192,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ogni denaro che segue aggiunge un punto: con il 4 fa quattro, con il 4 e il 5 fa cinque. Tutti e dieci i denari fanno dieci."
+          }
+        }
+      }
+    },
+    "Every game pays twice" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque partie paie deux fois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni partita paga il doppio"
           }
         }
       }
@@ -6754,6 +6899,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quando non si scherza più"
+          }
+        }
+      }
+    },
+    "For your next %lld games" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour vos %lld prochaines parties"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per le tue prossime %lld partite"
           }
         }
       }
@@ -7681,6 +7842,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bella questa!"
+          }
+        }
+      }
+    },
+    "Half as much again on every game you finish" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moitié plus de deniers à chaque partie terminée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metà in più a ogni partita finita"
           }
         }
       }
@@ -10168,6 +10345,22 @@
         }
       }
     },
+    "New in the shop: for 250 denari, your next 10 games pay twice. Buy another run and they add up." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau dans la boutique : pour 250 deniers, vos 10 prochaines parties paient deux fois. Achetez-en une autre série et elles s'ajoutent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità nel negozio: con 250 denari le tue prossime 10 partite pagano il doppio. Comprane un'altra serie e si sommano."
+          }
+        }
+      }
+    },
     "NEW LEAGUE" : {
       "localizations" : {
         "fr" : {
@@ -10280,6 +10473,22 @@
         }
       }
     },
+    "No ads, %lld denari, and half again every game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans pub, %lld deniers, et moitié plus à chaque partie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niente pubblicità, %lld denari e metà in più a ogni partita"
+          }
+        }
+      }
+    },
     "No banner and no ad between games. The videos that pay denari stay, for when you want them." : {
       "localizations" : {
         "fr" : {
@@ -10313,6 +10522,7 @@
       }
     },
     "No banner, no ad between games" : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -10827,6 +11037,22 @@
         }
       }
     },
+    "Not enough denari yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas encore assez de deniers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non hai ancora abbastanza denari"
+          }
+        }
+      }
+    },
     "Not enough in the purse" : {
       "localizations" : {
         "fr" : {
@@ -10987,6 +11213,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qui non si compra nulla con denaro vero, e nulla cambia come cadono le carte."
+          }
+        }
+      }
+    },
+    "Nothing here changes how the cards fall." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien ici n'influence la distribution des cartes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nulla qui cambia come cadono le carte."
           }
         }
       }
@@ -11227,6 +11469,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "dagli scaffali"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
       }
@@ -16258,6 +16516,22 @@
         }
       }
     },
+    "Thank you for going ad free" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merci d'avoir chassé les pubs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grazie per aver spazzato via la pubblicità"
+          }
+        }
+      }
+    },
     "Thank you for playing Scopa. It is kind of you to keep a seat at our table, so the house has put something by for you." : {
       "localizations" : {
         "fr" : {
@@ -16516,7 +16790,24 @@
         }
       }
     },
+    "The ads are gone and every game pays half again. Thank you for keeping the table going." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pubs sont parties et chaque partie paie moitié plus. Merci de faire vivre la table."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La pubblicità è sparita e ogni partita paga metà in più. Grazie di tenere vivo il tavolo."
+          }
+        }
+      }
+    },
     "The ads are gone. Thank you for keeping the table going." : {
+      "extractionState" : "stale",
       "localizations" : {
         "fr" : {
           "stringUnit" : {
@@ -17406,6 +17697,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La nuova campagna in solitario: regione dopo regione, tappa dopo tappa, contro giocatori sempre più bravi. Fino a tre stelle per tappa, e un premio alla fine di ogni regione."
+          }
+        }
+      }
+    },
+    "The no-ads purchase now gives 2,000 denari once, and half as much again on every game you finish. Already have it? Your 2,000 are in your purse." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'achat sans pub donne maintenant 2 000 deniers une fois, puis moitié plus à chaque partie terminée. Vous l'avez déjà ? Vos 2 000 deniers sont dans votre bourse."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'acquisto senza pubblicità ora regala 2.000 denari una volta, poi metà in più a ogni partita finita. Ce l'hai già? I tuoi 2.000 denari sono nel borsellino."
           }
         }
       }

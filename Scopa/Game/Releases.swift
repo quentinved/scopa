@@ -9,6 +9,12 @@ import ScopaRewards
 /// a gift if it has one; the lobby does the rest, once per player.
 enum Releases {
     static let all: [Release] = [
+        Release(version: "1.3", gift: nil, notes: [
+            ReleaseNote(art: .noAds, title: "Ad free, and paid for it",
+                        body: "The no-ads purchase now gives 2,000 denari once, and half as much again on every game you finish. Already have it? Your 2,000 are in your purse."),
+            ReleaseNote(art: .videos, title: "Double winnings",
+                        body: "New in the shop: for 250 denari, your next 10 games pay twice. Buy another run and they add up."),
+        ]),
         Release(version: "1.2.1", gift: nil, notes: [
             ReleaseNote(art: .journey, title: "Piemonte",
                         body: "Six new tables between Liguria and Napoli, from Torino to the Mole Antonelliana, and the Wine seat mark at the end of the road. Every star you had won is still yours."),

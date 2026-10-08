@@ -88,6 +88,7 @@ struct ShopContent: View {
                 // did not know it was there.
                 watchForDenari
                 AdFreeShopRow(ads: ads)
+                BoostShopRow(purse: purse)
                 hero
                 ShopGuide(isOpen: $guideOpen).id("guide")
                 packs.passesUnderShopBar(.packs, into: $passed)
@@ -197,7 +198,7 @@ struct ShopContent: View {
             }
             .padding(16)
             .glassPanel(radius: GlassRadius.control)
-            Text("Denari are never sold for money, and nothing here changes how the cards fall.")
+            Text("Nothing here changes how the cards fall.")
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.onTableSoft)
                 .fixedSize(horizontal: false, vertical: true)

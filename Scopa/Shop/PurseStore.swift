@@ -421,6 +421,48 @@ final class PurseStore {
         }
     }
 
+    /// A run of doubled games, for denari. False, with the shortfall in `problem`, when the
+    /// purse cannot cover it.
+    func buyBoost() async -> Bool {
+        do {
+            purse = try await wallet.buyBoost()
+            problem = nil
+            return true
+        } catch PurchaseError.tooDear(let short) {
+            problem = "You are \(short.coins) denari short."
+            return false
+        } catch {
+            problem = "That purchase could not be saved."
+            return false
+        }
+    }
+
+    /// The extras on what a game just earned. Only what landed, so a second settle is empty.
+    func boost(_ earned: Denari, gameID: UUID, withPass: Bool) async -> [LedgerEntry] {
+        do {
+            let fresh = try await wallet.boost(earned, gameID: gameID, withPass: withPass)
+            purse = try await wallet.purse()
+            return fresh
+        } catch {
+            problem = "Your denari from that game could not be saved."
+            return []
+        }
+    }
+
+    /// The no-ads pass's denari, once per account: keyed on the pass rather than the device,
+    /// so a restore on a second phone pays nothing more. True only when it was paid now.
+    @discardableResult
+    func grantPassGift() async -> Bool {
+        do {
+            let fresh = try await wallet.grant(Boost.passGift, note: Boost.passNote, key: Boost.passGiftKey)
+            purse = try await wallet.purse()
+            return !fresh.isEmpty
+        } catch {
+            problem = "Your denari could not be saved on this device."
+            return false
+        }
+    }
+
     /// Pays a campaign table won for the first time, and anything its region hands over.
     /// Keyed on the stage, so a second device or a summary drawn twice pays once. Nil when
     /// it was already paid, which is also the caller's word on whether a pack is still owed.
