@@ -102,9 +102,11 @@ final class AdsStore {
 
     // MARK: The interruption
 
-    /// Called when a round ends, so the ad is warm by the time the game is.
+    /// Called when a round ends, so the ad is warm by the time the game is. Skipped when the
+    /// pacing will not allow one after this game: a fetched ad that is never shown earns
+    /// nothing and only widens the gap between requests and impressions.
     func prepareForEndOfGame() {
-        guard interrupts else { return }
+        guard interrupts, policy.mayAllowInterstitialAfterThisGame() else { return }
         gateway.preloadInterstitial()
     }
 

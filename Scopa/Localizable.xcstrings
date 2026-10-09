@@ -1330,9 +1330,21 @@
     "%lld scope" : {
       "localizations" : {
         "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld scope"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld scopa"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld scopas"
+                }
+              }
+            }
           }
         },
         "it" : {
@@ -2080,22 +2092,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Una carta con una sola mossa possibile si gioca al primo tocco, non al secondo"
-          }
-        }
-      }
-    },
-    "A category nobody wins outright scores nothing, and a tie counts as nobody. First past the target — eleven, unless the host says otherwise — wins, and a dead heat plays one more round." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une catégorie ne rapporte que si quelqu'un la gagne nettement : en cas d'égalité, elle ne va à personne. Le premier à dépasser l'objectif — onze, sauf si l'hôte en décide autrement — gagne, et en cas d'égalité parfaite, on joue une manche de plus."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una categoria si vince nettamente o non dà punti: in caso di pareggio non va a nessuno. Il primo oltre l'obiettivo — undici, salvo diversa scelta dell'ospite — vince, e in caso di parità si gioca un'altra smazzata."
           }
         }
       }
@@ -3531,22 +3527,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "un giocatore non classificato"
-          }
-        }
-      }
-    },
-    "And one card of the same number always wins over a sum: with a 7 on the table beside a 3 and a 4, your 7 takes the 7." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Et une carte du même chiffre l'emporte toujours sur une somme : avec un 7 sur la table à côté d'un 3 et d'un 4, votre 7 prend le 7."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E una carta dello stesso numero batte sempre una somma: con un 7 sul tavolo accanto a un 3 e un 4, il tuo 7 prende il 7."
           }
         }
       }
@@ -5259,22 +5239,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossibile raggiungere quel tavolo"
-          }
-        }
-      }
-    },
-    "Counting up" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le décompte"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il conteggio"
           }
         }
       }
@@ -7048,22 +7012,6 @@
         }
       }
     },
-    "Four cards go face up on the table, three into every hand." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On pose quatre cartes face visible sur la table, et on en donne trois à chacun."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quattro carte scoperte sul tavolo, tre in ogni mano."
-          }
-        }
-      }
-    },
     "Four cards, a seven or better, and something off the shelves" : {
       "localizations" : {
         "fr" : {
@@ -7092,22 +7040,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In quattro in due squadre, dieci carte a testa, niente sul tavolo all'inizio"
-          }
-        }
-      }
-    },
-    "Four Italian suits, one to ten. No jokers, nothing wild." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quatre couleurs italiennes, de un à dix. Pas de joker, pas de carte magique."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quattro semi italiani, da uno a dieci. Niente jolly, niente matte."
           }
         }
       }
@@ -7156,22 +7088,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quattro giocatori, a coppie"
-          }
-        }
-      }
-    },
-    "Four points sit on the table, and every scopa adds one more." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quatre points sont en jeu à chaque manche, plus un par scopa."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quattro punti stanno sul tavolo, e ogni scopa ne aggiunge uno."
           }
         }
       }
@@ -11265,22 +11181,6 @@
         }
       }
     },
-    "Nothing matches and nothing adds up, so your card stays on the table." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune correspondance, aucune somme : votre carte reste sur la table."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nessuna corrispondenza, nessuna somma: la tua carta resta sul tavolo."
-          }
-        }
-      }
-    },
     "Nothing new this time" : {
       "localizations" : {
         "fr" : {
@@ -11661,22 +11561,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sul tuo posto, a ogni tavolo"
-          }
-        }
-      }
-    },
-    "On your turn you play one card. If it can take, it takes." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "À votre tour, vous jouez une carte. Si elle peut prendre, elle prend."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Al tuo turno giochi una carta. Se può prendere, prende."
           }
         }
       }
@@ -12241,22 +12125,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "o meglio, per pacchetto"
-          }
-        }
-      }
-    },
-    "Or cards that add up to it: 3 + 4 makes 7." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ou plusieurs cartes qui, additionnées, font le même total : 3 + 4 font 7."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oppure carte la cui somma corrisponde: 3 + 4 fa 7."
           }
         }
       }
@@ -14226,22 +14094,6 @@
         }
       }
     },
-    "Scopa is the Italian for broom. It is the point everyone plays for." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scopa veut dire « balai » en italien. C'est le point que tout le monde rêve de faire."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scopa è il colpo che pulisce il tavolo. È il punto che tutti cercano."
-          }
-        }
-      }
-    },
     "Scopa needs to see your Game Center friends to pick a partner. Allow it in Settings, under Game Center." : {
       "localizations" : {
         "fr" : {
@@ -14295,7 +14147,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scope"
+            "value" : "Scopas"
           }
         },
         "it" : {
@@ -15248,22 +15100,6 @@
         }
       }
     },
-    "Six of the ten denari" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Six des dix deniers"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sei dei dieci denari"
-          }
-        }
-      }
-    },
     "Soft guitar and bass. Thinking music" : {
       "localizations" : {
         "fr" : {
@@ -15684,9 +15520,21 @@
     "Sweep %lld scope or more" : {
       "localizations" : {
         "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faire au moins %lld scope"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Faire au moins %lld scopa"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Faire au moins %lld scopas"
+                }
+              }
+            }
           }
         },
         "it" : {
@@ -15757,22 +15605,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Spazza il tavolo e una scopa attraversa il panno, la parola si stampa in oro, e il telefono la sente. Anche il settebello, il re bello, la napola e l'asso piglia tutto hanno il loro momento."
-          }
-        }
-      }
-    },
-    "Sweep the table clean and it is a point, there and then." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Balayez la table et c'est un point, sur-le-champ."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spazzi via il tavolo ed è un punto, subito."
           }
         }
       }
@@ -16034,22 +15866,6 @@
         }
       }
     },
-    "Take, or leave it" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prendre, ou poser"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prendere, o lasciare"
-          }
-        }
-      }
-    },
     "taken" : {
       "localizations" : {
         "fr" : {
@@ -16142,22 +15958,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "prendendo %@"
-          }
-        }
-      }
-    },
-    "Taking is never optional — if your card can take, you may not lay it down instead." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prendre est obligatoire : si votre carte peut prendre, vous ne pouvez pas la poser à la place."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prendere è sempre obbligatorio: se la tua carta può prendere, prende — non puoi metterla giù."
           }
         }
       }
@@ -16738,22 +16538,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Il %@ è una carta che conta per la primiera. Tienila se puoi."
-          }
-        }
-      }
-    },
-    "The 7 of coins, worth a point on its own" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le 7 de deniers, un point à lui seul"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il 7 di denari, un punto da solo"
           }
         }
       }
@@ -17717,22 +17501,6 @@
         }
       }
     },
-    "The number in the corner is the whole game: it is what the card takes with. The three court cards are simply 8, 9 and 10." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le chiffre dans le coin, c'est tout le jeu : c'est avec lui que la carte prend. Les trois figures valent simplement 8, 9 et 10."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il numero nell'angolo è tutto il gioco: è con quello che la carta prende. Le tre figure valgono semplicemente 8, 9 e 10."
-          }
-        }
-      }
-    },
     "The odds" : {
       "localizations" : {
         "fr" : {
@@ -17745,22 +17513,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le probabilità"
-          }
-        }
-      }
-    },
-    "The only sweep that does not count is the one made with the very last card of the round — by then the table is bound to empty." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une seule scopa ne compte pas : celle faite avec la toute dernière carte de la manche, puisque la table se vide forcément à ce moment-là."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Una sola scopa non conta: quella fatta con l'ultimissima carta della smazzata, perché a quel punto il tavolo si svuota per forza."
           }
         }
       }
@@ -18832,22 +18584,6 @@
         }
       }
     },
-    "Three cards at a time" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trois cartes à la fois"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tre carte alla volta"
-          }
-        }
-      }
-    },
     "Three cards, a court or better among them" : {
       "localizations" : {
         "fr" : {
@@ -19442,22 +19178,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tutto pulito!"
-          }
-        }
-      }
-    },
-    "Twenty-one of the forty is enough" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vingt et une des quarante suffisent"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ventuno delle quaranta bastano"
           }
         }
       }
@@ -20420,38 +20140,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qualunque cosa ci sia sul tavolo, l'asso si prende tutto."
-          }
-        }
-      }
-    },
-    "Whatever is still lying on the table at the end goes to whoever took last. That one is not a scopa." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ce qui reste sur la table à la fin revient à qui a pris en dernier — et cela ne compte pas comme une scopa."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quel che resta sul tavolo alla fine va a chi ha preso per ultimo. Quella non è una scopa."
-          }
-        }
-      }
-    },
-    "When everyone has played their three, three more are dealt, and again, until the deck is empty." : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand chacun a joué ses trois cartes, on en redonne trois, et ainsi de suite jusqu'à épuisement du talon."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando tutti hanno giocato le loro tre, se ne distribuiscono altre tre, e così via finché il mazzo è finito."
           }
         }
       }
@@ -21753,22 +21441,6 @@
         }
       }
     },
-    "Your best card in each suit, added up: 7 is the best, then 6, then the ace. A table can settle it by counting sevens instead" : {
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vos meilleures cartes dans chaque couleur, additionnées : le 7 d'abord, puis le 6, puis l'as. Une table peut aussi trancher en comptant les sept"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le tue carte migliori in ogni seme, sommate: prima il 7, poi il 6, poi l'asso. Un tavolo può anche deciderla contando i sette"
-          }
-        }
-      }
-    },
     "Your campaign reward could not be saved." : {
       "localizations" : {
         "fr" : {
@@ -22600,6 +22272,502 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "È tuo. Mettilo nella bottega."
+          }
+        }
+      }
+    },
+    "How to win" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment gagner"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Come si vince"
+          }
+        }
+      }
+    },
+    "Take cards from the table. The cards you take are worth points. First to 11 points wins." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prenez des cartes sur la table. Les cartes prises rapportent des points. Le premier à 11 points gagne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi le carte dal tavolo. Le carte che prendi valgono punti. Vince chi arriva per primo a 11 punti."
+          }
+        }
+      }
+    },
+    "Play one card from your hand." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jouez une carte de votre main."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gioca una carta dalla tua mano."
+          }
+        }
+      }
+    },
+    "If it matches cards on the table, you take them." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si elle correspond à des cartes sur la table, vous les prenez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se corrisponde a carte sul tavolo, le prendi."
+          }
+        }
+      }
+    },
+    "Take every card on the table and it is a scopa: one point at once." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prenez toutes les cartes de la table : c'est une scopa, un point tout de suite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi tutte le carte del tavolo: è scopa, un punto subito."
+          }
+        }
+      }
+    },
+    "When the cards run out, count what you took." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand il n'y a plus de cartes, comptez ce que vous avez pris."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando le carte finiscono, conta quello che hai preso."
+          }
+        }
+      }
+    },
+    "The next pages show each step with real cards." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages suivantes montrent chaque étape avec de vraies cartes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le prossime pagine mostrano ogni passo con carte vere."
+          }
+        }
+      }
+    },
+    "Four Italian suits, numbered 1 to 10." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quatre couleurs italiennes, numérotées de 1 à 10."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quattro semi italiani, numerati da 1 a 10."
+          }
+        }
+      }
+    },
+    "A card is worth the number in its corner. The three picture cards are 8, 9 and 10." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une carte vaut le chiffre dans son coin. Les trois figures valent 8, 9 et 10."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una carta vale il numero nel suo angolo. Le tre figure valgono 8, 9 e 10."
+          }
+        }
+      }
+    },
+    "Three cards each" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trois cartes chacun"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre carte a testa"
+          }
+        }
+      }
+    },
+    "Four cards face up on the table, three in each hand." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quatre cartes face visible sur la table, trois dans chaque main."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quattro carte scoperte sul tavolo, tre in ogni mano."
+          }
+        }
+      }
+    },
+    "When every hand is empty, everyone gets three more. This goes on until the deck runs out." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand toutes les mains sont vides, chacun en reçoit trois de plus. Et ainsi de suite jusqu'à la fin du paquet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando tutte le mani sono vuote, ognuno ne riceve altre tre. Si continua così finché il mazzo non finisce."
+          }
+        }
+      }
+    },
+    "Taking cards" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendre des cartes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendere le carte"
+          }
+        }
+      }
+    },
+    "On your turn, play one card. It takes the cards it matches." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À votre tour, jouez une carte. Elle prend les cartes qui lui correspondent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al tuo turno, gioca una carta. Prende le carte che le corrispondono."
+          }
+        }
+      }
+    },
+    "Or several cards that add up to it: 3 + 4 = 7." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ou plusieurs cartes qui font le même total : 3 + 4 = 7."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oppure più carte che fanno la stessa somma: 3 + 4 = 7."
+          }
+        }
+      }
+    },
+    "Nothing matches: your card stays on the table." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien ne correspond : votre carte reste sur la table."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niente corrisponde: la tua carta resta sul tavolo."
+          }
+        }
+      }
+    },
+    "If your card can take, it must take." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si votre carte peut prendre, elle doit prendre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se la tua carta può prendere, deve prendere."
+          }
+        }
+      }
+    },
+    "A matching card comes before a sum: with a 7, a 3 and a 4 on the table, your 7 takes the 7." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une carte identique passe avant une somme : avec un 7, un 3 et un 4 sur la table, votre 7 prend le 7."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una carta uguale viene prima di una somma: con un 7, un 3 e un 4 sul tavolo, il tuo 7 prende il 7."
+          }
+        }
+      }
+    },
+    "Take every card on the table and you score one point at once." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prenez toutes les cartes de la table et vous marquez un point tout de suite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendi tutte le carte del tavolo e fai subito un punto."
+          }
+        }
+      }
+    },
+    "Scopa means broom in Italian: you sweep the table clean." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopa veut dire « balai » en italien : vous balayez la table."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopa vuol dire proprio questo: spazzi via il tavolo."
+          }
+        }
+      }
+    },
+    "The very last card of the round never makes a scopa: the table empties then anyway." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La toute dernière carte de la manche ne fait jamais de scopa : la table se vide forcément à ce moment-là."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'ultimissima carta della smazzata non fa mai scopa: a quel punto il tavolo si svuota comunque."
+          }
+        }
+      }
+    },
+    "Counting points" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compter les points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contare i punti"
+          }
+        }
+      }
+    },
+    "At the end of each round, look at the cards you took. Four points are up for grabs." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À la fin de chaque manche, regardez les cartes que vous avez prises. Quatre points sont en jeu."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alla fine di ogni smazzata, guarda le carte che hai preso. Ci sono quattro punti in palio."
+          }
+        }
+      }
+    },
+    "More cards than anyone else" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de cartes que les autres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più carte degli altri"
+          }
+        }
+      }
+    },
+    "More coin cards than anyone else" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de deniers que les autres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più denari degli altri"
+          }
+        }
+      }
+    },
+    "Whoever took the 7 of coins" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celui qui a pris le 7 de deniers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi ha preso il 7 di denari"
+          }
+        }
+      }
+    },
+    "Whoever took the most 7s" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Celui qui a pris le plus de 7"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi ha preso più 7"
+          }
+        }
+      }
+    },
+    "Each scopa adds one more point." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaque scopa ajoute un point."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogni scopa aggiunge un punto."
+          }
+        }
+      }
+    },
+    "A tie on a line: nobody gets that point." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Égalité sur une ligne : personne ne marque ce point."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pareggio su una voce: quel punto non va a nessuno."
+          }
+        }
+      }
+    },
+    "Cards still on the table at the end go to the last player who took." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les cartes restées sur la table à la fin vont au dernier joueur qui a pris."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le carte rimaste sul tavolo alla fine vanno all'ultimo che ha preso."
+          }
+        }
+      }
+    },
+    "First to 11 points wins. Level at the top? One more round." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le premier à 11 points gagne. Égalité en tête ? Une manche de plus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vince chi arriva per primo a 11 punti. Pari in testa? Si gioca un'altra smazzata."
           }
         }
       }

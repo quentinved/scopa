@@ -11,8 +11,8 @@ enum GameEnding {
 
 /// Every rule about when a full screen ad may interrupt the player, in one place.
 ///
-/// The limits are deliberately tight: Scopa is played in short bursts, so an ad after every
-/// game reads as a toll. The banner and the opt-in ad are the intended earners.
+/// Since 2026-10-09 an ad may follow every game: the full screen ad is what earns, and the
+/// quiet period and the daily cap keep a run of short games from turning into a toll.
 @MainActor
 struct AdPolicy {
     // MARK: The dials
@@ -20,8 +20,8 @@ struct AdPolicy {
     /// Games finished before the first interruption, so a first sitting is left alone.
     static let graceGames = 2
 
-    /// Games between interruptions afterwards, so every other game at most.
-    static let gamesBetween = 2
+    /// Games between interruptions afterwards: every game, within the limits below.
+    static let gamesBetween = 1
 
     /// Shortest gap between two interruptions. Pass-and-play games can end minutes apart.
     static let quietPeriod: TimeInterval = 3 * 60
@@ -77,6 +77,16 @@ struct AdPolicy {
         guard shownToday < Self.dailyCap else { return false }
         guard let last else { return true }
         return now.timeIntervalSince(last) >= Self.quietPeriod
+    }
+
+    /// Whether the game now being played could be followed by a full screen ad, so one is
+    /// only fetched for a game that may show it. The quiet period is left out: the game
+    /// itself takes minutes, and a lost stake is not known yet.
+    func mayAllowInterstitialAfterThisGame(now: Date = .now) -> Bool {
+        let shown = Self.ordinal(of: now) == day ? shownToday : 0
+        return gamesFinished + 1 > Self.graceGames
+            && gamesSinceLast + 1 >= Self.gamesBetween
+            && shown < Self.dailyCap
     }
 
     /// Records a shown ad. Call only once the network confirms it appeared, so a failed

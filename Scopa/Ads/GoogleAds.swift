@@ -22,14 +22,17 @@ final class GoogleAds: AdsGateway {
     /// The ad holds its delegate weakly, so the presentation has to be retained here until
     /// the player dismisses it.
     @ObservationIgnored private var presentation: FullScreen?
+    /// The banner, kept here rather than in a strip so it can move between them.
+    @ObservationIgnored fileprivate lazy var keeper = BannerKeeper { [weak self] height in
+        self?.bannerFilled(to: height)
+    }
 
     func begin() {
         guard !hasBegun else { return }
         hasBegun = true
         Log.ads.info("SDK up; asking for banner \(AdUnits.banner, privacy: .public), interstitial \(AdUnits.interstitial, privacy: .public), rewarded \(AdUnits.rewarded, privacy: .public)")
-        // Only the interstitial is warmed here. Loading the opt-in ad too put a third web
-        // view up while the lobby was still drawing, so the shop warms that one.
-        preloadInterstitial()
+        // Nothing full screen is warmed at launch: a session that never reaches a game the
+        // pacing would interrupt asked for an ad it could not show. The table warms it.
     }
 
     #if DEBUG
@@ -71,13 +74,15 @@ final class GoogleAds: AdsGateway {
     /// expired ad fails to present, so a stale one is dropped and fetched again.
     @ObservationIgnored private var interstitialLoadedAt: Date?
 
-    /// Comfortably inside AdMob's one hour.
-    private static let interstitialShelfLife: TimeInterval = 50 * 60
+    /// Comfortably inside AdMob's one hour, which applies to the opt-in ad as well.
+    private static let shelfLife: TimeInterval = 50 * 60
 
-    private var interstitialIsStale: Bool {
-        guard let interstitialLoadedAt else { return false }
-        return Date.now.timeIntervalSince(interstitialLoadedAt) > Self.interstitialShelfLife
+    private static func isStale(_ loadedAt: Date?) -> Bool {
+        guard let loadedAt else { return false }
+        return Date.now.timeIntervalSince(loadedAt) > shelfLife
     }
+
+    private var interstitialIsStale: Bool { Self.isStale(interstitialLoadedAt) }
 
     func preloadInterstitial() {
         if interstitial != nil, interstitialIsStale {
@@ -142,7 +147,16 @@ final class GoogleAds: AdsGateway {
 
     // MARK: The one they choose
 
+    /// When the waiting opt-in ad arrived. One held past the hour fails to present, and the
+    /// player's tap on "double" would do nothing at all.
+    @ObservationIgnored private var rewardedLoadedAt: Date?
+
     func preloadRewarded() {
+        if rewarded != nil, Self.isStale(rewardedLoadedAt) {
+            Log.ads.info("Rewarded ad older than its shelf life; fetching a fresh one")
+            rewarded = nil
+            isRewardedReady = false
+        }
         guard hasBegun, rewarded == nil, !isLoadingRewarded else { return }
         isLoadingRewarded = true
         Task { [weak self] in
@@ -156,6 +170,7 @@ final class GoogleAds: AdsGateway {
             guard let self else { return }
             isLoadingRewarded = false
             rewarded = ad
+            rewardedLoadedAt = ad == nil ? nil : .now
             isRewardedReady = ad != nil
         }
     }
@@ -254,7 +269,7 @@ private struct GoogleBanner: UIViewRepresentable {
     let ads: GoogleAds
 
     func makeUIView(context: Context) -> BannerHost {
-        BannerHost { [weak ads] height in ads?.bannerFilled(to: height) }
+        BannerHost(keeper: ads.keeper)
     }
 
     func updateUIView(_ host: BannerHost, context: Context) {}
@@ -264,7 +279,7 @@ private struct GoogleBanner: UIViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, uiView host: BannerHost, context: Context) -> CGSize? {
         guard let width = proposal.width, width > 0 else { return nil }
         host.prepare(width: width)
-        return CGSize(width: width, height: host.filledHeight)
+        return CGSize(width: width, height: host.keeper.filledHeight)
     }
 
     static func dismantleUIView(_ host: BannerHost, coordinator: ()) {
@@ -272,22 +287,14 @@ private struct GoogleBanner: UIViewRepresentable {
     }
 }
 
-/// Holds the banner and reports the height that was actually filled. Nothing is reserved
-/// up front, so a failed load leaves the lobby as it was drawn.
-private final class BannerHost: UIView, BannerViewDelegate, AdSizeDelegate {
-    /// Cap on the banner's height. Anchored adaptive sizes go up to 150 points, which is
-    /// too much of the lobby.
-    private static let maxHeight: CGFloat = 60
+/// One strip's place for the banner. Nothing is reserved up front, so a failed load leaves
+/// the lobby as it was drawn.
+private final class BannerHost: UIView {
+    let keeper: BannerKeeper
+    private var width: CGFloat = 0
 
-    private let report: (CGFloat) -> Void
-    private var banner: BannerView?
-    private var loadedWidth: CGFloat = 0
-
-    /// How tall the ad in here actually is. Zero until one has arrived.
-    private(set) var filledHeight: CGFloat = 0
-
-    init(report: @escaping (CGFloat) -> Void) {
-        self.report = report
+    init(keeper: BannerKeeper) {
+        self.keeper = keeper
         super.init(frame: .zero)
         clipsToBounds = true
     }
@@ -297,38 +304,100 @@ private final class BannerHost: UIView, BannerViewDelegate, AdSizeDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        banner?.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        for banner in subviews { banner.center = CGPoint(x: bounds.midX, y: bounds.midY) }
     }
 
-    /// Requests an ad at this width, and again when the width changes, since a rotated
+    /// Takes the banner at this width, and again when the width changes, since a rotated
     /// strip is a different ad size.
     func prepare(width: CGFloat) {
-        guard abs(width - loadedWidth) > 1 else { return }
-        load(width: width)
+        guard abs(width - self.width) > 1 else { return }
+        self.width = width
+        keeper.attach(to: self, width: width)
     }
 
-    /// Tears the strip down when it leaves the screen. An off screen banner that keeps
-    /// requesting ads breaks AdMob's policy.
+    func hold(_ banner: BannerView) {
+        addSubview(banner)
+        setNeedsLayout()
+    }
+
+    /// The strip is leaving the screen.
     func stop() {
+        width = 0
+        keeper.detach(from: self)
+    }
+}
+
+/// The one banner, handed from strip to strip. Opening or closing a sheet moves the strip
+/// to a new host; passing it the ad already showing, rather than asking for another, saves
+/// a request per sheet and keeps the ad on screen long enough to count.
+@MainActor
+private final class BannerKeeper: NSObject, BannerViewDelegate, AdSizeDelegate {
+    /// Cap on the banner's height. Anchored adaptive sizes go up to 150 points, which is
+    /// too much of the lobby.
+    private static let maxHeight: CGFloat = 60
+
+    /// How long the banner waits out of sight for the next strip: long enough for a sheet
+    /// to open or close. Past it the banner goes, since one left refreshing off screen
+    /// breaks AdMob's policy.
+    private static let handOver: Duration = .seconds(1)
+
+    private let report: (CGFloat) -> Void
+    private var banner: BannerView?
+    private var width: CGFloat = 0
+    private weak var host: BannerHost?
+    private var drop: Task<Void, Never>?
+
+    /// How tall the ad is. Zero until one has arrived.
+    private(set) var filledHeight: CGFloat = 0
+
+    init(report: @escaping (CGFloat) -> Void) {
+        self.report = report
+    }
+
+    /// Puts the banner in this strip: the one already loaded when it was asked for at this
+    /// width, a fresh one otherwise.
+    func attach(to host: BannerHost, width: CGFloat) {
+        drop?.cancel()
+        drop = nil
+        self.host = host
+        if let banner, abs(width - self.width) <= 1 {
+            host.hold(banner)
+            Log.ads.info("Banner handed to the next strip")
+        } else {
+            load(into: host, width: width)
+        }
+    }
+
+    /// The strip is leaving. The banner steps out of sight and waits a moment for the next.
+    func detach(from host: BannerHost) {
+        guard self.host === host else { return }
+        self.host = nil
         banner?.removeFromSuperview()
+        drop = Task { [weak self] in
+            try? await Task.sleep(for: Self.handOver)
+            guard !Task.isCancelled else { return }
+            self?.discard()
+        }
+    }
+
+    private func discard() {
         banner = nil
-        loadedWidth = 0
+        width = 0
         filledHeight = 0
         report(0)
     }
 
-    private func load(width: CGFloat) {
-        loadedWidth = width
+    private func load(into host: BannerHost, width: CGFloat) {
         banner?.removeFromSuperview()
-
         let banner = BannerView(adSize: inlineAdaptiveBanner(width: width, maxHeight: Self.maxHeight))
         banner.adUnitID = AdUnits.banner
-        banner.rootViewController = window?.rootViewController
+        banner.rootViewController = host.window?.rootViewController
         banner.delegate = self
         // An inline adaptive ad may come back shorter than requested, reported here.
         banner.adSizeDelegate = self
-        addSubview(banner)
         self.banner = banner
+        self.width = width
+        host.hold(banner)
         Log.ads.info("Banner requested at \(width, format: .fixed(precision: 0))pt wide, unit \(AdUnits.banner, privacy: .public)")
         banner.load(Request())
     }
@@ -336,6 +405,7 @@ private final class BannerHost: UIView, BannerViewDelegate, AdSizeDelegate {
     // MARK: BannerViewDelegate
 
     func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+        guard bannerView === banner else { return }
         // `adSize` is the size requested, not the one delivered, so the height comes from
         // `intrinsicContentSize` instead.
         let network = bannerView.responseInfo?.loadedAdNetworkResponseInfo?.adNetworkClassName
@@ -344,6 +414,7 @@ private final class BannerHost: UIView, BannerViewDelegate, AdSizeDelegate {
     }
 
     func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
+        guard bannerView === banner else { return }
         // On screen a failed load and no banner at all look identical, so log the reason.
         Log.ads.error("Banner did not load: \(AdTrouble.words(for: error), privacy: .public)")
         filledHeight = 0
@@ -354,6 +425,7 @@ private final class BannerHost: UIView, BannerViewDelegate, AdSizeDelegate {
 
     /// How an inline adaptive ad announces the height it actually wants, after landing.
     func adView(_ bannerView: BannerView, willChangeAdSizeTo size: AdSize) {
+        guard bannerView === banner else { return }
         fill(bannerView, height: size.size.height)
     }
 
@@ -364,7 +436,7 @@ private final class BannerHost: UIView, BannerViewDelegate, AdSizeDelegate {
         let actual = height > 0 ? height : asked
         filledHeight = min(actual, Self.maxHeight)
         bannerView.frame.size = CGSize(width: bannerView.adSize.size.width, height: filledHeight)
-        setNeedsLayout()
+        host?.setNeedsLayout()
         report(filledHeight)
     }
 }

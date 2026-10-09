@@ -269,8 +269,9 @@ struct SettingsSheet: View {
 
     private var name: some View {
         HStack(spacing: 14) {
-            SeatBadge(name: draft.isEmpty ? store.playerName : draft, tint: Palette.seat(0), size: 58,
+            SeatBadge(name: draft.isEmpty ? store.playerName : draft, tint: Palette.seat(0), size: badgeSize,
                       mark: store.seatMark, cornice: store.cornice, livery: store.livery)
+                .frame(width: badgeSlot, height: badgeSlot)
                 .animation(.snappy, value: draft)
             VStack(alignment: .leading, spacing: 2) {
                 TextField("", text: $draft,
@@ -303,6 +304,16 @@ struct SettingsSheet: View {
         }
         .contentShape(.rect)
         .onTapGesture { isTypingName = true }
+    }
+
+    /// Struck to fit, as the lobby's pill is: metal and a bought ring at full reach ran
+    /// off the panel's corner and over the name. The slot is cut for all of it.
+    private var badgeSize: CGFloat {
+        SeatBadge.fitted(58, mark: store.seatMark, cornice: store.cornice)
+    }
+
+    private var badgeSlot: CGFloat {
+        badgeSize * SeatBadge.reach(mark: store.seatMark, cornice: store.cornice)
     }
 
     /// The slow number: how much has been played, ever.

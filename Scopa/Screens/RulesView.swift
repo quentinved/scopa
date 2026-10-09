@@ -63,6 +63,7 @@ struct RulesView: View {
     @ViewBuilder private func page(_ chapter: Chapter) -> some View {
         switch chapter {
         case .house: thisTable
+        case .goal: goal
         case .deck: deck
         case .take: take
         case .scopa: scopa
@@ -72,9 +73,11 @@ struct RulesView: View {
         }
     }
 
-    /// The closing offer is only a page when there is a table to deal.
+    /// The whole game on one page first, then each part of it in the order it happens at the
+    /// table: the cards, the deal, a turn, the sweep, the count. The closing offer is only a
+    /// page when there is a table to deal.
     private var chapters: [Chapter] {
-        let classic: [Chapter] = [.deck, .take, .scopa, .deal, .points] + (onFinish == nil ? [] : [.ready])
+        let classic: [Chapter] = [.goal, .deck, .deal, .take, .scopa, .points] + (onFinish == nil ? [] : [.ready])
         return house.isEmpty ? classic : [.house] + classic
     }
 
@@ -88,85 +91,107 @@ struct RulesView: View {
         }
     }
 
+    /// The whole game before any of its parts, so each page after it answers a question
+    /// the player already has.
+    private var goal: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Heading("How to win",
+                    detail: "Take cards from the table. The cards you take are worth points. First to 11 points wins.")
+            VStack(spacing: 10) {
+                Step(number: 1, text: "Play one card from your hand.")
+                Step(number: 2, text: "If it matches cards on the table, you take them.")
+                Step(number: 3, text: "Take every card on the table and it is a scopa: one point at once.")
+                Step(number: 4, text: "When the cards run out, count what you took.")
+            }
+            Paragraph("The next pages show each step with real cards.")
+        }
+    }
+
     private var deck: some View {
         VStack(alignment: .leading, spacing: 22) {
             Heading("Forty cards",
-                    detail: "Four Italian suits, one to ten. No jokers, nothing wild.")
+                    detail: "Four Italian suits, numbered 1 to 10.")
             Fan()
-            Paragraph("The number in the corner is the whole game: it is what the card takes with. The three court cards are simply 8, 9 and 10.")
+            Paragraph("A card is worth the number in its corner. The three picture cards are 8, 9 and 10.")
             Suits()
+        }
+    }
+
+    private var deal: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Heading("Three cards each",
+                    detail: "Four cards face up on the table, three in each hand.")
+            Deal()
+            Paragraph("When every hand is empty, everyone gets three more. This goes on until the deck runs out.")
         }
     }
 
     private var take: some View {
         VStack(alignment: .leading, spacing: 22) {
-            Heading("Take, or leave it",
-                    detail: "On your turn you play one card. If it can take, it takes.")
+            Heading("Taking cards",
+                    detail: "On your turn, play one card. It takes the cards it matches.")
             Take(played: Card(.four, of: .cups), taking: [Card(.four, of: .swords)],
                  note: "Same number: your 4 takes the 4.")
             Take(played: .settebello, taking: [Card(.three, of: .clubs), Card(.four, of: .coins)],
-                 note: "Or cards that add up to it: 3 + 4 makes 7.")
+                 note: "Or several cards that add up to it: 3 + 4 = 7.")
             Take(played: Card(.two, of: .swords), taking: [],
-                 note: "Nothing matches and nothing adds up, so your card stays on the table.")
-            Paragraph("Taking is never optional — if your card can take, you may not lay it down instead.")
-            Paragraph("And one card of the same number always wins over a sum: with a 7 on the table beside a 3 and a 4, your 7 takes the 7.")
+                 note: "Nothing matches: your card stays on the table.")
+            VStack(spacing: 10) {
+                Tip(text: "If your card can take, it must take.")
+                Tip(text: "A matching card comes before a sum: with a 7, a 3 and a 4 on the table, your 7 takes the 7.")
+            }
         }
     }
 
     private var scopa: some View {
         VStack(alignment: .leading, spacing: 22) {
             Heading("Scopa!",
-                    detail: "Sweep the table clean and it is a point, there and then.")
+                    detail: "Take every card on the table and you score one point at once.")
             HStack(spacing: 18) {
                 BroomMark(size: 44, tint: Palette.goldLight)
                     .padding(18)
                     .glass(.riviera(), in: .circle)
-                Text("Scopa is the Italian for broom. It is the point everyone plays for.")
-                    .font(.system(size: 15))
+                Text("Scopa means broom in Italian: you sweep the table clean.")
+                    .font(.system(size: 16))
                     .foregroundStyle(Palette.onTable)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Take(played: Card(.five, of: .cups), taking: [Card(.five, of: .coins)],
                  note: "The last card on the table: nothing is left, so that is a scopa.")
-            Paragraph("The only sweep that does not count is the one made with the very last card of the round — by then the table is bound to empty.")
-        }
-    }
-
-    private var deal: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            Heading("Three cards at a time",
-                    detail: "Four cards go face up on the table, three into every hand.")
-            Deal()
-            Paragraph("When everyone has played their three, three more are dealt, and again, until the deck is empty.")
-            Paragraph("Whatever is still lying on the table at the end goes to whoever took last. That one is not a scopa.")
+            Tip(text: "The very last card of the round never makes a scopa: the table empties then anyway.")
         }
     }
 
     private var points: some View {
         VStack(alignment: .leading, spacing: 22) {
-            Heading("Counting up",
-                    detail: "Four points sit on the table, and every scopa adds one more.")
+            Heading("Counting points",
+                    detail: "At the end of each round, look at the cards you took. Four points are up for grabs.")
             VStack(spacing: 10) {
-                Point(title: "Most cards", detail: "Twenty-one of the forty is enough") {
+                Point(title: "Most cards", detail: "More cards than anyone else") {
                     HStack(spacing: -11) {
                         CardBack(width: 17)
                         CardBack(width: 17).rotationEffect(.degrees(9))
                     }
                 }
-                Point(title: "Most coins", detail: "Six of the ten denari") {
+                Point(title: "Most coins", detail: "More coin cards than anyone else") {
                     SuitMark(.coins, size: 24)
                 }
-                Point(title: "The settebello", detail: "The 7 of coins, worth a point on its own") {
+                Point(title: "The settebello", detail: "Whoever took the 7 of coins") {
                     CardView(card: .settebello, width: 24)
                 }
-                Point(title: "Primiera", detail: "Your best card in each suit, added up: 7 is the best, then 6, then the ace. A table can settle it by counting sevens instead") {
+                Point(title: "Primiera", detail: "Whoever took the most 7s") {
                     Text(verbatim: "7")
                         .font(.display(24))
                         .foregroundStyle(Palette.goldLight)
                 }
             }
-            Paragraph("A category nobody wins outright scores nothing, and a tie counts as nobody. First past the target — eleven, unless the host says otherwise — wins, and a dead heat plays one more round.")
+            VStack(spacing: 10) {
+                Tip(text: "Each scopa adds one more point.")
+                Tip(text: "A tie on a line: nobody gets that point.")
+                Tip(text: "Cards still on the table at the end go to the last player who took.")
+                Tip(text: "First to 11 points wins. Level at the top? One more round.")
+            }
         }
     }
 
@@ -240,6 +265,7 @@ private enum Chapter: Int, CaseIterable, Identifiable {
     case deck, take, scopa, deal, points, ready
     /// The house rules of the table the book was opened from.
     case house
+    case goal
 
     var id: Int { rawValue }
 }
@@ -296,10 +322,54 @@ struct Paragraph: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 15))
-            .foregroundStyle(Palette.onTableSoft)
+            .font(.system(size: 16))
+            .foregroundStyle(Palette.onTable.opacity(0.85))
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// One line of the game in order, numbered, for the page that sums it up.
+private struct Step: View {
+    let number: Int
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Text(verbatim: "\(number)")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Palette.ink)
+                .frame(width: 30, height: 30)
+                .background { Circle().fill(Palette.goldSheen) }
+            Text(text)
+                .font(.system(size: 16))
+                .foregroundStyle(Palette.onTable)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .glassPanel(radius: GlassRadius.control)
+    }
+}
+
+/// A rule worth remembering, one sentence long, set apart from the pictures.
+private struct Tip: View {
+    let text: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundStyle(Palette.onTable)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .glassPanel(radius: GlassRadius.control)
     }
 }
 

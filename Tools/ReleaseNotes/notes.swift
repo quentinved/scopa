@@ -9,6 +9,41 @@ import Foundation
 // Never mention the passphrases, and leave the rating prompt out.
 
 let releaseNotes: [String: [String: String]] = [
+    "1.3.1": [
+        "en-US": """
+        Thank you for playing Scopa Bella! The rules are easier to learn now.
+
+        • A clearer How to play: it starts with how to win in four steps, then follows a game in the order it is played, with a short tip for each rule worth remembering.
+        • Fix: a video offer (free denari in the shop, an extra turn of the wheel, double winnings after a game) could do nothing once the app had been open a long while. It plays now.
+        • Fix: in Settings, a medal and a badge frame no longer run over your name.
+        """,
+
+        "en-GB": """
+        Thank you for playing Scopa Bella! The rules are easier to learn now.
+
+        • A clearer How to play: it starts with how to win in four steps, then follows a game in the order it is played, with a short tip for each rule worth remembering.
+        • Fix: a video offer (free denari in the shop, an extra turn of the wheel, double winnings after a game) could do nothing once the app had been open a long while. It plays now.
+        • Fix: in Settings, a medal and a badge frame no longer run over your name.
+        """,
+
+        "fr-FR": """
+        Merci de jouer à Scopa Bella ! Les règles s'apprennent plus facilement.
+
+        • Un « Comment jouer » plus clair : il commence par comment gagner, en quatre étapes, puis suit une partie dans l'ordre où elle se joue, avec une courte astuce pour chaque règle à retenir.
+        • Au pluriel, on dit maintenant « scopas » et non plus « scope ».
+        • Correction : une vidéo proposée (deniers offerts dans la boutique, un tour de roue en plus, gains doublés après une partie) pouvait ne rien faire quand l'app était ouverte depuis longtemps. Elle se lance désormais.
+        • Correction : dans les Réglages, une médaille et un cadre sur votre badge ne débordent plus sur votre nom.
+        """,
+
+        "it": """
+        Grazie di giocare a Scopa Bella! Ora le regole si imparano più facilmente.
+
+        • Un «Come si gioca» più chiaro: comincia da come si vince, in quattro passi, poi segue una partita nell'ordine in cui si gioca, con un breve consiglio per ogni regola da ricordare.
+        • Correzione: un video proposto (denari in regalo nel negozio, un giro di ruota in più, vincite doppie dopo una partita) poteva non fare nulla quando l'app era aperta da tanto. Ora parte.
+        • Correzione: nelle Impostazioni, una medaglia e una cornice sul tuo stemma non coprono più il tuo nome.
+        """,
+    ],
+
     "1.3": [
         "en-US": """
         Thank you for playing Scopa Bella! A brighter icon, and more denari from every game.
