@@ -82,6 +82,12 @@ final class FriendsOnline {
         guard isOn else { return fallback }
         do {
             try await loadFriendsIfStale()
+            // Nobody to see and nobody to be seen by: the Worker only shows a player to the
+            // friends their own beat named. Looked at again once the list is due a reload.
+            guard !friends.isEmpty else {
+                if !online.isEmpty { online = [] }
+                return .seconds(Self.friendsLifetime)
+            }
             guard let identity = try await signature(),
                   let answer = try await Ladder.beat(friends: Array(friends.keys), identity: identity)
             else { return fallback }

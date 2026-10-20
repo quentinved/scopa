@@ -18,8 +18,8 @@ enum CoachSay: Equatable {
     /// card it is in.
     case lookFor(Chance)
     /// The move that has just been made against you, while the cards it took are still
-    /// being shown on the cloth.
-    case theirMove(Coach.Reading, name: String)
+    /// being shown on the cloth. `yoursNext` when the turn it passed is shown as yours.
+    case theirMove(Coach.Reading, name: String, yoursNext: Bool)
     /// Somebody else is on the move.
     case waiting(String)
     /// Between rounds, or a table with nothing to say.
@@ -83,14 +83,14 @@ struct CoachStrip: View {
     }
 
     private var tint: Color {
-        if case .theirMove(let reading, _) = say { return reading.sweeps ? Palette.terracotta : Palette.onTable }
+        if case .theirMove(let reading, _, _) = say { return reading.sweeps ? Palette.terracotta : Palette.onTable }
         return counsel?.standing.tint ?? Palette.onTable
     }
 
     private var headline: LocalizedStringKey {
         switch say {
         case .counsel(let counsel): counsel.action
-        case .theirMove(let reading, let name): reading.headline(by: name)
+        case .theirMove(let reading, let name, _): reading.headline(by: name)
         case .lookFor(.sweep): "There is a sweep in this hand"
         case .lookFor(.take): "Something here takes"
         case .lookFor(.nothing): "Nothing here takes"
@@ -108,8 +108,8 @@ struct CoachStrip: View {
                 ? counsel.warnings + counsel.reasons
                 : counsel.reasons + counsel.warnings
             return notes.first?.advice ?? "Play it when you are ready."
-        case .theirMove(let reading, let name):
-            return reading.line(by: name) ?? "Your move."
+        case .theirMove(let reading, let name, let yoursNext):
+            return reading.line(by: name) ?? (yoursNext ? "Your move." : " ")
         case .lookFor(.sweep): return "Find the card that clears the table and the point is yours."
         case .lookFor(.take):
             return oneTap ? "The star marks the card I would play." : "Tap a card and I will tell you what it would do."

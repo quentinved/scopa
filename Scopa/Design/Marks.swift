@@ -66,14 +66,19 @@ struct SuitMark: View {
 
     var body: some View {
         let face = theme.face
-        SuitArt(
-            style: theme.style,
-            suit: suit,
-            size: size,
-            colour: tint ?? face.colour(of: suit),
-            accent: tint ?? face.accent,
-            ink: tint ?? face.ink
-        )
+        // A painted deck's suit in its own colours, unless the mark is asked for in one colour.
+        if theme.style.paintsItsOwnFace, tint == nil {
+            PaintedSuit(style: theme.style, suit: suit, size: size)
+        } else {
+            SuitArt(
+                style: theme.style,
+                suit: suit,
+                size: size,
+                colour: tint ?? face.colour(of: suit),
+                accent: tint ?? face.accent,
+                ink: tint ?? face.ink
+            )
+        }
     }
 }
 

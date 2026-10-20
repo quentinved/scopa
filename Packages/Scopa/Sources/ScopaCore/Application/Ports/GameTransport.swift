@@ -1,3 +1,5 @@
+import Foundation
+
 /// Everything that crosses the wire between host and guests. Adapters (Multipeer, later a server) only carry these.
 public enum GameMessage: Hashable, Codable, Sendable {
     // Guest -> host
@@ -5,6 +7,10 @@ public enum GameMessage: Hashable, Codable, Sendable {
     case leave(PlayerID)
     case play(Move)
     case react(Reaction)
+    /// Walking out of a ranked game on purpose, said on the way out so the host reports the
+    /// same loss this phone does rather than whatever the bot in the empty chair goes on to
+    /// make of it. A build that has never heard of it drops the envelope, as before.
+    case forfeit
 
     // Host -> guests
     case lobby(Lobby)
@@ -16,6 +22,17 @@ public enum GameMessage: Hashable, Codable, Sendable {
     case reacted(player: PlayerID, reaction: Reaction)
     /// The whole game, once it has ended, so every device can read it back.
     case record(GameRecord)
+    /// Somebody whose device had gone is back in their seat, so every phone stops drawing a
+    /// bot over it. A build that has never heard of this drops the envelope, which costs
+    /// nothing but the bot face lingering.
+    case playerReturned(PlayerID)
+    /// The host put the table away on purpose. Without it a guest cannot tell a host who left
+    /// from one whose signal dropped, and would wait for somebody who is not coming back.
+    case tableClosed
+    /// `record`, compressed, for a game long enough that the plain one is past what a carrier
+    /// takes in one message. Sent only then, so a build that cannot read it loses nothing it
+    /// would ever have received. See `Wire.message(for:)`.
+    case packedRecord(Data)
 }
 
 /// A small fixed set of things to say without typing. Sent to everyone at the table.
@@ -28,6 +45,9 @@ public enum Reaction: String, CaseIterable, Codable, Sendable, Hashable {
     case fire, respect, no, clever
     /// Nonna: the things said by whoever taught you to play.
     case careful, taught, patience, told
+    /// Carnevale: the things said from behind a mask. A build that predates them hears a
+    /// shrug, like any reaction it has never heard of.
+    case masked, carnival, unmasked, confetti
 
     /// The five that need no buying. The rest arrive with a pack, and only the shop knows
     /// which: the rules have no idea what anything costs.
@@ -52,6 +72,10 @@ public enum Reaction: String, CaseIterable, Codable, Sendable, Hashable {
         case .taught: "📖"
         case .patience: "🫖"
         case .told: "☝️"
+        case .masked: "🎭"
+        case .carnival: "🎉"
+        case .unmasked: "🪶"
+        case .confetti: "🎊"
         }
     }
 
@@ -74,6 +98,10 @@ public enum Reaction: String, CaseIterable, Codable, Sendable, Hashable {
         case .taught: "Nonna taught me"
         case .patience: "Patience"
         case .told: "I told you so"
+        case .masked: "Who, me?"
+        case .carnival: "Carnevale"
+        case .unmasked: "Unmasked"
+        case .confetti: "Confetti"
         }
     }
 
@@ -113,10 +141,22 @@ public struct Lobby: Hashable, Codable, Sendable {
     /// The name this game goes by on the ladder. Set by the host, read by every guest, so
     /// every phone at a ranked table reports the same game rather than four of its own.
     public var gameID: String?
+    /// The division the house plays at, at a ranked table with bots in its chairs. Set by the
+    /// host, which plays them, so every phone shows the league they actually play at rather
+    /// than one worked out from its own rank. See `HostCoordinator.setHouseStep`.
+    public var houseStep: Int?
+    /// The host reports a guest's `forfeit` the way the guest does. Nil from a build that
+    /// cannot, whose guests leave a walk-out for the host's phone to report alone rather than
+    /// tell the ladder a different story from it.
+    public var takesForfeits: Bool?
+    /// Who left a ranked game in its first minutes, which calls it off: no phone reports it, so
+    /// nobody's rating or run moves. Set by the host mid-game. See `EarlyExit`.
+    public var leftEarly: PlayerID?
 
     public init(host: Player, players: [Player]? = nil, teams: Bool = false, turnClock: TurnClock = .default,
                 targetScore: Int = 11, primiera: PrimieraRule = .default, ties: TieRule = .default,
-                house: Set<HouseRule> = [], gameID: String? = nil) {
+                house: Set<HouseRule> = [], gameID: String? = nil, houseStep: Int? = nil, takesForfeits: Bool? = nil,
+                leftEarly: PlayerID? = nil) {
         self.host = host
         self.players = players ?? [host]
         self.teams = teams
@@ -126,10 +166,13 @@ public struct Lobby: Hashable, Codable, Sendable {
         self.ties = ties
         self.house = house
         self.gameID = gameID
+        self.houseStep = houseStep
+        self.takesForfeits = takesForfeits
+        self.leftEarly = leftEarly
     }
 
     private enum CodingKeys: String, CodingKey {
-        case host, players, teams, turnClock, targetScore, primiera, ties, house, gameID
+        case host, players, teams, turnClock, targetScore, primiera, ties, house, gameID, houseStep, takesForfeits, leftEarly
     }
 
     /// By hand, so a lobby from a build that had no primiera or tie rule still decodes.
@@ -145,6 +188,9 @@ public struct Lobby: Hashable, Codable, Sendable {
         let names = try container.decodeIfPresent([String].self, forKey: .house) ?? []
         house = Set(names.compactMap(HouseRule.init(rawValue:)))
         gameID = try container.decodeIfPresent(String.self, forKey: .gameID)
+        houseStep = try container.decodeIfPresent(Int.self, forKey: .houseStep)
+        takesForfeits = try container.decodeIfPresent(Bool.self, forKey: .takesForfeits)
+        leftEarly = try container.decodeIfPresent(PlayerID.self, forKey: .leftEarly)
     }
 
     public var isFull: Bool { players.count >= GameConfiguration.playerRange.upperBound }

@@ -73,6 +73,24 @@ nonisolated enum Palette {
         return [terracotta, seatBlue, terracottaLight, seatBlueLight][index % 4]
     }
 
+    /// A chair's colour as one phone sees it: `home`, the chair the phone belongs to, is
+    /// always terracotta, and the others follow round the table from it.
+    ///
+    /// Counted from seat 0 instead, the host's chair was terracotta on every phone, so a
+    /// guest saw the host's turn in the very colour of their own "Your turn". Counted round
+    /// all four chairs whatever the table, as the waiting room draws them, so a face keeps
+    /// its colour from the room to the cloth.
+    static func seat(_ index: Int, teams: Bool, home: Int) -> Color {
+        seat((index - home + 4) % 4, teams: teams)
+    }
+
+    /// A side's colour as one phone sees it. In teams a side is a pair of chairs, so it
+    /// turns by pairs and the phone's own side is terracotta.
+    static func side(_ side: Int, teams: Bool, home: Int) -> Color {
+        guard teams else { return seat(side, teams: false, home: home) }
+        return seat((side - home % 2 + 2) % 2, teams: true)
+    }
+
     private static let terracottaLight = Color(red: 0.925, green: 0.588, blue: 0.478)
     private static let seatBlueLight = Color(red: 0.608, green: 0.765, blue: 0.847)
     private static let seatBlue = Color(red: 0.404, green: 0.573, blue: 0.667)

@@ -1,0 +1,80 @@
+{
+  "identifier" : "6C1F0E52-3B7A-4C2E-9F1D-58A3D2B7E410",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "20001",
+      "localizations" : [
+        {
+          "description" : "No banner and no ad between games.",
+          "displayName" : "Scopa without ads",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.quentinvedrenne.scopa.noads",
+      "referenceName" : "No ads",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "20002",
+      "localizations" : [
+        {
+          "description" : "1,000 denari, straight into your purse.",
+          "displayName" : "Mancia · 1,000 denari",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.quentinvedrenne.scopa.denari.mancia",
+      "referenceName" : "Denari 1,000",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "3.99",
+      "familyShareable" : false,
+      "internalID" : "20003",
+      "localizations" : [
+        {
+          "description" : "5,000 denari, straight into your purse.",
+          "displayName" : "Borsellino · 5,000 denari",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.quentinvedrenne.scopa.denari.borsellino",
+      "referenceName" : "Denari 5,000",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "7.99",
+      "familyShareable" : false,
+      "internalID" : "20004",
+      "localizations" : [
+        {
+          "description" : "12,000 denari, straight into your purse.",
+          "displayName" : "Tesoretto · 12,000 denari",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.quentinvedrenne.scopa.denari.tesoretto",
+      "referenceName" : "Denari 12,000",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "fr_FR",
+    "_storefront" : "FRA"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

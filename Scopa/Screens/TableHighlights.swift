@@ -1,8 +1,9 @@
 import ScopaCore
 import SwiftUI
 
-/// A take worth stopping on that is not a sweep: the seven of coins, and the moments the
-/// house rules add. Each gets a plate on the cloth, smaller and shorter than a scopa's band.
+/// A take worth stopping on: the seven of coins, and the moments the house rules add. Each
+/// gets a plate on the cloth, smaller and shorter than a scopa's band; a sweep that earns
+/// one carries the plate above its band.
 enum TableHighlight: Equatable {
     case settebello
     /// The king of coins, where re bello is played.
@@ -12,10 +13,10 @@ enum TableHighlight: Equatable {
     /// An ace that took the whole table under asso piglia tutto.
     case assoPigliaTutto(Card)
 
-    /// The one moment a play earns, if any. A sweep keeps the floor, so it never gets one;
-    /// a napola first made outranks the seven, which outranks everything after it.
+    /// The one moment a play earns, if any, sweep or not. A napola first made outranks the
+    /// seven, which outranks everything after it.
     static func of(_ play: TableStore.Play, in view: PlayerView) -> TableHighlight? {
-        guard !play.sweeps, !play.captures.isEmpty else { return nil }
+        guard !play.captures.isEmpty else { return nil }
         let house = view.configuration.house
         let taken = play.captures + [play.card]
         let napola = house.contains(.napola) ? napolaGrowth(play, taken: taken, in: view) : nil
@@ -79,11 +80,14 @@ enum TableHighlight: Equatable {
     }
 
     /// The phone's part, beside the plate. The seven's own thud for somebody else's is
-    /// `TableScreen.playFeedback`; the seven's bells are `Audio.announce`.
-    @MainActor func feel(mine: Bool) {
+    /// `TableScreen.playFeedback`, which stays quiet on a sweep, so `afterSweep` knocks it
+    /// here instead. The seven's bells are `Audio.announce`.
+    @MainActor func feel(mine: Bool, afterSweep: Bool = false) {
         if mine {
             let coins = if case .napola(let points) = self { min(points, 5) } else { 0 }
             Rumble.shared.prize(coins: coins)
+        } else if afterSweep, self == .settebello {
+            Rumble.shared.theirPrize()
         }
         switch self {
         case .reBello, .napola: Audio.shared.play(.shine, gain: mine ? 1 : 0.6, after: .milliseconds(140))
@@ -108,6 +112,9 @@ struct HighlightPlate: View {
     let highlight: TableHighlight
     /// Who took it, or empty when it was you.
     var by: String
+    /// The smaller size whoever took it, and slimmer still, for a plate sharing the screen
+    /// with a scopa band.
+    var compact = false
 
     @State private var turned = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -115,28 +122,33 @@ struct HighlightPlate: View {
     @Environment(\.screenSize) private var screenSize
     private var stage: Stage { Stage(heightClass, size: screenSize) }
     private var mine: Bool { by.isEmpty }
-    private var cardWidth: CGFloat { stage.pick(tall: mine ? 46 : 36, wide: mine ? 38 : 32) }
+    private var large: Bool { mine && !compact }
+    private var cardWidth: CGFloat {
+        if compact { return 32 }
+        return stage.pick(tall: mine ? 46 : 36, wide: mine ? 38 : 32)
+    }
 
     var body: some View {
         HStack(spacing: stage.pick(tall: 14, wide: 12)) {
             art
             VStack(alignment: .leading, spacing: -2) {
                 Text(verbatim: highlight.title)
-                    .font(.display(stage.pick(tall: mine ? 36 : 28, wide: mine ? 30 : 24)))
+                    .font(.display(stage.pick(tall: large ? 36 : 28, wide: large ? 30 : 24)))
                     .foregroundStyle(Palette.cream)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 Text(subtitle)
-                    .font(.system(size: stage.pick(tall: mine ? 13 : 12, wide: 12), weight: .semibold))
+                    .font(.system(size: stage.pick(tall: large ? 13 : 12, wide: 12), weight: .semibold))
                     .foregroundStyle(Palette.cream.opacity(0.9))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
         }
-        .padding(.horizontal, mine ? 18 : 14)
-        .padding(.vertical, mine ? 12 : 9)
+        .padding(.horizontal, large ? 18 : 14)
+        .padding(.vertical, large ? 12 : (compact ? 7 : 9))
         .glassPanel(radius: GlassRadius.panel, tint: highlight.tint)
-        .shadow(color: Palette.goldDeep.opacity(mine ? 0.45 : 0.3), radius: mine ? 24 : 14, y: 10)
+        .plateShadow(color: Palette.goldDeep.opacity(mine ? 0.45 : 0.3), radius: large ? 24 : 14, y: 10,
+                     cornerRadius: GlassRadius.panel)
         .padding(.horizontal, 24)
         .transition(.scale(scale: 0.82).combined(with: .opacity))
         .allowsHitTesting(false)

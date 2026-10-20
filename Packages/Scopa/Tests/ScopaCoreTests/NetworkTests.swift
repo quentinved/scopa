@@ -15,22 +15,28 @@ private actor Recorder {
     private func append(_ update: TableUpdate) { updates.append(update) }
 
     /// Waits until an update matches, or gives up. Avoids fixed sleeps in tests.
-    func first(where match: @Sendable (TableUpdate) -> Bool, within ticks: Int = 400) async -> TableUpdate? {
-        for _ in 0..<ticks {
+    ///
+    /// By the clock rather than by counting yields: with every suite running at once, the
+    /// host's actor can be further behind than a few hundred yields.
+    func first(where match: @Sendable (TableUpdate) -> Bool, within limit: Duration = .seconds(5)) async -> TableUpdate? {
+        let deadline = ContinuousClock.now + limit
+        repeat {
             if let hit = updates.first(where: match) { return hit }
-            await Task.yield()
-        }
-        return nil
+            try? await Task.sleep(for: .milliseconds(2))
+        } while ContinuousClock.now < deadline
+        return updates.first(where: match)
     }
 
     /// The first match at or after `index`, for a test that walks a stream in order.
-    func first(where match: @Sendable (TableUpdate) -> Bool, after index: Int, within ticks: Int = 400) async -> (Int, TableUpdate)? {
-        for _ in 0..<ticks {
+    func first(where match: @Sendable (TableUpdate) -> Bool, after index: Int,
+               within limit: Duration = .seconds(5)) async -> (Int, TableUpdate)? {
+        let deadline = ContinuousClock.now + limit
+        repeat {
             if let hit = updates[min(index, updates.count)...].enumerated().first(where: { match($0.element) }) {
                 return (index + hit.offset, hit.element)
             }
-            await Task.yield()
-        }
+            try? await Task.sleep(for: .milliseconds(2))
+        } while ContinuousClock.now < deadline
         return nil
     }
 
@@ -739,6 +745,36 @@ private func recordOf(_ u: TableUpdate?) -> GameRecord? { if case .record(let r)
         _ = await recorder.first { lobbyOf($0)?.players.contains { $0.name == "Bea" } == true }
         #expect(await host.lobby.players.contains { $0.name == "Bea" })
         #expect(await host.lobby.players.count == 4)
+        await host.stop()
+    }
+
+    /// The host picks a partner by moving them across: the one who sat there takes their
+    /// chair, and the host never moves. Not once the cards are out.
+    @Test func theHostChoosesWhoSitsAcross() async throws {
+        let network = LoopbackNetwork()
+        let host = HostCoordinator(transport: network.transport(for: player("Host")), pace: .zero)
+        let recorder = Recorder()
+        await recorder.listen(host.updates)
+        await host.start()
+        let bea = GuestClient(transport: network.transport(for: player("Bea")))
+        await bea.start()
+        try await bea.join()
+        _ = await recorder.first { (lobbyOf($0)?.players.count ?? 0) == 2 }
+        await host.addBots(upTo: 4)
+        #expect(await host.lobby.players.map(\.name) == ["Host", "Bea", "Hugo", "Laurence"])
+
+        await host.teamUp(with: await host.lobby.players[1].id)
+        #expect(await host.lobby.players.map(\.name) == ["Host", "Hugo", "Bea", "Laurence"])
+        // Already across, or the host: nothing to do.
+        await host.teamUp(with: await host.lobby.players[2].id)
+        await host.teamUp(with: await host.lobby.host.id)
+        #expect(await host.lobby.players.map(\.name) == ["Host", "Hugo", "Bea", "Laurence"])
+
+        await host.setTeams(true)
+        try await host.startGame()
+        let seated = await host.lobby.players
+        await host.teamUp(with: seated[3].id)
+        #expect(await host.lobby.players == seated)
         await host.stop()
     }
 

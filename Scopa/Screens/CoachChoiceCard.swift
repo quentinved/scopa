@@ -30,8 +30,7 @@ struct CoachChoiceCard: View {
             }
             .padding(14)
             .overlay(alignment: .topTrailing) { tick }
-            .glassPanel(radius: GlassRadius.panel, tint: isPicked ? Palette.terracotta.opacity(0.55) : nil,
-                        interactive: true)
+            .glassPanel(radius: GlassRadius.panel, tint: isPicked ? Palette.terracotta.opacity(0.55) : nil)
             .overlay {
                 RoundedRectangle(cornerRadius: GlassRadius.panel)
                     .strokeBorder(Palette.goldLight, lineWidth: isPicked ? 2 : 0)

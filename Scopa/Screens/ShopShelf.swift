@@ -89,7 +89,32 @@ extension View {
             task {
                 guard let shelf = DebugLaunch.shelf else { return }
                 try? await Task.sleep(for: .milliseconds(400))
+                if let section = ShopJump.holding(shelf)?.rawValue, section != shelf {
+                    reader.scrollTo(section, anchor: .top)
+                    try? await Task.sleep(for: .milliseconds(300))
+                }
                 reader.scrollTo(shelf, anchor: .top)
+            }
+        }
+    }
+
+    /// Scrolls the page up and down through its sections for as long as it is open, under
+    /// `-shopTour`. Inert without the flag.
+    func toursShopForDebugging() -> some View {
+        ScrollViewReader { reader in
+            task {
+                #if DEBUG
+                guard let wait = DebugLaunch.shopTour else { return }
+                try? await Task.sleep(for: .seconds(wait))
+                let down = ShopJump.allCases.map(\.rawValue)
+                let stops = ["guide"] + down + down.reversed().dropFirst()
+                while !Task.isCancelled {
+                    for stop in stops {
+                        withAnimation(.easeInOut(duration: 1.6)) { reader.scrollTo(stop, anchor: .top) }
+                        try? await Task.sleep(for: .seconds(2))
+                    }
+                }
+                #endif
             }
         }
     }

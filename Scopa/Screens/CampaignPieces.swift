@@ -153,7 +153,14 @@ struct RegionBanner: View {
                 ruleLine
             }
             Spacer(minLength: 4)
-            if isOpen { tally } else { lock }
+            if isOpen {
+                VStack(alignment: .trailing, spacing: 8) {
+                    tally
+                    if let rule = region.rule { TryRuleButton(rule: rule) }
+                }
+            } else {
+                lock
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

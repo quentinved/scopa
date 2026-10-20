@@ -217,12 +217,14 @@ extension CampaignStage {
 // MARK: - Stars and rewards
 
 extension CampaignStage {
-    /// The second star: a win by at least this many points.
-    var marginGoal: Int { max(3, (target + 1) / 3) }
+    /// The second star: a win by at least this many points, about a third of the target.
+    /// Two at a six-point table, three at seven and eight.
+    var marginGoal: Int { max(2, (target + 2) / 3) }
 
-    /// The third star: at least this many scope over the game. A crowded table sweeps less.
+    /// The third star: at least this many scope over the game. One until the eight-point
+    /// finales, which ask two of a duel. A crowded table sweeps less.
     var scopeGoal: Int {
-        let duel = max(1, (target + 1) / 5)
+        let duel = max(1, (target + 2) / 5)
         return seating == .duel ? duel : max(1, duel - 1)
     }
 

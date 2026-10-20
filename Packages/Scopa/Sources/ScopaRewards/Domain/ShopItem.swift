@@ -20,6 +20,8 @@ public struct ShopItem: Identifiable, Hashable, Codable, Sendable {
         /// independently: any hand can be had in any colourway.
         case cardSkin
         case cardBack
+        /// What the edge of every card is finished in. Only ever earned, never sold.
+        case cardEdge
         case felt
         /// The weave of the cloth, which varies independently of the felt's colour for the
         /// same reason a drawing varies independently of a colourway.

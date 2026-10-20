@@ -23,6 +23,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+import album_songs  # noqa: E402
 import dsp  # noqa: E402
 import music  # noqa: E402
 import sfx  # noqa: E402
@@ -34,6 +35,7 @@ LOOPS = {
     "music_lungomare": music.lungomare,
     "music_tavolo": music.tavolo,
     **songs.LOOPS,
+    **album_songs.LOOPS,
 }
 
 ONE_SHOTS = {

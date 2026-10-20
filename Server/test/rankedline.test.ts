@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { invalidSeek, Line, PAIRED_MS, STALE_MS } from "../src/rankedline.ts";
+import { invalidFollow, invalidSeek, Line, PAIRED_MS, STALE_MS } from "../src/rankedline.ts";
 
 function pairUp(line: Line, now: number) {
   line.seek("a", "Ada", "1v1", now);
@@ -130,4 +130,104 @@ test("a failed settle never undoes a partner's newer pairing", () => {
   assert.ok(line.settle(second, "WXYZ", 200));
   assert.equal(line.settle(first, "ABCD", 300), false);
   assert.equal(line.seek("b", "Bea", "1v1", 400).pairing?.code, "WXYZ");
+});
+
+const cal = { player: "c2", name: "Cal" };
+const dee = { player: "d2", name: "Dee" };
+
+/// A leader in the line with its teammate following, as both phones of a new pair are.
+function seekAsPair(line: Line, leader: string, name: string, teammate: { player: string; name: string }, now: number) {
+  line.seek(leader, name, "duo", now, "", teammate);
+  line.follow(teammate.player, leader, now);
+  return line.seek(leader, name, "duo", now, "", teammate);
+}
+
+function pairOfPairs(line: Line, now: number) {
+  seekAsPair(line, "a", "Ada", cal, now);
+  seekAsPair(line, "b", "Bea", dee, now + 1000);
+  const match = line.match("b");
+  assert.ok(match);
+  assert.ok(line.settle(match, "WXYZ", now + 1000));
+  return match;
+}
+
+test("a pair only meets a pair, and a solo never meets one", () => {
+  const line = new Line();
+  seekAsPair(line, "a", "Ada", cal, 0);
+  assert.equal(line.seek("s", "Sol", "1v1", 100).searching, 0);
+  assert.equal(line.match("s"), null);
+  assert.equal(line.match("a"), null);
+  assert.equal(seekAsPair(line, "b", "Bea", dee, 200).searching, 1);
+  const match = line.match("b");
+  assert.equal(match?.host.player, "a");
+  assert.equal(match?.guest.player, "b");
+  assert.equal(line.seek("t", "Tom", "2v2", 300).searching, 1);
+  assert.equal(line.match("t")?.guest.player, "t");
+});
+
+test("the pair that waited longer hosts, and each hears the whole other side", () => {
+  const line = new Line();
+  pairOfPairs(line, 0);
+  assert.deepEqual(line.seek("a", "Ada", "duo", 2000, "", cal).pairing,
+                   { code: "WXYZ", host: "a", format: "duo", opponent: "Bea", opponents: ["Bea", "Dee"] });
+  assert.deepEqual(line.seek("b", "Bea", "duo", 2000, "", dee).pairing,
+                   { code: "WXYZ", host: "a", format: "duo", opponent: "Ada", opponents: ["Ada", "Cal"] });
+});
+
+test("the teammate follows its leader, and hears the pairing only after the leader has", () => {
+  const line = new Line();
+  line.seek("a", "Ada", "duo", 0, "", cal);
+  assert.deepEqual(line.follow("c2", "a", 100), { searching: 0, inLine: true, pairing: undefined });
+  seekAsPair(line, "b", "Bea", dee, 500);
+  assert.equal(line.follow("c2", "a", 600).searching, 1);
+  line.settle(line.match("b")!, "WXYZ", 1000);
+  assert.equal(line.follow("c2", "a", 1100).pairing, undefined);
+  const leaders = line.seek("a", "Ada", "duo", 1200, "", cal).pairing;
+  assert.deepEqual(line.follow("c2", "a", 1300).pairing, leaders);
+  assert.equal(line.follow("d2", "b", 1300).pairing, undefined);
+});
+
+test("only the named teammate can follow a leader", () => {
+  const line = new Line();
+  line.seek("a", "Ada", "duo", 0, "", cal);
+  assert.deepEqual(line.follow("x", "a", 100), { searching: 0, inLine: false });
+  assert.deepEqual(line.follow("c2", "nobody", 100), { searching: 0, inLine: false });
+});
+
+test("a leader who takes the house before hearing of a pairing frees the other pair", () => {
+  const line = new Line();
+  pairOfPairs(line, 0);
+  line.leave("a");
+  assert.deepEqual(line.follow("c2", "a", 1500), { searching: 0, inLine: false });
+  assert.equal(line.seek("b", "Bea", "duo", 1600, "", dee).pairing, undefined);
+  assert.equal(line.follow("d2", "b", 1700).inLine, true);
+  seekAsPair(line, "e", "Eve", { player: "f2", name: "Fay" }, 1800);
+  assert.equal(line.match("e")?.host.player, "b");
+});
+
+test("a pair whose teammate never follows, as on an older app, is never paired", () => {
+  const line = new Line();
+  line.seek("a", "Ada", "duo", 0, "", cal);
+  assert.equal(seekAsPair(line, "b", "Bea", dee, 100).searching, 0);
+  assert.equal(line.match("b"), null);
+  assert.equal(line.match("a"), null);
+  line.follow("c2", "a", 200);
+  assert.equal(line.match("a")?.guest.player, "b");
+});
+
+test("a leader who stops asking takes the follower's search with them", () => {
+  const line = new Line();
+  line.seek("a", "Ada", "duo", 0, "", cal);
+  assert.equal(line.follow("c2", "a", STALE_MS + 1).inLine, false);
+});
+
+test("a duo's search is checked before it joins", () => {
+  const duo = { player: "gc:1", name: "Ada", format: "duo" };
+  assert.equal(invalidSeek({ ...duo, teammate: "gc:2", teammateName: "Cal" }), null);
+  assert.equal(invalidSeek(duo), "bad teammate");
+  assert.equal(invalidSeek({ ...duo, teammate: "gc:1", teammateName: "Cal" }), "bad teammate");
+  assert.equal(invalidSeek({ ...duo, teammate: "gc:2", teammateName: " " }), "no teammate name");
+  assert.equal(invalidFollow({ player: "gc:2", leader: "gc:1" }), null);
+  assert.equal(invalidFollow({ player: "gc:2" }), "bad leader");
+  assert.equal(invalidFollow({ player: "gc:2", leader: "gc:2" }), "bad leader");
 });

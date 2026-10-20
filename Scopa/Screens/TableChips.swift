@@ -101,6 +101,25 @@ struct PileCount: View {
     }
 }
 
+/// The chair across from yours at a table in teams. Their colour is only a lighter tone of
+/// yours, which a glance at four faces did not pick out; a word does.
+struct PartnerTag: View {
+    /// The partner's own chair colour, so the word and the face read as one.
+    let tint: Color
+
+    var body: some View {
+        Text("PARTNER")
+            .font(.system(size: 9, weight: .bold))
+            .tracking(0.8)
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(tint, in: RoundedRectangle(cornerRadius: 4))
+    }
+}
+
 /// Your own take, counted beside the pile: how many cards came over, and whether one of
 /// them was the seven of coins.
 struct PilePop: Equatable, Identifiable {
@@ -192,7 +211,7 @@ struct LastMoveTag: View {
         .padding(.vertical, Self.padding)
         .glassPanel(radius: GlassRadius.chip,
                     tint: play.tookSettebello ? Palette.goldDeep.opacity(0.8) : felt.shade(0.8))
-        .shadow(color: felt.shade(0.4), radius: 10, y: 4)
+        .plateShadow(color: felt.shade(0.4), radius: 10, y: 4, cornerRadius: GlassRadius.chip)
         .allowsHitTesting(false)
         .accessibilityElement(children: .combine)
     }

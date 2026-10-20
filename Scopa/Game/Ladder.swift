@@ -169,6 +169,14 @@ enum Ladder {
         var seasonEndsAt: String? = nil
         /// Last season, waiting to be handed over. Nil once it has been.
         var finish: Finish? = nil
+        /// The run the latest game broke, while a video can still carry it on. Nil once it is
+        /// kept, once another game is played, and from a Worker deployed before keeping.
+        var keepableRun: KeepableRun? = nil
+
+        struct KeepableRun: Codable, Hashable {
+            let gameID: String
+            let run: Int
+        }
 
         /// When this season gives way to the next one.
         var seasonEnds: Date? {
@@ -204,6 +212,17 @@ enum Ladder {
     /// takes it on trust and pays a win in full, for the first few of the day only.
     static func postHouseGame(gameID: UUID, won: Bool) async throws -> RankAnswer? {
         try await signedPost("v1/ranked/house") { HousePost(gameID: gameID.uuidString, won: won, identity: $0) }
+    }
+
+    private struct KeepPost: Encodable {
+        let gameID: String
+        let identity: GameCenterIdentity
+    }
+
+    /// Carries on the run a ranked loss broke, once a video has been watched for it. The
+    /// Worker takes the phone's word for the video, as it does for a house game.
+    static func keepRun(gameID: UUID) async throws -> RankAnswer? {
+        try await signedPost("v1/ranked/keep-run") { KeepPost(gameID: gameID.uuidString, identity: $0) }
     }
 
     private struct ClaimPost: Encodable {

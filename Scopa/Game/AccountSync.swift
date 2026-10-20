@@ -228,7 +228,8 @@ final class AccountSync {
     /// along with the rest and otherwise leaves them alone, since it cannot read one as a
     /// card — so a device that has not updated yet still passes them on.
     private func codes(of book: AlbumBook) -> [String: Int] {
-        Volume.allCases.reduce(into: [:]) { codes, volume in
+        // The foils go along the same way, as "oro/7d" and "perla/7d".
+        Volume.allCases.reduce(into: book.foilCodes) { codes, volume in
             for (card, count) in book.album(volume).counts {
                 codes[volume == .riviera ? card.code : "\(volume.rawValue)/\(card.code)"] = count
             }
@@ -247,6 +248,7 @@ final class AccountSync {
             guard let data = try? JSONEncoder().encode(Album(counts: counts)) else { continue }
             defaults.set(data, forKey: AlbumBook.storageKey(for: volume))
         }
+        AlbumBook.storeFoils(from: profile.album, in: defaults)
         defaults.set(Array(profile.paidSuits), forKey: Stored.paidSuits)
         // A bonus paid stays paid. Never written back to false: the other device having no
         // record of it means it has not seen it yet, not that it did not happen.
@@ -329,7 +331,7 @@ private enum Stored {
         .init("cardStyle"), .init("cardSkin"), .init("language"),
         .init("tableFelt"), .init("tapis"), .init("cardBack"), .init("seatMark"),
         .init("companion"), .init("cornice"), .init("livery"), .init("flourish"), .init("cheer"),
-        .init("tableSong"),
+        .init("tableSong"), .init(CardEdge.stored),
         .init("hasSeenRules", .flag), .init("knowsTieRules", .flag), .init("adsAreSwept", .flag),
         .init("musicOn", .flag), .init("soundsOn", .flag),
         .init("reminders.on", .flag), .init("reminders.offered", .flag),

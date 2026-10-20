@@ -19,6 +19,8 @@ struct PackShelf: View {
     let title: LocalizedStringKey
     let purse: PurseStore
     let till: PackTill
+    /// Where card packs are going, whose odds the shelf prints.
+    var volume: Volume = .riviera
     /// Whether a refused purchase writes its line here. The shop already prints the purse's
     /// troubles under the balance at the top of its page, and the same sentence twice on
     /// one screen reads as two things having gone wrong.
@@ -40,8 +42,9 @@ struct PackShelf: View {
             }
             VStack(spacing: 10) {
                 ForEach(PackTier.forSale(on: shelf)) { tier in
-                    Button { till.buying = tier } label: {
-                        PackRow(tier: tier, affordable: affordable(tier))
+                    // A card pack shows what is in it first; that page is where it is bought.
+                    Button { if shelf == .album { till.previewing = tier } else { till.buying = tier } } label: {
+                        PackRow(tier: tier, affordable: affordable(tier), volume: volume)
                     }
                     .buttonStyle(.plain)
                     .disabled(till.isPaying)
@@ -53,7 +56,8 @@ struct PackShelf: View {
                     .foregroundStyle(Palette.terracotta)
             }
         }
-        .sheet(isPresented: $showsOdds) { OddsSheet(shelf: shelf).coversBanner() }
+        .sheet(isPresented: $showsOdds) { OddsSheet(shelf: shelf, volume: volume).coversBanner() }
+        .task { if shelf == .album && DebugLaunch.showsOddsSheet { showsOdds = true } }
     }
 
     private func affordable(_ tier: PackTier) -> Bool {
@@ -73,6 +77,10 @@ struct PackShelf: View {
 final class PackTill {
     /// The pack the till is waiting on a yes for.
     var buying: PackTier?
+    /// The card pack being looked into, which is where a card pack is said yes to.
+    var previewing: PackTier?
+    /// What the preview was left with a yes for, bought once its sheet is down.
+    var chosen: PackTier?
     /// The opening being shown, bought or earned.
     var opening: AlbumBook.Opening?
     /// True while denari are leaving the purse, so a second tap cannot buy twice.
@@ -121,8 +129,17 @@ private struct PackTillModifier: ViewModifier {
     let purse: PurseStore
     let name: String
 
+    @Environment(\.tableFelt) private var felt
+
     func body(content: Content) -> some View {
         content
+            .sheet(item: $till.previewing, onDismiss: buyChosen) { tier in
+                PackPreview(tier: tier, volume: book.openVolume, album: book.shown(book.openVolume),
+                            purse: purse) { till.chosen = $0 }
+                    .environment(\.cardTheme, book.openVolume.theme)
+                    .environment(\.tableFelt, felt)
+                    .coversBanner()
+            }
             .fullScreenCover(item: $till.opening) { opened in
                 // Drawn in the volume's own deck, whatever the table is dressed in.
                 // No strip over a pack being torn open.
@@ -143,12 +160,20 @@ private struct PackTillModifier: ViewModifier {
                 ])
             }
     }
+
+    /// Bought only once the preview is gone, so the opening is not refused for it.
+    private func buyChosen() {
+        guard let chosen = till.chosen else { return }
+        till.chosen = nil
+        till.buy(chosen, book: book, purse: purse)
+    }
 }
 
 /// One pack on the shelf: what it is wrapped in, what is in it, and what it costs.
 struct PackRow: View {
     let tier: PackTier
     let affordable: Bool
+    var volume: Volume = .riviera
 
     var body: some View {
         HStack(spacing: 14) {
@@ -158,18 +183,25 @@ struct PackRow: View {
                     Text(verbatim: tier.title)
                         .font(.display(21))
                         .foregroundStyle(Palette.onTable)
-                    RarityTag(PackLook.grade(tier), size: 8.5)
+                    // A shop grade means nothing beside cards, which have rarities of their own.
+                    if tier.shelf == .shop { RarityTag(PackLook.grade(tier), size: 8.5) }
                 }
                 Text(PackLook.explanation(tier))
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.onTableSoft)
                     .fixedSize(horizontal: false, vertical: true)
+                if tier.shelf == .album { settebelloOdds }
             }
             Spacer(minLength: 8)
             if let price = tier.price {
                 DenariLabel(amount: price, size: 14,
                             tint: affordable ? Palette.goldLight : Palette.onTableSoft)
                     .opacity(affordable ? 1 : 0.7)
+            }
+            if tier.shelf == .album {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Palette.onTableSoft)
             }
         }
         .padding(14)
@@ -182,6 +214,21 @@ struct PackRow: View {
     }
 }
 
+extension PackRow {
+    /// The one card everybody is after, and how many of these packs it takes.
+    private var settebelloOdds: some View {
+        let packs = Int((1 / Pack.packChance(of: .settebello, in: tier, volume: volume)).rounded())
+        // One run of text, so it wraps as a sentence and only when it must.
+        return (Text(Image(systemName: "suit.diamond.fill")).font(.system(size: 8))
+                + Text(verbatim: " ")
+                + Text("Settebello · 1 in \(packs) packs"))
+            .font(.system(size: 11.5, weight: .semibold))
+            .foregroundStyle(Palette.goldLight)
+            .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 1)
+    }
+}
+
 /// What every pack on one shelf actually pays, written down.
 ///
 /// Printed rather than described, and reachable from the page that sells them rather than
@@ -189,6 +236,8 @@ struct PackRow: View {
 /// trusted about the one thing it should be showing.
 struct OddsSheet: View {
     var shelf: PackTier.Shelf = .album
+    /// Where card packs are going: a later volume holds its good cards back harder.
+    var volume: Volume = .riviera
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
@@ -211,9 +260,14 @@ struct OddsSheet: View {
                     ForEach(PackTier.on(shelf)) { tier in
                         tierOdds(tier)
                     }
+                    if shelf == .album {
+                        DailyCardOdds(volume: volume)
+                        OroOdds()
+                    }
                 }
                 .padding(20)
             }
+            .defaultScrollAnchor(DebugLaunch.showsAlbumEnd ? .bottom : .top)
             .background(TableGround())
             .navigationTitle("What is in a pack")
             .navigationBarTitleDisplayMode(.inline)
@@ -272,7 +326,7 @@ struct OddsSheet: View {
     }
 
     private func oddsLine(_ rarity: Rarity, in tier: PackTier) -> some View {
-        let chance = Pack.packChance(ofAtLeast: rarity, in: tier)
+        let chance = Pack.packChance(ofAtLeast: rarity, in: tier, volume: volume)
         return HStack(spacing: 8) {
             RarityTag(rarity, locale: locale, size: 8.5)
             Text("or better, per pack")

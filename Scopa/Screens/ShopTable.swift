@@ -27,7 +27,8 @@ struct ShopTable: View {
                            justBought: counter.justBought(item),
                            earnedBy: Streaks.milestone(for: felt).map { milestone -> LocalizedStringKey in
                                "Play \(milestone.days) days in a row"
-                           }) {
+                           },
+                           trying: store.tryOn.isTrying(item)) {
                         FeltSwatch(felt: felt)
                     }
                 }
@@ -47,7 +48,9 @@ struct ShopTable: View {
                            owned: purse.owns(tapis),
                            equipped: store.tapis == tapis,
                            affordable: counter.affordable(item),
-                           justBought: counter.justBought(item)) {
+                           justBought: counter.justBought(item),
+                           earnedBy: ShopEarning.fromAlbum(item),
+                           trying: store.tryOn.isTrying(item)) {
                         TapisSwatch(tapis: tapis, felt: store.tableFelt)
                     }
                 }

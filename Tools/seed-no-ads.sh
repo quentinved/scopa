@@ -19,5 +19,6 @@ swiftc -O -swift-version 5 \
     -target arm64-apple-macos14.0 \
     -o "$build/seed-no-ads" \
     "$root/Tools/ASC/Client.swift" \
+    "$root/Tools/ASC/Purchase.swift" \
     "$root/Tools/NoAdsSeed/main.swift"
 "$build/seed-no-ads" "$bundle" "$shot" "$promo"

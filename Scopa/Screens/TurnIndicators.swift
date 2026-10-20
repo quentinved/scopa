@@ -38,8 +38,18 @@ struct TurnRing: View {
 /// dot that keeps time while they think.
 struct TurnPill: View {
     let view: PlayerView
+    /// The seat shown on the move: the view's own, but for a hand held back while the move
+    /// that dealt it lands, when it stays with whoever made it. See `TableScreen.holdsHand`.
+    let seat: Int?
     let name: String
+    /// The chair this phone belongs to. Seat colours count from it, so terracotta is only
+    /// ever yours.
+    let home: Int
+    /// A bot under Scatouch waiting for the player to make its move, rather than thinking.
+    var steered = false
     @State private var beat = false
+
+    private var isMine: Bool { seat == view.seat }
 
     /// The old label fades out before the new one fades in. A plain cross-fade drew both
     /// labels over each other at half strength.
@@ -50,9 +60,9 @@ struct TurnPill: View {
 
     var body: some View {
         ZStack {
-            if view.isMyTurn {
+            if isMine {
                 yourTurn
-            } else if let seat = view.turnSeat {
+            } else if let seat {
                 theirTurn(seat: seat)
             } else {
                 Text("Round over")
@@ -72,8 +82,8 @@ struct TurnPill: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .glassCapsule(tint: tint)
-        .shadow(color: Palette.ink.opacity(0.28), radius: 6, y: 2)
-        .animation(.easeInOut(duration: 0.18), value: view.isMyTurn)
+        .plateShadow(color: Palette.ink.opacity(0.28), radius: 6, y: 2)
+        .animation(.easeInOut(duration: 0.18), value: isMine)
     }
 
     private var yourTurn: some View {
@@ -93,16 +103,16 @@ struct TurnPill: View {
                 .scaleEffect(beat ? 1.35 : 1)
                 // Keyed on the seat so each new player's turn gets its own beats.
                 .task(id: seat) { await Pulse.beat(times: 3, every: 0.7) { beat = $0 } }
-            Text("\(name) is thinking")
+            Text(steered ? "Play for \(name)" : "\(name) is thinking")
         }
         .foregroundStyle(Palette.cream)
         .transition(Self.swap)
     }
 
     private var tint: Color? {
-        if view.isMyTurn { return Palette.terracotta }
-        if let seat = view.turnSeat {
-            return Palette.seat(seat, teams: view.configuration.teams).opacity(0.85)
+        if isMine { return Palette.terracotta }
+        if let seat {
+            return Palette.seat(seat, teams: view.configuration.teams, home: home).opacity(0.85)
         }
         return nil
     }
@@ -115,27 +125,36 @@ struct TurnEdge: View {
     @State private var breathing = false
 
     var body: some View {
+        // The breath fades a wider glow in over the resting one. Animating the width and the
+        // blur instead worked the full-screen blur out again on every frame of the breath.
+        ZStack {
+            glow(width: 24, blur: 16).opacity(0.85)
+            if breathing { glow(width: 34, blur: 22).opacity(0.75).transition(.opacity) }
+        }
+        .opacity(isOn ? 1 : 0)
+        .overlay {
+            RoundedRectangle(cornerRadius: 52, style: .continuous)
+                .strokeBorder(Palette.terracotta.opacity(breathing ? 0.9 : 0.65), lineWidth: 4)
+                .padding(2)
+                .opacity(isOn ? 1 : 0)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .animation(.easeInOut(duration: 0.35), value: isOn)
+        .task(id: isOn) {
+            guard isOn else { breathing = false; return }
+            await Pulse.beat(times: 2, every: 0.6) { breathing = $0 }
+        }
+    }
+
+    /// Baked into one texture. Left live, a full-screen blur is worked out again on every
+    /// frame anything on the cloth moves, for the whole of your turn.
+    private func glow(width: CGFloat, blur: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: 56, style: .continuous)
-            .strokeBorder(Palette.terracotta, lineWidth: breathing ? 34 : 24)
-            .blur(radius: breathing ? 22 : 16)
+            .strokeBorder(Palette.terracotta, lineWidth: width)
+            .blur(radius: blur)
             .padding(-6)
-            // Baked into one texture. Left live, a full-screen blur is worked out again on
-            // every frame anything on the cloth moves, for the whole of your turn.
             .drawingGroup()
-            .opacity(isOn ? (breathing ? 0.95 : 0.85) : 0)
-            .overlay {
-                RoundedRectangle(cornerRadius: 52, style: .continuous)
-                    .strokeBorder(Palette.terracotta.opacity(breathing ? 0.9 : 0.65), lineWidth: 4)
-                    .padding(2)
-                    .opacity(isOn ? 1 : 0)
-            }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-            .animation(.easeInOut(duration: 0.35), value: isOn)
-            .task(id: isOn) {
-                guard isOn else { breathing = false; return }
-                await Pulse.beat(times: 2, every: 0.6) { breathing = $0 }
-            }
     }
 }

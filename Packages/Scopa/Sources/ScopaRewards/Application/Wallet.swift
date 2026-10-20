@@ -187,6 +187,13 @@ public actor Wallet {
         try await credit([LedgerEntry(date: date, amount: amount, reason: .granted(note), key: key)])
     }
 
+    /// A bag bought on the App Store. Only what landed, so the same transaction handed over
+    /// again pays nothing more.
+    @discardableResult
+    public func credit(_ bag: DenariBag, transaction: UInt64, on date: Date = .now) async throws -> [LedgerEntry] {
+        try await grant(bag.denari, note: DenariBag.note, key: DenariBag.key(transaction: transaction), on: date)
+    }
+
     /// A grant with an item handed over beside it, in one write: both land or neither, so a
     /// failure cannot spend the key and lose the item. The item only comes with a fresh grant.
     @discardableResult

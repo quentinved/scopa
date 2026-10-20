@@ -11,6 +11,8 @@ struct SummaryPayout: View {
     let earnings: [PayoutLine]
     let doubling: Doubling?
     let experience: Experience.Gain?
+    /// A run of doubled games, offered under the ad. Nil when there is nothing to offer.
+    var boost: BoostOffer? = nil
 
     var body: some View {
         VStack(spacing: 9) {
@@ -23,9 +25,11 @@ struct SummaryPayout: View {
                 total.padding(.top, experience == nil ? 0 : 3)
                 ForEach(earnings) { line in self.line(line) }
                 if let doubling { doublingButton(doubling) }
+                if let boost { SummaryBoostRow(offer: boost).transition(.opacity) }
             }
         }
         .animation(.easeInOut(duration: 0.25), value: doubling == nil)
+        .animation(.easeInOut(duration: 0.25), value: boost?.phase)
         .animation(.spring(duration: 0.45, bounce: 0.2), value: earnings.isEmpty)
         .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
@@ -43,15 +47,20 @@ struct SummaryPayout: View {
                 .font(.system(size: 15, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(total.isCredit ? Palette.ink : Palette.terracotta)
+                .contentTransition(.numericText(value: Double(total.coins)))
         }
     }
 
     /// Set in under the total's label, so the lines read as what it is made of.
     private func line(_ line: PayoutLine) -> some View {
         HStack(spacing: 10) {
-            Text(line.title)
-                .font(.system(size: 14))
-                .foregroundStyle(Palette.inkSoft)
+            HStack(spacing: 6) {
+                // The ticket's stamp, so a run's double is known for what was bought.
+                if line.id == Boost.note { DoubleStamp(size: 10.5) }
+                Text(line.title)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Palette.inkSoft)
+            }
             Spacer(minLength: 8)
             Text(verbatim: line.value.signed)
                 .font(.system(size: 13, weight: .semibold))

@@ -18,24 +18,42 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
     public let localPlayer: Player
     public let code: String
     public let incoming: AsyncStream<Envelope>
-    /// Only real bad news: the table is gone, or we have stopped being able to reach it.
-    /// A drop that is being reconnected says nothing, because it usually fixes itself
-    /// before anybody could have read the message.
+    /// Kept for the shape every transport shares; a room has nothing to put on it. A seated
+    /// table that cannot be reached says so on `link`, where it can be tried again, and a
+    /// table that never opened fails `connect()`.
     public let problems: AsyncStream<String>
     /// One value each time the socket has been remade after a drop. A guest sends its join
-    /// again when this fires, so the host can catch it up; the host has nothing to do.
+    /// again when this fires, and the host sends everybody the table again.
     public let reconnects: AsyncStream<Void>
+    /// How the line is, once the table has been sat at: what the reconnect banner draws.
+    public let link: AsyncStream<Link>
+
+    public enum Link: Sendable, Equatable {
+        case up
+        /// Dropped, and being remade without anybody asking.
+        case down
+        /// Given up on. `reconnect()` tries again.
+        case lost
+    }
 
     private let baseURL: URL
     private let incomingContinuation: AsyncStream<Envelope>.Continuation
     private let problemsContinuation: AsyncStream<String>.Continuation
     private let reconnectsContinuation: AsyncStream<Void>.Continuation
+    private let linkContinuation: AsyncStream<Link>.Continuation
 
     private let lock = NSLock()
     private var socket: URLSessionWebSocketTask?
     private var declaredHost: PlayerID?
+    /// Everyone else this phone knows to be in the room, by id: told by a welcome, a `joined`
+    /// or a message, and forgotten on a `left`. Compared with the next welcome's list, so a
+    /// departure that happened while this phone could not hear it is not missed.
+    private var others: Set<String> = []
     private var isClosed = false
     private var hasConnected = false
+    /// Whether the connect-and-retry loop is going. It stops after `reconnectTries`, and
+    /// `reconnect()` starts it again.
+    private var isRunning = false
     private var pump: Task<Void, Never>?
     private var keepAlive: Task<Void, Never>?
     private var opening: OnceBox<Void>?
@@ -48,6 +66,9 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
     /// A ping often enough to keep the phone's carrier from quietly dropping an idle
     /// socket. It is a control frame, so the room stays asleep and costs nothing.
     private static let pingInterval = Duration.seconds(25)
+    /// How long a ping may go unanswered before the socket is taken for dead. A phone that
+    /// walks out of Wi-Fi leaves a socket that never closes; only the silence gives it away.
+    private static let pongPatience = Duration.seconds(10)
 
     init(baseURL: URL, code: String, localPlayer: Player) {
         self.baseURL = baseURL
@@ -56,6 +77,7 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
         (incoming, incomingContinuation) = AsyncStream.makeStream(of: Envelope.self, bufferingPolicy: .unbounded)
         (problems, problemsContinuation) = AsyncStream.makeStream(of: String.self, bufferingPolicy: .bufferingNewest(1))
         (reconnects, reconnectsContinuation) = AsyncStream.makeStream(of: Void.self, bufferingPolicy: .bufferingNewest(1))
+        (link, linkContinuation) = AsyncStream.makeStream(of: Link.self, bufferingPolicy: .bufferingNewest(1))
         super.init()
     }
 
@@ -91,6 +113,20 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
         incomingContinuation.finish()
         problemsContinuation.finish()
         reconnectsContinuation.finish()
+        linkContinuation.finish()
+    }
+
+    /// Tries the table again after the connection was given up on: the same room, the same
+    /// id, so the seat is the one this phone had. Does nothing while a try is already going.
+    public func reconnect() {
+        let again = lock.withLock {
+            guard !isClosed, !isRunning, hasConnected else { return false }
+            isRunning = true
+            return true
+        }
+        guard again else { return }
+        Self.log.info("Trying table \(self.code, privacy: .public) again")
+        start()
     }
 
     // MARK: GameTransport
@@ -129,6 +165,7 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
     }
 
     private func start() {
+        lock.withLock { isRunning = true }
         let task = Task { [weak self] in await self?.run() ?? () }
         lock.withLock { pump = task }
     }
@@ -136,6 +173,7 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
     /// Connects, listens, and connects again when that ends badly, until the table is left
     /// or it stops being worth trying.
     private func run() async {
+        defer { lock.withLock { isRunning = false } }
         var failures = 0
         while !lock.withLock({ isClosed }), !Task.isCancelled {
             let carried = await listen()
@@ -143,12 +181,12 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
             failures = carried ? 0 : failures + 1
 
             let seated = lock.withLock { hasConnected }
+            if seated, carried { linkContinuation.yield(.down) }
             let limit = seated ? Self.reconnectTries : Self.firstTries
             if failures >= limit {
                 Self.log.error("Gave up on table \(self.code, privacy: .public) after \(failures) tries")
-                if seated {
-                    problemsContinuation.yield("The connection to the table was lost")
-                } else {
+                // A seated table says so on `link`, where the banner offers to try again.
+                if seated { linkContinuation.yield(.lost) } else {
                     finishOpening(.failure(RelayError.unreachable("Could not reach the table")))
                 }
                 return
@@ -170,6 +208,9 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
         defer {
             lock.withLock { keepAlive?.cancel(); keepAlive = nil }
             task.cancel(with: .goingAway, reason: nil)
+            // A session holds its delegate queue and connection pool until invalidated, and
+            // every reconnect makes a new one.
+            session.finishTasksAndInvalidate()
         }
 
         var welcomed = false
@@ -198,6 +239,7 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
             return true
 
         case "relay":
+            if let from = frame.from { lock.withLock { _ = others.insert(from) } }
             guard let sealed = frame.data?.data(using: .utf8), let envelope = try? Wire.decode(sealed) else { return false }
             incomingContinuation.yield(envelope)
 
@@ -205,12 +247,13 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
             // Told the way Multipeer and Game Center tell it, so the host covers the empty
             // seat exactly the same way however the player was connected.
             guard let who = frame.player.map({ PlayerID(rawValue: $0) }) else { return false }
+            lock.withLock { _ = others.remove(who.rawValue) }
             incomingContinuation.yield(Envelope(from: who, message: .leave(who)))
 
         case "joined":
             // The guest announces itself properly with a `join`; this is only the Worker
             // being polite, and there is nothing for the game to do about it.
-            break
+            if let who = frame.player { lock.withLock { _ = others.insert(who) } }
 
         default:
             break
@@ -220,29 +263,78 @@ public final class RelaySession: NSObject, GameTransport, @unchecked Sendable {
 
     /// The first welcome is `connect()` returning. Every one after it is a socket that came
     /// back, and a guest has a join to send again.
+    ///
+    /// A phone coming back to a room is told who left while it could not hear: the `left` went
+    /// out while it was away. A guest whose host is missing would otherwise wait on a table that
+    /// is not answering without saying why, and a host would wait for good on the turn of a
+    /// guest nobody is playing for.
     private func welcome(_ frame: Inbound) {
         let host = frame.host.map { PlayerID(rawValue: $0) }
-        let returning = lock.withLock {
-            defer { declaredHost = host; hasConnected = true }
-            return hasConnected
+        let present = frame.present.map { Set($0.map(\.id)) }
+        let (returning, known) = lock.withLock {
+            defer {
+                declaredHost = host
+                hasConnected = true
+                if let present { others = present }
+            }
+            return (hasConnected, others)
         }
         Self.log.info("Seated at table \(self.code, privacy: .public), host \(frame.host ?? "?", privacy: .public)")
         finishOpening(.success(()))
-        if returning { reconnectsContinuation.yield(()) }
+        linkContinuation.yield(.up)
+        guard returning else { return }
+        reconnectsContinuation.yield(())
+        guard let present else { return }
+        for id in Self.leftMeanwhile(known: known, present: present, host: frame.host, me: localPlayer.id.rawValue) {
+            let who = PlayerID(rawValue: id)
+            incomingContinuation.yield(Envelope(from: who, message: .leave(who)))
+        }
     }
 
+    /// Who left the room while this phone was out of it: everyone it knew to be there who is not
+    /// there now, and the host whether or not it had heard from them. Never this phone.
+    static func leftMeanwhile(known: Set<String>, present: Set<String>, host: String?, me: String) -> [String] {
+        var gone = known.subtracting(present)
+        if let host, !present.contains(host) { gone.insert(host) }
+        gone.remove(me)
+        return gone.sorted()
+    }
+
+    /// Pings on a timer, and takes the socket down when one that has been answered before
+    /// stops being answered, so the loop in `run` makes a new one.
+    ///
+    /// Only after an answer: a Worker that does not answer pings at all would otherwise have
+    /// every table remade every half minute.
     private func startPinging(_ task: URLSessionWebSocketTask) {
-        let pinger = Task { [weak self] in
+        let code = self.code
+        let pinger = Task {
+            var answered = false
             while !Task.isCancelled {
                 try? await Task.sleep(for: Self.pingInterval)
                 guard !Task.isCancelled else { return }
-                task.sendPing { error in
-                    if let error { Self.log.debug("Ping failed: \(error.localizedDescription, privacy: .public)") }
-                }
-                _ = self
+                let heard = await Self.answers(task)
+                guard !Task.isCancelled else { return }
+                if heard { answered = true; continue }
+                guard answered else { continue }
+                Self.log.info("Table \(code, privacy: .public) went quiet; remaking the connection")
+                task.cancel(with: .goingAway, reason: nil)
+                return
             }
         }
         lock.withLock { keepAlive?.cancel(); keepAlive = pinger }
+    }
+
+    /// Whether a ping comes back inside `pongPatience`.
+    private static func answers(_ task: URLSessionWebSocketTask) async -> Bool {
+        let heard = try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+            let box = OnceBox(continuation)
+            task.sendPing { error in box.resume(.success(error == nil)) }
+            Task {
+                try? await Task.sleep(for: pongPatience)
+                box.resume(.success(false))
+            }
+        }
+        return heard ?? false
     }
 
     private func finishOpening(_ result: Result<Void, Error>) {
@@ -269,6 +361,12 @@ private struct Inbound: Decodable {
     let from: String?
     let data: String?
     let player: String?
+    /// On a welcome: everyone else whose socket is in the room right now.
+    let present: [Seat]?
+
+    struct Seat: Decodable {
+        let id: String
+    }
 }
 
 /// A continuation that can only be resumed once, however many times the socket comes and

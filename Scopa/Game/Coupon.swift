@@ -102,10 +102,13 @@ enum PromoCode {
     enum Answer: Equatable {
         case received(Receipt)
         case refused(LocalizedStringKey)
+        /// The god mode's phrase: whether `Scatouch` is now on.
+        case scatouch(Bool)
     }
 
     static func use(_ code: String, purse: PurseStore, book: AlbumBook) async -> Answer {
         if Passphrase.opensShop(code) { return await openShop(purse: purse) }
+        if Passphrase.callsScatouch(code) { return .scatouch(Scatouch.shared.answerPhrase()) }
         switch await Coupon.redeem(code) {
         case .reward(let reward), .alreadyRedeemed(let reward?): return await pay(reward, purse: purse, book: book)
         case .alreadyRedeemed(nil): return .refused("You have already used this code.")

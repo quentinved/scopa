@@ -6,6 +6,8 @@ import SwiftUI
 enum Haptic {
     /// A card picked up or put back.
     static let pick: SensoryFeedback = .selection
+    /// A card in hand traded for one from the deck, under Scatouch.
+    static let swap: SensoryFeedback = .impact(weight: .medium, intensity: 0.75)
     /// Your own card landing on the table.
     static let play: SensoryFeedback = .impact(flexibility: .soft, intensity: 0.55)
     /// Cards coming your way.
@@ -20,6 +22,8 @@ enum Haptic {
     static let yourTurn: SensoryFeedback = .impact(weight: .medium, intensity: 0.9)
     /// The winner's name at the end of a game.
     static let reveal: SensoryFeedback = .success
+    /// A search found somebody. Soft, but enough to reach a phone put down to wait.
+    static let seated: SensoryFeedback = .impact(flexibility: .soft, intensity: 0.8)
     /// A pack coming apart in your hands.
     static let tear: SensoryFeedback = .impact(weight: .heavy, intensity: 0.85)
     /// An ordinary card turned over out of a pack.

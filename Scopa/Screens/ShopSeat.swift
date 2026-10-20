@@ -82,7 +82,8 @@ struct ShopSeat: View {
                            owned: purse.owns(livery),
                            equipped: store.livery == livery,
                            affordable: counter.affordable(item),
-                           justBought: counter.justBought(item)) {
+                           justBought: counter.justBought(item),
+                           earnedBy: ShopEarning.fromAlbum(item)) {
                         SeatBadge(name: store.playerName, tint: Palette.seat(0), size: 46,
                                   mark: store.seatMark, cornice: store.cornice, livery: livery)
                             // Room for whatever metal the chosen mark already wears.
@@ -105,7 +106,8 @@ struct ShopSeat: View {
                            owned: purse.owns(cornice),
                            equipped: store.cornice == cornice,
                            affordable: counter.affordable(item),
-                           justBought: counter.justBought(item)) {
+                           justBought: counter.justBought(item),
+                           earnedBy: ShopEarning.fromAlbum(item)) {
                         SeatBadge(name: store.playerName, tint: Palette.seat(0), size: 40,
                                   mark: store.seatMark, cornice: cornice)
                             // A badge draws outside its own size: room for the deepest ring.
@@ -146,7 +148,7 @@ struct ShopSeat: View {
             ShelfHeading(.reactions)
             VStack(spacing: 10) {
                 ForEach(Cosmetics.reactionPacks) { pack in
-                    Button { if !purse.owns(pack) { counter.ask(for: pack.item) {} } } label: {
+                    Button { buy(pack) } label: {
                         ReactionPackRow(pack: pack, owned: purse.owns(pack),
                                         affordable: purse.canAfford(pack.item),
                                         justBought: counter.bought == pack.id)
@@ -156,6 +158,15 @@ struct ShopSeat: View {
                 }
             }
         }
+    }
+}
+
+extension ShopSeat {
+    /// Asks before buying a set, and refuses the one only an album hands over.
+    fileprivate func buy(_ pack: Cosmetics.ReactionPack) {
+        guard !purse.owns(pack) else { return }
+        guard !pack.isEarned else { return Audio.shared.play(.refused) }
+        counter.ask(for: pack.item) {}
     }
 }
 
@@ -186,7 +197,7 @@ private struct ReactionPackRow: View {
         .padding(14)
         .glassPanel(radius: GlassRadius.control)
         .overlay { if justBought { Gilding().id(justBought) } }
-        .opacity(owned || affordable ? 1 : 0.75)
+        .opacity(owned || affordable || pack.isEarned ? 1 : 0.75)
         .contentShape(.rect(cornerRadius: GlassRadius.control))
     }
 
@@ -195,6 +206,9 @@ private struct ReactionPackRow: View {
             Label("Owned", systemImage: "checkmark")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Palette.onTableSoft)
+        } else if let earnedBy = ShopEarning.fromAlbum(pack.item) {
+            EarnedTag(requirement: earnedBy)
+                .frame(maxWidth: 120)
         } else {
             DenariLabel(amount: pack.price, size: 15,
                         tint: affordable ? Palette.goldLight : Palette.onTableSoft)

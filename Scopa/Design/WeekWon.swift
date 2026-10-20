@@ -69,7 +69,8 @@ struct WeekWonCard: View {
                 .opacity(landed ? 0.22 : 0)
                 .rotationEffect(.degrees(landed ? 22 : 0))
                 .scaleEffect(landed ? 1 : 0.6)
-            SeatBadge(name: name, tint: Palette.seat(0), size: badge, mark: mark,
+            SeatBadge(name: name, tint: Palette.seat(0),
+                      size: SeatBadge.fitted(badge, mark: mark, honoured: true, cornice: cornice), mark: mark,
                       honoured: true, cornice: cornice)
                 .scaleEffect(landed ? 1 : 0.7)
         }

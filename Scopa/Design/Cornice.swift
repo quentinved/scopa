@@ -5,7 +5,8 @@ import SwiftUI
 /// because the table can see it.
 ///
 /// No cornice is ever metal: metal is `Prestige`, which is earned by winning. A bought
-/// cornice is made of rope, flowers, ribbon or paint instead.
+/// cornice is made of rope, flowers, ribbon or paint instead, and the Mosaico album's of
+/// glass: gold leaf under glass is mosaic, not metal.
 enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
     /// A bare mark, which is what everybody starts with.
     case none
@@ -17,6 +18,8 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
     case nastro
     /// A painted wave border, off a plate.
     case onde
+    /// Courses of tesserae, lapis and gold. Never sold: the Mosaico album is the only way.
+    case tessere
 
     var id: String { rawValue }
 
@@ -41,6 +44,7 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
         case .fiori: "Fiori"
         case .nastro: "Nastro"
         case .onde: "Onde"
+        case .tessere: "Tessere"
         }
     }
 
@@ -52,6 +56,7 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
         case .fiori: "A ring of small flowers"
         case .nastro: "A ribbon, tied at the bottom"
         case .onde: "A painted wave border"
+        case .tessere: "Courses of tesserae, lapis and gold"
         }
     }
 
@@ -63,6 +68,7 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
         case .fiori: "Six gold flowers. Somebody loves you"
         case .nastro: "A ribbon under your name. Fancy"
         case .onde: "Waves off a Ligurian plate"
+        case .tessere: "Ravenna gold round your name. Theodora is jealous"
         }
     }
 
@@ -73,7 +79,7 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
         case .none: 1.00
         case .corda, .onde: 1.22
         case .fiori: 1.28
-        case .nastro: 1.34
+        case .nastro, .tessere: 1.34
         }
     }
 
@@ -87,6 +93,7 @@ enum Cornice: String, CaseIterable, Codable, Sendable, Identifiable {
         case .corda: 1.24
         case .fiori: 1.30
         case .nastro, .onde: 1.32
+        case .tessere: 1.34
         }
     }
 }
@@ -112,6 +119,7 @@ struct CorniceRing: View {
         case .fiori: fiori
         case .nastro: nastro
         case .onde: onde
+        case .tessere: TessereRing(ring: ring, size: size)
         }
     }
 

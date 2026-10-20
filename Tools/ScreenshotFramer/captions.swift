@@ -36,11 +36,11 @@ let frames: [Frame] = [
     ]),
     Frame(shot: "9-campaign", name: "02-campaign", captions: [
         "en": Caption(headline: "A journey through *Italy*",
-                      line: "30 tables, region by region"),
+                      line: "36 tables, region by region"),
         "fr-FR": Caption(headline: "Un voyage à travers *l’Italie*",
-                         line: "30 tables, de région en région"),
+                         line: "36 tables, de région en région"),
         "it": Caption(headline: "Un viaggio attraverso *l’Italia*",
-                      line: "30 tavoli, di regione in regione"),
+                      line: "36 tavoli, di regione in regione"),
     ]),
     Frame(shot: "5-lobby", name: "03-lobby", captions: [
         "en": Caption(headline: "Play at *your own pace*",
@@ -92,11 +92,11 @@ let frames: [Frame] = [
     ]),
     Frame(shot: "11-album", name: "09-album", captions: [
         "en": Caption(headline: "Collect *every card*",
-                      line: "Four volumes, each in a deck of its own"),
+                      line: "Ten volumes, each in a deck of its own"),
         "fr-FR": Caption(headline: "Collectionnez *toutes les cartes*",
-                         line: "Quatre volumes, chacun dans son propre jeu"),
+                         line: "Dix volumes, chacun dans son propre jeu"),
         "it": Caption(headline: "Colleziona *tutte le carte*",
-                      line: "Quattro volumi, ognuno con il suo mazzo"),
+                      line: "Dieci volumi, ognuno con il suo mazzo"),
     ]),
     Frame(shot: "7-rules", name: "10-rules", captions: [
         "en": Caption(headline: "New to *Scopa*?",

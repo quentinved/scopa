@@ -13,6 +13,7 @@ struct ShopDeck: View {
             shelf(.cardTheme, CardStyle.options)
             shelf(.cardSkin, CardSkin.options)
             backs
+            EdgeShelf(purse: purse, counter: counter)
         }
     }
 
@@ -27,7 +28,9 @@ struct ShopDeck: View {
                            owned: purse.owns(option),
                            equipped: store.cardTheme == preview,
                            affordable: counter.affordable(option.shopItem),
-                           justBought: counter.justBought(option.shopItem)) {
+                           justBought: counter.justBought(option.shopItem),
+                           earnedBy: ShopEarning.fromAlbum(option.shopItem),
+                           trying: store.tryOn.isTrying(option.shopItem)) {
                         HStack(spacing: -20) {
                             CardView(card: Card(.knight, of: .coins), width: 44)
                             CardBack(width: 44).rotationEffect(.degrees(7))
@@ -52,7 +55,8 @@ struct ShopDeck: View {
                            equipped: store.cardBack == pattern,
                            affordable: counter.affordable(item),
                            justBought: counter.justBought(item),
-                           earnedBy: ShopEarning.fromAlbum(item)) {
+                           earnedBy: ShopEarning.fromAlbum(item),
+                           trying: store.tryOn.isTrying(item)) {
                         CardBack(width: 52)
                             .environment(\.cardBack, pattern)
                             .environment(\.cardTheme, store.cardTheme)

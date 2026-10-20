@@ -15,6 +15,7 @@ struct ShopSongs: View {
                 ShelfHeading(.song)
                 ForEach(Song.allCases) { song in
                     SongRow(song: song, item: Cosmetics.item(for: song),
+                            earnedBy: ShopEarning.fromAlbum(Cosmetics.item(for: song)),
                             owned: purse.owns(song),
                             equipped: audio.tableSong == song,
                             playing: audio.auditioning == song.track,
@@ -26,7 +27,6 @@ struct ShopSongs: View {
             }
             .reactsToPick(audio.tableSong)
         }
-        .onDisappear { audio.audition(nil) }
     }
 
     /// Said where it matters: a song bought with the music off would never be heard.
@@ -53,9 +53,12 @@ struct ShopSongs: View {
 }
 
 /// One song: a play button, its name and grade, what it sounds like, and where it stands.
+/// An album's song can be heard here before it is won, and only won there.
 private struct SongRow: View {
     let song: Song
     let item: ShopItem?
+    /// How a song that is never sold is had, in place of its price.
+    let earnedBy: LocalizedStringKey?
     let owned: Bool
     let equipped: Bool
     let playing: Bool
@@ -74,7 +77,7 @@ private struct SongRow: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 12)
-        .glass(equipped ? .riviera(tint: Palette.terracotta.opacity(0.75), interactive: true) : .identity,
+        .glass(equipped ? .riviera(tint: Palette.terracotta.opacity(0.75)) : .identity,
                in: .rect(cornerRadius: GlassRadius.control))
         .overlay { border }
         .overlay { if song.grade == .leggendario { legendaryLight } }
@@ -120,6 +123,9 @@ private struct SongRow: View {
             Label("Owned", systemImage: "checkmark")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Palette.onTableSoft)
+        } else if let earnedBy {
+            EarnedTag(requirement: earnedBy)
+                .frame(maxWidth: 110)
         } else if let item {
             DenariLabel(amount: item.price, size: 14,
                         tint: affordable ? Palette.goldLight : Palette.onTableSoft)

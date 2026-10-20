@@ -85,8 +85,11 @@ struct PlayerBadge: View {
         if isBot {
             BotFace(tint: tint, size: size)
         } else {
-            SeatBadge(name: name, tint: tint, size: size, mark: mark, honoured: honoured,
-                      cornice: cornice, livery: livery)
+            // With the laurel on, the circle gives up what the laurel round its metal needs,
+            // so the seat takes a bare laurel's room and never runs into the name beside it.
+            SeatBadge(name: name, tint: tint,
+                      size: honoured ? SeatBadge.fitted(size, mark: mark, honoured: true, cornice: cornice) : size,
+                      mark: mark, honoured: honoured, cornice: cornice, livery: livery)
         }
     }
 }

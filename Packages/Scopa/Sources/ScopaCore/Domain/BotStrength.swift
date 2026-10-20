@@ -39,15 +39,37 @@ extension BotStrength {
     /// Divisions from Bronze III to Maestro I, as `Standing.step` counts them.
     static let topStep = League.allCases.count * Ranking.divisionsPerLeague - 1
 
-    /// What the house plays like at a ranked table, `step` divisions above Bronze III.
+    /// Gold III, where the ramp bends: below it the house hardens as it always has, and from
+    /// there to Diamond I more gently, so Diamond plays about the way Platinum used to. Until
+    /// 1.4 Diamond I took its own advice 87 times in a hundred, and players there were losing
+    /// round after round to it.
+    static let houseBendsAt = 6
+    /// How often the house follows its own advice at Diamond I, the last division before it searches.
+    static let houseFollowsBelowMaestro = 0.80
+
+    /// How much sloppier the house plays for each ranked game in a row lost to it, and how
+    /// many of those it counts. A bad run gets a kinder table, and a win puts it back.
+    static let reliefPerLoss = 0.05
+    public static let reliefLosses = 3
+
+    /// What the house plays like at a ranked table, `step` divisions above Bronze III, for a
+    /// player who has lost `losses` ranked games in a row to it.
     ///
-    /// A shallow ramp of about 2.5 points of `follows` per division, so the opponent hardens
+    /// A shallow ramp of a few points of `follows` per division, so the opponent hardens
     /// without anyone being told. It never reaches perfect: the hard setting is for that.
     /// Only ranked uses this. Wager tables and the daily deal use a fixed opponent, see `TableStore.contestLevel`.
-    public static func house(atStep step: Int) -> BotStrength {
+    public static func house(atStep step: Int, losing losses: Int = 0) -> BotStrength {
         let step = min(max(step, 0), topStep)
-        return BotStrength(searches: step >= houseSearchesFrom,
-                           follows: ramp(houseFollowsFloor, houseFollowsCeiling, over: step, of: topStep))
+        let relief = Double(min(max(losses, 0), reliefLosses)) * reliefPerLoss
+        return BotStrength(searches: step >= houseSearchesFrom, follows: houseFollows(atStep: step) - relief)
+    }
+
+    private static func houseFollows(atStep step: Int) -> Double {
+        let line = ramp(houseFollowsFloor, houseFollowsCeiling, over: step, of: topStep)
+        guard (houseBendsAt..<houseSearchesFrom).contains(step) else { return line }
+        let bend = ramp(houseFollowsFloor, houseFollowsCeiling, over: houseBendsAt, of: topStep)
+        let span = houseSearchesFrom - 1 - houseBendsAt
+        return bend + (houseFollowsBelowMaestro - bend) * Double(step - houseBendsAt) / Double(span)
     }
 
     /// The house in the middle division of a league, for copy that describes it.

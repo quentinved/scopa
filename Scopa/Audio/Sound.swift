@@ -142,6 +142,8 @@ enum Track: String, CaseIterable {
     case serenata = "music_serenata"
     case tarantella = "music_tarantella"
     case mergellina = "music_mergellina"
+    /// Never sold: the Maiolica album hands it over.
+    case faenza = "music_faenza"
 
     /// Set against the table bed's loudness, so changing song does not change the room.
     var level: Float {
@@ -151,6 +153,7 @@ enum Track: String, CaseIterable {
         case .pomeriggio, .serenata, .mergellina: 0.29
         case .piazza, .barcarola: 0.27
         case .tarantella: 0.34
+        case .faenza: 0.32
         }
     }
 }

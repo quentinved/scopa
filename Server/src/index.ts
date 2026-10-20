@@ -3,17 +3,19 @@
 // Every write to the ladder is signed by Game Center, so a result is only recorded for
 // the player who made it. The app works without this Worker.
 
-import { Identity, IdentityError, verifyIdentity, VerifyOptions } from "./gamecenter.ts";
-import { apply, change, houseChange, HOUSE_GAMES_PER_DAY, HOUSE_LOSS, HOUSE_WIN, resetForSeason, seasonEnd, seasonOf, standing as leagueStanding, streakAfter, streakBonus } from "./ranking.ts";
+// Types are imported as types, so node can run this file for the tests as well as wrangler.
+import { type Identity, IdentityError, verifyIdentity, type VerifyOptions } from "./gamecenter.ts";
+import { apply, change, houseChange, HOUSE_GAMES_PER_DAY, HOUSE_LOSS, HOUSE_WIN, KEEPABLE_RUN, resetForSeason, seasonEnd, seasonOf, standing as leagueStanding, streakAfter, streakBonus } from "./ranking.ts";
 import { privacyPage } from "./privacy.ts";
 import { supportPage } from "./support.ts";
 import { invitePage, siteAssociation } from "./invite.ts";
-import { cursor, invalidLedger, invalidProfile, LedgerPost, MAX_LEDGER_PAGE } from "./profile.ts";
+import { cursor, invalidLedger, invalidProfile, type LedgerPost, MAX_LEDGER_PAGE } from "./profile.ts";
 import { isCode, normaliseCode, openTable, Room } from "./room.ts";
 import { RankedQueue } from "./queue.ts";
 import { BEAT_SECONDS, fingerprint, friendSet, invalidFriends, WINDOW_SECONDS } from "./presence.ts";
-import { FriendCodeRow, giftOf, normaliseFriendCode } from "./friendcodes.ts";
+import { type FriendCodeRow, giftOf, normaliseFriendCode } from "./friendcodes.ts";
 import { deviceOf, normaliseCoupon, redeemCoupon } from "./coupons.ts";
+import { cardGiftOf, collectGifts, type Gift, invalidGift, invalidTaken, PER_DAY, sendGift } from "./gifts.ts";
 import { campaignBoard, friendsCampaignBoard, invalidLookup, invalidProgress, progressOf, recordProgress, roadOf, rowsForRoad, stageFaces, stagesForRoad } from "./campaign.ts";
 import { wheelStrip } from "./wheel.ts";
 
@@ -61,9 +63,11 @@ const routes: Route[] = [
   { method: "GET", path: /^\/v1\/weekly\/([^/]+)$/, handle: ({ url, env, params: [week] }) => getWeekly(week, url.searchParams.get("player"), env) },
   { method: "POST", path: /^\/v1\/ranked\/claim$/, handle: ({ request, env }) => claimSeason(request, env) },
   { method: "POST", path: /^\/v1\/ranked\/house$/, handle: ({ request, env }) => postHouseGame(request, env) },
+  { method: "POST", path: /^\/v1\/ranked\/keep-run$/, handle: ({ request, env }) => postKeepRun(request, env) },
   // Unsigned like rooms: the queue only seats players, and the result is signed later.
   { method: "POST", path: /^\/v1\/ranked\/queue$/, handle: ({ request, env }) => rankedQueue(request, "seek", env) },
   { method: "POST", path: /^\/v1\/ranked\/queue\/leave$/, handle: ({ request, env }) => rankedQueue(request, "leave", env) },
+  { method: "POST", path: /^\/v1\/ranked\/queue\/follow$/, handle: ({ request, env }) => rankedQueue(request, "follow", env) },
   { method: "POST", path: /^\/v1\/ranked$/, handle: ({ request, env }) => postRanked(request, env) },
   { method: "GET", path: /^\/v1\/ranked\/board$/, handle: ({ url, env }) => getRankedBoard(url.searchParams.get("player"), env) },
   { method: "POST", path: /^\/v1\/ranked\/board\/friends$/, handle: ({ request, env }) => postFriendsBoard(request, env) },
@@ -75,6 +79,10 @@ const routes: Route[] = [
   { method: "POST", path: /^\/v1\/presence\/leave$/, handle: ({ request, env }) => leavePresence(request, env) },
   { method: "POST", path: /^\/v1\/codes\/redeem$/, handle: ({ request, env }) => redeemFriendCode(request, env) },
   { method: "POST", path: /^\/v1\/coupons\/redeem$/, handle: ({ request, env }) => postCoupon(request, env) },
+  // A spare card for a friend. The bare GET only says this Worker knows about them.
+  { method: "GET", path: /^\/v1\/gifts$/, handle: () => json({ open: true, perDay: PER_DAY }) },
+  { method: "POST", path: /^\/v1\/gifts\/send$/, handle: ({ request, env }) => postGift(request, env) },
+  { method: "POST", path: /^\/v1\/gifts\/collect$/, handle: ({ request, env }) => postCollectGifts(request, env) },
   // The campaign's board. Only the progress post is signed, like the other boards.
   { method: "POST", path: /^\/v1\/campaign$/, handle: ({ request, env }) => postCampaign(request, env) },
   { method: "GET", path: /^\/v1\/campaign\/board$/, handle: ({ url, env }) => getCampaignBoard(url.searchParams.get("player"), Number(url.searchParams.get("road")), env) },
@@ -132,12 +140,19 @@ function upsertPlayer(env: Env, id: string, name: string, now: string): D1Prepar
 }
 
 /** `streak` is the run as it stands *after* this game: a house game passes its own back
- *  unchanged, since the house neither lengthens a run nor ends one. */
-function upsertRating(env: Env, id: string, next: { rating: number; floor: number }, won: boolean, now: string, season: string, streak: number): D1PreparedStatement {
+ *  unchanged, since the house neither lengthens a run nor ends one.
+ *
+ *  A run of KEEPABLE_RUN or more that this game ends is left to keep, under `gameID`, unless
+ *  it was kept once already; any other game closes what the last one left. Every SET reads
+ *  the row as it stood before, so `streak` there is the run this game ended. */
+function upsertRating(env: Env, id: string, next: { rating: number; floor: number }, won: boolean, now: string, season: string, streak: number, gameID: string): D1PreparedStatement {
   return env.DB.prepare(
     `INSERT INTO ratings (player_id, rating, floor, games, wins, season, streak, updated_at) VALUES (?1, ?2, ?3, 1, ?4, ?6, ?7, ?5)
-     ON CONFLICT(player_id) DO UPDATE SET rating = ?2, floor = ?3, games = games + 1, wins = wins + ?4, season = ?6, streak = ?7, updated_at = ?5`,
-  ).bind(id, next.rating, next.floor, won ? 1 : 0, now, season, streak);
+     ON CONFLICT(player_id) DO UPDATE SET rating = ?2, floor = ?3, games = games + 1, wins = wins + ?4, season = ?6, streak = ?7, updated_at = ?5,
+       broken_run = CASE WHEN ?7 = 0 AND streak >= ${KEEPABLE_RUN} AND run_kept = 0 THEN streak ELSE 0 END,
+       broken_game = CASE WHEN ?7 = 0 AND streak >= ${KEEPABLE_RUN} AND run_kept = 0 THEN ?8 ELSE NULL END,
+       run_kept = CASE WHEN ?7 = 0 THEN 0 ELSE run_kept END`,
+  ).bind(id, next.rating, next.floor, won ? 1 : 0, now, season, streak, gameID);
 }
 
 async function currentRating(playerID: string, env: Env): Promise<{ rating: number; floor: number; streak: number }> {
@@ -267,6 +282,31 @@ async function postCoupon(request: Request, env: Env): Promise<Response> {
   await verifyIdentity(body.identity, verifyOptions(env));
   const player = { id: body.identity.gamePlayerID, name: displayName(body.identity), device: deviceOf(body.device) };
   const answer = await redeemCoupon(env.DB, code, player);
+  return json(answer.body, answer.status);
+}
+
+// MARK: - Gifts
+
+/// One spare card for a friend, one a day. See gifts.ts for what each refusal means.
+async function postGift(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as (Gift & { identity?: Identity }) | null;
+  const problem = invalidGift(body) ?? (body?.identity?.gamePlayerID ? null : "no identity");
+  if (problem) return json({ error: problem }, 400);
+  const identity = body!.identity!;
+  await verifyIdentity(identity, verifyOptions(env));
+  const sender = { id: identity.gamePlayerID, name: displayName(identity) };
+  await upsertPlayer(env, sender.id, sender.name, new Date().toISOString()).run();
+  const answer = await sendGift(env.DB, sender, cardGiftOf(body!));
+  return json(answer.body, answer.status);
+}
+
+/// The cards waiting for a player, once the ones their phone already has are put away.
+async function postCollectGifts(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json().catch(() => null)) as { taken?: string[]; identity?: Identity } | null;
+  const problem = invalidTaken(body?.taken) ?? (body?.identity?.gamePlayerID ? null : "no identity");
+  if (problem) return json({ error: problem }, 400);
+  await verifyIdentity(body!.identity!, verifyOptions(env));
+  const answer = await collectGifts(env.DB, body!.identity!.gamePlayerID, body!.taken ?? []);
   return json(answer.body, answer.status);
 }
 
@@ -609,7 +649,7 @@ async function applyHouseGame(body: HousePost, playerID: string, now: Date, env:
   const delta = spent ? 0 : houseChange(body.won, streak);
   const next = apply(delta, rating, floor);
   await env.DB.batch([
-    upsertRating(env, playerID, next, body.won, stamp, seasonOf(now), spent ? streak : streakAfter(body.won, streak)),
+    upsertRating(env, playerID, next, body.won, stamp, seasonOf(now), spent ? streak : streakAfter(body.won, streak), body.gameID),
     env.DB.prepare(
       `INSERT INTO house_games (player_id, day, count) VALUES (?1, ?2, 1)
        ON CONFLICT(player_id, day) DO UPDATE SET count = count + 1`,
@@ -626,6 +666,30 @@ async function houseGamesOn(day: string, playerID: string, env: Env): Promise<nu
   const row = await env.DB.prepare(`SELECT count FROM house_games WHERE player_id = ?1 AND day = ?2`)
     .bind(playerID, day).first<{ count: number }>();
   return row?.count ?? 0;
+}
+
+// MARK: Keeping a run
+
+interface KeepRunPost {
+  /** The game that broke the run, as the rank answer's `keepableRun` named it. */
+  gameID: string;
+  identity: Identity;
+}
+
+/// An ad watched straight after a loss puts back the run it ended, taken on trust like a
+/// house game. The loss stands, rating and all. Only the game that broke the run can, and
+/// only until the next one; a second call finds nothing left to put back.
+async function postKeepRun(request: Request, env: Env): Promise<Response> {
+  const body = (await request.json()) as KeepRunPost;
+  if (!GAME_ID.test(body.gameID ?? "")) return json({ error: "bad game id" }, 400);
+  await verifyIdentity(body.identity, verifyOptions(env));
+
+  const playerID = body.identity.gamePlayerID;
+  await env.DB.prepare(
+    `UPDATE ratings SET streak = broken_run, run_kept = 1, broken_run = 0, broken_game = NULL
+     WHERE player_id = ?1 AND broken_game = ?2 AND broken_run > 0 AND streak = 0`,
+  ).bind(playerID, body.gameID).run();
+  return json(await rankOf(playerID, env));
 }
 
 // MARK: Settling
@@ -689,7 +753,7 @@ async function applyStory(gameID: string, story: Story, env: Env): Promise<void>
     const others = ratings.filter((r) => r.id !== me.id && winnerIDs.includes(r.id) !== won).map((r) => r.rating);
     const next = apply(change(me.rating, others, won, winnerRating, me.streak), me.rating, me.floor);
     changes[me.id] = next.rating - me.rating;
-    return upsertRating(env, me.id, next, won, now, season, streakAfter(won, me.streak));
+    return upsertRating(env, me.id, next, won, now, season, streakAfter(won, me.streak), gameID);
   });
   statements.push(env.DB.prepare(`INSERT OR IGNORE INTO ranked_games (game_id, applied_at, changes) VALUES (?1, ?2, ?3)`).bind(gameID, now, JSON.stringify(changes)));
   await env.DB.batch(statements);
@@ -701,8 +765,8 @@ async function rankOf(playerID: string, env: Env) {
   await rollover(playerID, env);
   await settlePending(playerID, env);
 
-  const row = await env.DB.prepare(`SELECT rating, floor, games, wins, streak FROM ratings WHERE player_id = ?1`).bind(playerID)
-    .first<{ rating: number; floor: number; games: number; wins: number; streak: number }>();
+  const row = await env.DB.prepare(`SELECT rating, floor, games, wins, streak, broken_run, broken_game FROM ratings WHERE player_id = ?1`).bind(playerID)
+    .first<{ rating: number; floor: number; games: number; wins: number; streak: number; broken_run: number; broken_game: string | null }>();
   const rating = row?.rating ?? 0;
   const streak = row?.streak ?? 0;
   const last = await lastChange(playerID, env);
@@ -717,6 +781,8 @@ async function rankOf(playerID: string, env: Env) {
     // The run standing now, and what the next win would add for it.
     streak,
     streakBonus: streakBonus(streak),
+    // The run the last game broke, while an ad can still put it back. See postKeepRun.
+    keepableRun: row?.broken_run ? { gameID: row.broken_game, run: row.broken_run } : null,
     lastChange: last.change,
     // Which game the change came from, so a phone can tell this answer from the last one.
     lastGameID: last.gameID,
@@ -772,7 +838,8 @@ async function rollover(playerID: string, env: Env): Promise<void> {
        VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6)`,
     ).bind(row.season, playerID, row.rating, row.games, row.wins, new Date().toISOString()),
     env.DB.prepare(
-      `UPDATE ratings SET rating = ?2, floor = ?3, games = 0, wins = 0, streak = 0, season = ?4 WHERE player_id = ?1`,
+      `UPDATE ratings SET rating = ?2, floor = ?3, games = 0, wins = 0, streak = 0, broken_run = 0, broken_game = NULL, run_kept = 0, season = ?4
+       WHERE player_id = ?1`,
     ).bind(playerID, next.rating, next.floor, season),
   ]);
 }

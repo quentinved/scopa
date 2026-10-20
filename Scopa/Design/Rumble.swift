@@ -138,6 +138,12 @@ final class Rumble {
              gap: .milliseconds(80))
     }
 
+    /// Somebody else's seven, held back behind their sweep: the one heavy knock that
+    /// `Haptic.settebello` is, played late.
+    func theirPrize() {
+        play([.transient(at: 0, intensity: 0.7, sharpness: 0.35)], fallback: [.heavy])
+    }
+
     private static func curve(_ parameter: CHHapticDynamicParameter.ID,
                               _ points: [(TimeInterval, Float)]) -> CHHapticParameterCurve {
         CHHapticParameterCurve(

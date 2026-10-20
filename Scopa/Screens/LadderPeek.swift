@@ -12,6 +12,8 @@ struct LadderPeek: View {
     /// How many lines to show. Five is the podium and the two chasing it; a landscape lobby
     /// has room for three.
     var count = 5
+    /// The strip as one line: its name and who leads. The lobby's, where every line counts.
+    var oneLine = false
     let open: () -> Void
 
     @State private var board: Ladder.Board?
@@ -19,21 +21,33 @@ struct LadderPeek: View {
     /// because the strip says the same short thing for all three.
     @State private var failed = false
 
-    private var rows: [Ladder.Board.Row] { Array(board?.top.prefix(count) ?? []) }
+    /// One line short when the reader came further down, so their own line takes the last
+    /// place and the strip keeps its height on a lobby with none to spare.
+    private var rows: [Ladder.Board.Row] {
+        let isBelow = (board?.you?.rank).map { $0 > count } ?? false
+        return Array(board?.top.prefix(isBelow ? count - 1 : count) ?? [])
+    }
 
     var body: some View {
         Button(action: open) {
-            VStack(alignment: .leading, spacing: 8 * lift) {
-                header
-                content
+            Group {
+                if oneLine {
+                    line
+                } else {
+                    VStack(alignment: .leading, spacing: 8 * lift) {
+                        header
+                        content
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14 * lift)
-            .padding(.vertical, 12 * lift)
-            .glassPanel(radius: GlassRadius.panel, interactive: true)
+            .padding(.vertical, oneLine ? 9 * lift : 12 * lift)
+            .glassPanel(radius: GlassRadius.panel)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Today's ladder"))
+        .accessibilityValue(isVacant ? Text("Up for grabs") : Text(verbatim: ""))
         // Reloaded on the walk back from a deal just played, which is the one moment the
         // board is certain to have changed.
         .task(id: store.freshDailyDay) { await load() }
@@ -49,16 +63,41 @@ struct LadderPeek: View {
     /// edge; a chevron is all the promise it needs.
     private var header: some View {
         HStack(spacing: 8 * lift) {
-            Text("Today's ladder")
-                .textCase(.uppercase)
-                .font(.system(size: 12 * lift, weight: .semibold))
-                .tracking(1.2)
-                .foregroundStyle(Palette.onTableSoft)
+            caption
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11 * lift, weight: .semibold))
-                .foregroundStyle(Palette.onTableSoft)
+            chevron
         }
+    }
+
+    /// The name, and the leader beside it once the board has answered.
+    private var line: some View {
+        HStack(spacing: 10 * lift) {
+            caption.layoutPriority(1)
+            if let leader = board?.top.first {
+                PeekRow(place: 1, name: leader.name, margin: leader.margin, isYou: board?.you?.rank == 1)
+                    .transition(.opacity)
+            } else if isVacant {
+                VacantRow().transition(.opacity)
+            } else {
+                Spacer(minLength: 0).frame(height: 26 * lift)
+            }
+            chevron
+        }
+    }
+
+    private var caption: some View {
+        Text("Today's ladder")
+            .textCase(.uppercase)
+            .font(.system(size: 12 * lift, weight: .semibold))
+            .tracking(1.2)
+            .foregroundStyle(Palette.onTableSoft)
+            .lineLimit(1)
+    }
+
+    private var chevron: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 11 * lift, weight: .semibold))
+            .foregroundStyle(Palette.onTableSoft)
     }
 
     @ViewBuilder private var content: some View {
@@ -75,8 +114,11 @@ struct LadderPeek: View {
             .transition(.opacity)
         } else if failed {
             note("The ladder is not answering")
-        } else if board != nil {
-            note("Nobody has played today yet. Play the deal and it starts with you.")
+        } else if isVacant {
+            VStack(alignment: .leading, spacing: 4 * lift) {
+                VacantRow()
+                note("Play today's deal and the ladder starts with you.")
+            }
         } else {
             waiting
         }
@@ -139,13 +181,36 @@ struct LadderPeek: View {
         }
     }
 
+    /// The board answered, and nobody is on it yet: most of a day on a small ladder.
+    private var isVacant: Bool { board?.isEmpty == true && !failed }
+
     private func load() async {
         failed = false
-        guard let answer = await store.ladderBoard(day: store.today) else {
+        guard let answer = await store.boardToShow(day: store.today) else {
             failed = true
             return
         }
         board = answer
+    }
+}
+
+/// First place before anybody has taken it: the gold medal, and an invitation where a name
+/// would be. The strip used to stand empty but for its label, which read as a list that
+/// had failed to load rather than as a day still open.
+private struct VacantRow: View {
+    @Environment(\.lift) private var lift
+
+    var body: some View {
+        HStack(spacing: 9 * lift) {
+            LeagueMedal(league: 2, size: 20 * lift).frame(width: 24 * lift)
+            Text("Up for grabs")
+                .font(.system(size: 13 * lift, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+        }
+        .frame(height: 26 * lift)
     }
 }
 

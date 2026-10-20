@@ -129,8 +129,22 @@ public enum Ranking {
     public static let houseLoss = -5
 
     /// House games per day the ladder counts. Past this they move nothing, the run included,
-    /// which is the only brake on the house: ten wins is +320 with the run.
-    public static let houseGamesPerDay = 10
+    /// which is the only brake on the house: fifteen wins is +495 with the run.
+    public static let houseGamesPerDay = 15
+
+    /// The division the house plays at a table: the strongest real player's there, so a pair
+    /// cannot meet an easier house by letting the weaker friend lead. Bronze III when nobody
+    /// at the table has a rank.
+    public static func houseStep(among steps: [Int]) -> Int {
+        min(max(steps.max() ?? 0, 0), top / pointsPerDivision)
+    }
+
+    /// A rating for a house chair to wear: `jitter` points into the division it plays at, so
+    /// two house chairs read as two players and both read as the league they play at.
+    public static func houseRating(atStep step: Int, jitter: Int) -> Int {
+        let step = min(max(step, 0), top / pointsPerDivision)
+        return step * pointsPerDivision + (jitter % pointsPerDivision + pointsPerDivision) % pointsPerDivision
+    }
 
     /// What one house game does to a rating, before the floor is applied. `streak` is the run
     /// standing before it, as for `change`.

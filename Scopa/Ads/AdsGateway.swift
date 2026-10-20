@@ -34,14 +34,14 @@ protocol AdsGateway: AnyObject {
 
     // MARK: The one they choose
 
-    /// Whether an opt-in ad is loaded right now, so a tap can show it at once.
-    var isRewardedReady: Bool { get }
+    /// Whether an opt-in ad is loaded for this offer right now, so a tap can show it at once.
+    func isRewardedReady(_ slot: RewardedSlot) -> Bool
 
-    /// Warms the next opt-in ad.
-    func preloadRewarded()
+    /// Warms the next opt-in ad for this offer.
+    func preloadRewarded(_ slot: RewardedSlot)
 
-    /// Shows the opt-in ad and says whether it was watched far enough to be paid for.
-    func showRewarded() async -> Bool
+    /// Shows the offer's opt-in ad and says whether it was watched far enough to be paid for.
+    func showRewarded(_ slot: RewardedSlot) async -> Bool
 }
 
 /// The no-ads gateway, used once ads have been removed. Every call is a no-op.
@@ -56,7 +56,7 @@ final class SweptAds: AdsGateway {
     func preloadInterstitial() {}
     func showInterstitial() async -> Bool { false }
 
-    var isRewardedReady: Bool { false }
-    func preloadRewarded() {}
-    func showRewarded() async -> Bool { false }
+    func isRewardedReady(_ slot: RewardedSlot) -> Bool { false }
+    func preloadRewarded(_ slot: RewardedSlot) {}
+    func showRewarded(_ slot: RewardedSlot) async -> Bool { false }
 }

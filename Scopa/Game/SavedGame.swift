@@ -22,6 +22,19 @@ struct SavedGame: Codable, Equatable {
     /// What the game had earned so far, so a scopa swept before the relaunch still pays.
     let tally: RewardTally?
     let savedAt: Date
+    /// Dealt with Scatouch on, so it comes back with every card face up and still pays nothing.
+    /// Missing from a save written before it existed.
+    var scatouch: Bool? = nil
+    /// A ranked game against the house that the app was closed on, so it comes back ranked, at
+    /// the division it was dealt at, and reports under its own id when it ends. Nil for any
+    /// other game, and for a ranked one walked out of, which the ladder has already had as lost.
+    var ranked: Ranked? = nil
+
+    struct Ranked: Codable, Equatable {
+        let id: UUID
+        let step: Int
+        let format: String
+    }
 
     var state: GameState { snapshot.state }
     var configuration: GameConfiguration { state.configuration }

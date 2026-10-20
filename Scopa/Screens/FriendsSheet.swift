@@ -2,9 +2,10 @@ import SwiftUI
 import ScopaCore
 import ScopaRelay
 
-/// Every way to play a friend, near or far, laid out by who does what: one of you opens a
-/// table, the others join it, by code from anywhere or over the same Wi-Fi. Or one phone
-/// passed round. The online door is for strangers and has no codes on it.
+/// A quick game against the bots, then every way to play a friend, near or far, laid out by
+/// who does what: one of you opens a table, the others join it, by code from anywhere or
+/// over the same Wi-Fi. Or one phone passed round. The online door is for strangers and has
+/// no codes on it.
 ///
 /// It used to be split by distance — anywhere, then the same room — which put "open" and
 /// "host" side by side (both "Ouvrir une table" in French) and left whoever hosted nearby
@@ -30,9 +31,10 @@ struct FriendsSheet: View {
         NavigationStack(path: $path) {
             // The root wears the play sheets' own headline; the pages pushed from it keep a
             // navigation bar, which is where their back button lives.
-            SheetScaffold(title: "With friends", subtitle: "One of you opens a table, the others join it.",
+            SheetScaffold(title: "Friends & bots", subtitle: "A quick game against the bots, or a table with friends.",
                           close: { dismiss() }) {
                 VStack(alignment: .leading, spacing: 12) {
+                    quickGame
                     openSection
                     joinSection
                     phoneSection
@@ -63,6 +65,28 @@ struct FriendsSheet: View {
         case .scorePad:
             ScorePadPage(you: store.playerName)
         }
+    }
+
+    /// The bots at whichever table the chip shows, dealt at once. It had a door of its own on
+    /// the lobby, which made four answers to "what now?" before a card was dealt.
+    private var quickGame: some View {
+        HStack(spacing: 12) {
+            Button {
+                dismiss()
+                store.playQuickGame()
+            } label: {
+                DoorWords(title: "Quick game", detail: "Deals against the bots") {
+                    BotFace(tint: Palette.goldLight, size: 30)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            QuickTableChip(table: Bindable(store).quickTable)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .glassPanel(radius: GlassRadius.panel, tint: Palette.terracotta.opacity(0.78))
+        .padding(.bottom, 6)
     }
 
     /// The two ways to be the one others join: a code that reaches anywhere, or a table put
@@ -208,7 +232,7 @@ private struct FriendsTile: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(14)
         .glassPanel(radius: GlassRadius.control,
-                    tint: isSelected ? Palette.terracotta.opacity(0.75) : nil, interactive: true)
+                    tint: isSelected ? Palette.terracotta.opacity(0.75) : nil)
         .contentShape(.rect(cornerRadius: GlassRadius.control))
     }
 }
@@ -350,6 +374,6 @@ private struct NearbyRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .glassPanel(radius: GlassRadius.control, interactive: true)
+        .glassPanel(radius: GlassRadius.control)
     }
 }

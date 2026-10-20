@@ -7,6 +7,14 @@ public enum Deck {
     public static func shuffled(using rng: inout some RandomNumberGenerator) -> [Card] {
         standard.shuffled(using: &rng)
     }
+
+    /// A deck in the order `Rules.deal` reads it, so `table` goes face up and `deals[0][seat]`
+    /// is that seat's first hand, `deals[1][seat]` its second, and so on. Shorter than forty
+    /// cards when the round should be that short.
+    public static func stacked(table: [Card], deals: [[[Card]]]) -> [Card] {
+        // Dealt from the end: the table first, then seat 0, seat 1 and on, deal by deal.
+        deals.reversed().flatMap { hands in hands.reversed().flatMap { $0 } } + table
+    }
 }
 
 /// Deterministic SplitMix64 generator. Seed it to replay a game or make tests reproducible.

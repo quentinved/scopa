@@ -18,7 +18,15 @@ struct IconArtwork: View {
     /// are won on the ranked ladder, one per league from Silver up. Each keeps what the one
     /// below it has: a second line in the frame from Platinum, glints from Diamond, and a
     /// terracotta line and stronger light at Maestro.
-    enum Finish: String, CaseIterable { case classic, silver, gold, platinum, diamond, maestro }
+    ///
+    /// `patron` is off the ladder: the no-ads purchase gives it. Lapis and gold leaf, with the
+    /// patron's crest on the coin, Ravenna's stars and tesserae where the others have light,
+    /// and every gloss taken off in favour of engraved lines. See `PatronCrest`.
+    ///
+    /// `visconti` is the album's: the Tarocchi volume gives it. The same picture laid on a
+    /// tarot card's gold leaf, punched and ruled like the Visconti deck's, the name on
+    /// ultramarine, and engraved like the patron's. See `ViscontiLeaf`.
+    enum Finish: String, CaseIterable { case classic, silver, gold, platinum, diamond, maestro, patron, visconti }
 
     /// Everything is expressed against this, so 1024 and 180 draw the same picture.
     var size: CGFloat
@@ -68,6 +76,15 @@ struct IconArtwork: View {
             Tones(groundLight: rgb(0.212, 0.196, 0.176), ground: rgb(0.106, 0.094, 0.082),
                   groundDeep: rgb(0.035, 0.031, 0.027), night: rgb(0.012, 0.012, 0.012),
                   metalLight: rgb(1.000, 0.886, 0.541), metal: Self.gold, metalDeep: Self.goldDeep, rays: 0.72)
+        case .patron:
+            Tones(groundLight: rgb(0.212, 0.318, 0.624), ground: rgb(0.106, 0.176, 0.427),
+                  groundDeep: rgb(0.039, 0.063, 0.204), night: rgb(0.016, 0.024, 0.075),
+                  metalLight: Self.goldLight, metal: Self.gold, metalDeep: Self.goldDeep, rays: 0)
+        case .visconti:
+            // The ground is the leaf's own, in `ViscontiLeaf`; these are what it casts.
+            Tones(groundLight: ViscontiTone.leafLight, ground: ViscontiTone.leaf,
+                  groundDeep: rgb(0.290, 0.169, 0.051), night: rgb(0.122, 0.071, 0.020),
+                  metalLight: Self.goldLight, metal: Self.gold, metalDeep: rgb(0.420, 0.267, 0.071), rays: 0)
         }
     }
 
@@ -75,7 +92,13 @@ struct IconArtwork: View {
         Color(red: red, green: green, blue: blue)
     }
 
-    private var finishRank: Int { Finish.allCases.firstIndex(of: finish) ?? 0 }
+    private var isPatron: Bool { finish == .patron }
+    private var isVisconti: Bool { finish == .visconti }
+    /// Drawn with engraved lines rather than lit: the two that are off the ladder.
+    private var isEngraved: Bool { isPatron || isVisconti }
+
+    /// How far up the ladder the finish is. The patron's and the album's are not on it.
+    private var finishRank: Int { isEngraved ? 0 : Finish.allCases.firstIndex(of: finish) ?? 0 }
 
     private static let deepGreen = Color(red: 0.020, green: 0.250, blue: 0.137)
     private static let green = Color(red: 0.055, green: 0.447, blue: 0.247)
@@ -98,10 +121,12 @@ struct IconArtwork: View {
     private var drawing: some View {
         ZStack {
             ground
+            if isPatron { PatronVault(unit: unit, tones: vaultTones) }
+            if isVisconti { ViscontiLeaf(unit: unit) }
             // Scaled and lifted as one group, so the plaque sits under the picture and the
             // fan keeps its proportions.
             ZStack {
-                rays
+                if !isEngraved { rays }
                 fan
                 broom
             }
@@ -111,9 +136,11 @@ struct IconArtwork: View {
         }
         .frame(width: size, height: size)
         .clipped()
-        .overlay { frame }
+        .overlay {
+            if isPatron { patronFrame } else if isVisconti { ViscontiFrame(unit: unit) } else { frame }
+        }
         .overlay { if finishRank >= 4 { glints } }
-        .overlay { sheen }
+        .overlay { if !isEngraved { sheen } }
     }
 
     // MARK: Ground
@@ -123,6 +150,13 @@ struct IconArtwork: View {
     private var ground: some View {
         ZStack {
             switch appearance {
+            case .light where isVisconti:
+                // Leaf darkens where the gesso under it was laid thick, never lightens to white.
+                LinearGradient(colors: [ViscontiTone.leafLight, ViscontiTone.leaf, ViscontiTone.leafDeep],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                RadialGradient(colors: [tones.groundDeep.opacity(0.4), .clear],
+                               center: UnitPoint(x: 0.92, y: 1.04),
+                               startRadius: 0, endRadius: 720 * unit)
             case .light:
                 LinearGradient(colors: [tones.groundLight, tones.ground, tones.groundDeep],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -181,16 +215,23 @@ struct IconArtwork: View {
             RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
                 .fill(LinearGradient(colors: [Self.cream, Self.stock],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
-            // The gold hairline inside the card edge.
+            // The gold hairline inside the card edge, ruled twice on the engraved ones.
             RoundedRectangle(cornerRadius: 22 * unit, style: .continuous)
                 .strokeBorder(tones.metal.opacity(0.55), lineWidth: 4 * unit)
                 .padding(16 * unit)
+            if isEngraved {
+                RoundedRectangle(cornerRadius: 16 * unit, style: .continuous)
+                    .strokeBorder(tones.metalDeep.opacity(0.45), lineWidth: 2 * unit)
+                    .padding(27 * unit)
+            }
             mark(for: suit)
-            RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
-                .fill(LinearGradient(stops: [
-                    .init(color: .white.opacity(0.5), location: 0.0),
-                    .init(color: .clear, location: 0.4),
-                ], startPoint: .topLeading, endPoint: .bottomTrailing))
+            if !isEngraved {
+                RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
+                    .fill(LinearGradient(stops: [
+                        .init(color: .white.opacity(0.5), location: 0.0),
+                        .init(color: .clear, location: 0.4),
+                    ], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
             RoundedRectangle(cornerRadius: 30 * unit, style: .continuous)
                 .strokeBorder(edge(for: suit), lineWidth: 5 * unit)
         }
@@ -200,7 +241,7 @@ struct IconArtwork: View {
 
     /// The specular edge each card carries, in gold for the coin card at the front.
     private func edge(for suit: IconSuit) -> LinearGradient {
-        let colours: [Color] = suit == .coin
+        let colours: [Color] = suit == .coin || isEngraved
             ? [tones.metalLight, tones.metal.opacity(0.55), tones.metalLight.opacity(0.9)]
             : [.white, .white.opacity(0.4), .white.opacity(0.8)]
         return LinearGradient(colors: colours, startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -208,6 +249,11 @@ struct IconArtwork: View {
 
     @ViewBuilder private func mark(for suit: IconSuit) -> some View {
         switch suit {
+        case .coin where isPatron:
+            PatronCrest(size: 190 * unit).offset(y: -40 * unit)
+        case .coin where isVisconti:
+            ViscontiCoin(unit: unit, light: tones.metalLight, metal: tones.metal, deep: tones.metalDeep)
+                .offset(y: -40 * unit)
         case .coin: coinMark
         case .cup: cupMark
         case .sword: swordMark
@@ -236,9 +282,11 @@ struct IconArtwork: View {
             Capsule().fill(Self.terracotta).frame(width: 104 * unit, height: 22 * unit)
         }
         .overlay(alignment: .top) {
-            Capsule().fill(.white.opacity(0.45))
-                .frame(width: 72 * unit, height: 14 * unit)
-                .offset(y: 17 * unit)
+            if !isEngraved {
+                Capsule().fill(.white.opacity(0.45))
+                    .frame(width: 72 * unit, height: 14 * unit)
+                    .offset(y: 17 * unit)
+            }
         }
         .offset(y: -40 * unit)
     }
@@ -258,11 +306,13 @@ struct IconArtwork: View {
     /// The broom the game is named after, in front of the fan.
     private var broom: some View {
         ZStack {
-            Circle()
-                .fill(tones.metal.opacity(0.30))
-                .frame(width: 500 * unit, height: 500 * unit)
-                .offset(y: 130 * unit)
-                .blur(radius: 100 * unit)
+            if !isEngraved {
+                Circle()
+                    .fill(tones.metal.opacity(0.30))
+                    .frame(width: 500 * unit, height: 500 * unit)
+                    .offset(y: 130 * unit)
+                    .blur(radius: 100 * unit)
+            }
             handle
             bristles
             collar
@@ -277,11 +327,22 @@ struct IconArtwork: View {
             .fill(LinearGradient(colors: [Color(red: 0.271, green: 0.235, blue: 0.204), Self.ink],
                                  startPoint: .leading, endPoint: .trailing))
             .overlay {
-                Capsule()
-                    .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                         startPoint: .leading, endPoint: .center))
+                if isEngraved {
+                    // A gold ferrule at the end, rather than a gloss down the length.
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        Rectangle().fill(tones.metal).frame(height: 16 * unit)
+                            .overlay { Rectangle().strokeBorder(tones.metalDeep, lineWidth: 2 * unit) }
+                            .padding(.bottom, 26 * unit)
+                    }
+                    .clipShape(Capsule())
+                } else {
+                    Capsule()
+                        .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
+                                             startPoint: .leading, endPoint: .center))
+                }
             }
-            .overlay { Capsule().strokeBorder(.white.opacity(0.25), lineWidth: 3 * unit) }
+            .overlay { Capsule().strokeBorder(.white.opacity(isEngraved ? 0.12 : 0.25), lineWidth: 3 * unit) }
             .frame(width: 44 * unit, height: 240 * unit)
             .offset(y: -190 * unit)
     }
@@ -295,9 +356,15 @@ struct IconArtwork: View {
                 .fill(LinearGradient(colors: [tones.metal, tones.metalLight],
                                      startPoint: .top, endPoint: .bottom))
                 .overlay {
-                    Capsule()
-                        .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                             startPoint: .topLeading, endPoint: .center))
+                    if isEngraved {
+                        // Each slat engraved down its middle and edged, like the crest's.
+                        Capsule().strokeBorder(tones.metalDeep.opacity(0.75), lineWidth: 2 * unit)
+                        Rectangle().fill(tones.metalDeep.opacity(0.5)).frame(width: 2 * unit).padding(.vertical, 18 * unit)
+                    } else {
+                        Capsule()
+                            .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
+                                                 startPoint: .topLeading, endPoint: .center))
+                    }
                 }
                 .frame(width: 21 * unit, height: (272 - abs(position) * 36) * unit)
                 .offset(y: 146 * unit)
@@ -311,13 +378,20 @@ struct IconArtwork: View {
                                           Color(red: 0.827, green: 0.337, blue: 0.239)],
                                  startPoint: .top, endPoint: .bottom))
             .overlay {
-                RoundedRectangle(cornerRadius: 11 * unit, style: .continuous)
-                    .fill(LinearGradient(colors: [.white.opacity(0.55), .clear],
-                                         startPoint: .top, endPoint: .center))
+                if isEngraved {
+                    // A row of gold beads round the band, as on the crest's collar.
+                    MidLine(inset: 18 * unit)
+                        .stroke(tones.metalLight, style: StrokeStyle(lineWidth: 9 * unit, lineCap: .round,
+                                                                    dash: [0, 19 * unit]))
+                } else {
+                    RoundedRectangle(cornerRadius: 11 * unit, style: .continuous)
+                        .fill(LinearGradient(colors: [.white.opacity(0.55), .clear],
+                                             startPoint: .top, endPoint: .center))
+                }
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 11 * unit, style: .continuous)
-                    .strokeBorder(.white.opacity(0.4), lineWidth: 3 * unit)
+                    .strokeBorder(isEngraved ? tones.metalDeep : .white.opacity(0.4), lineWidth: 3 * unit)
             }
             .frame(width: 162 * unit, height: 52 * unit)
             .offset(y: -18 * unit)
@@ -349,19 +423,32 @@ struct IconArtwork: View {
                                            tones.metalLight.opacity(0.9)],
                                   startPoint: .topLeading, endPoint: .bottomTrailing)
         return ZStack {
-            Capsule(style: .continuous)
-                .fill(LinearGradient(colors: [tones.ground.opacity(0.86),
-                                              tones.groundDeep.opacity(0.94)],
-                                     startPoint: .top, endPoint: .bottom))
-            Capsule(style: .continuous)
-                .fill(LinearGradient(stops: [
-                    .init(color: .white.opacity(0.34), location: 0.0),
-                    .init(color: .clear, location: 0.45),
-                ], startPoint: .top, endPoint: .bottom))
+            Capsule(style: .continuous).fill(plaqueFill)
+            if isEngraved {
+                // Ruled twice, the inner line engraved, where the others have glass.
+                Capsule(style: .continuous)
+                    .strokeBorder(tones.metal.opacity(0.7), lineWidth: 2.5 * unit)
+                    .padding(13 * unit)
+            } else {
+                Capsule(style: .continuous)
+                    .fill(LinearGradient(stops: [
+                        .init(color: .white.opacity(0.34), location: 0.0),
+                        .init(color: .clear, location: 0.45),
+                    ], startPoint: .top, endPoint: .bottom))
+            }
             Capsule(style: .continuous)
                 .strokeBorder(edge, lineWidth: 6 * unit)
         }
         .shadow(color: tones.groundDeep.opacity(0.65), radius: 26 * unit, y: 12 * unit)
+    }
+
+    /// Glass in the ground's own colour, or ultramarine on the Visconti's leaf, where the
+    /// ground's colour would be gold on gold.
+    private var plaqueFill: LinearGradient {
+        let colours = isVisconti
+            ? [ViscontiTone.ultramarineLight, ViscontiTone.ultramarine, ViscontiTone.ultramarineDeep]
+            : [tones.ground.opacity(0.86), tones.groundDeep.opacity(0.94)]
+        return LinearGradient(colors: colours, startPoint: .top, endPoint: .bottom)
     }
 
     // MARK: Edges
@@ -385,6 +472,32 @@ struct IconArtwork: View {
             }
         }
         .shadow(color: tones.groundDeep.opacity(0.5), radius: 8 * unit, y: 3 * unit)
+    }
+
+    /// The patron's border: the same gold hairline, a row of pearls inside it, and an
+    /// engraved line inside those. Detail in the drawing, where the ladder has light.
+    private var patronFrame: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 189 * unit, style: .continuous)
+                .strokeBorder(LinearGradient(colors: [tones.metalLight, tones.metal.opacity(0.75),
+                                                      tones.metalLight.opacity(0.9)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing),
+                              lineWidth: 9 * unit)
+                .padding(40 * unit)
+            RoundedRectangle(cornerRadius: 172 * unit, style: .continuous)
+                .inset(by: 4 * unit)
+                .stroke(tones.metal, style: StrokeStyle(lineWidth: 8 * unit, lineCap: .round, dash: [0, 21 * unit]))
+                .padding(55 * unit)
+            RoundedRectangle(cornerRadius: 156 * unit, style: .continuous)
+                .strokeBorder(tones.metalDeep.opacity(0.9), lineWidth: 3 * unit)
+                .padding(71 * unit)
+        }
+        .shadow(color: tones.night.opacity(0.6), radius: 6 * unit, y: 3 * unit)
+    }
+
+    /// The ground's three tones, for the patron's vault laid over it.
+    private var vaultTones: PatronVault.Tones {
+        PatronVault.Tones(light: tones.groundLight, deep: tones.groundDeep, night: tones.night)
     }
 
     /// Four-point glints caught on the frame and the rays, from Diamond up.
@@ -427,6 +540,99 @@ struct IconArtwork: View {
                 .blur(radius: 90 * unit)
         }
         .allowsHitTesting(false)
+    }
+}
+
+/// The patron's ground under the picture: lapis set as tesserae, row on row, and gold stars
+/// of every size scattered over it, as on Galla Placidia's vault. Struck gold, never light.
+/// Scattered rather than ringed: twelve stars in a circle on blue is a flag.
+private struct PatronVault: View {
+    struct Tones {
+        let light: Color
+        let deep: Color
+        let night: Color
+    }
+
+    let unit: CGFloat
+    let tones: Tones
+
+    var body: some View {
+        Canvas { context, size in
+            tesserae(&context, size)
+            // Inside the frame's engraved line, so no star sits out on the bare edge.
+            context.clip(to: Path(roundedRect: CGRect(x: 74 * unit, y: 74 * unit, width: 876 * unit, height: 876 * unit),
+                                  cornerRadius: 152 * unit, style: .continuous))
+            stars(&context)
+        }
+        .allowsHitTesting(false)
+    }
+
+    /// Rows of small glass squares, each a shade off its neighbours, with dark grout between.
+    private func tesserae(_ context: inout GraphicsContext, _ size: CGSize) {
+        var random = VaultRandom(seed: 0x9A11A)
+        let height = 22 * unit
+        let grout = 2.6 * unit
+        var lighter = Path(), darker = Path(), joints = Path()
+        var y: CGFloat = 0
+        while y < size.height {
+            var x = -CGFloat(random.unit()) * 20 * unit
+            while x < size.width {
+                let width = (19 + CGFloat(random.unit()) * 6) * unit
+                let tile = CGRect(x: x + grout / 2, y: y + grout / 2, width: width - grout, height: height - grout)
+                let shade = random.unit()
+                if shade < 0.36 { darker.addRect(tile) } else if shade > 0.7 { lighter.addRect(tile) }
+                joints.addRect(CGRect(x: x, y: y, width: grout / 2, height: height))
+                x += width
+            }
+            joints.addRect(CGRect(x: 0, y: y, width: size.width, height: grout / 2))
+            y += height
+        }
+        context.fill(darker, with: .color(tones.night.opacity(0.13)))
+        context.fill(lighter, with: .color(tones.light.opacity(0.11)))
+        context.fill(joints, with: .color(tones.night.opacity(0.26)))
+    }
+
+    /// One star to a cell of a loose grid, nudged off it and sized at random, most of them small.
+    private func stars(_ context: inout GraphicsContext) {
+        var random = VaultRandom(seed: 0x57A125)
+        let cell = 104.0
+        for row in 0..<10 {
+            for column in 0..<10 {
+                let x = (Double(column) + 0.15 + random.unit() * 0.7) * cell
+                let y = (Double(row) + 0.15 + random.unit() * 0.7) * cell
+                let size = random.unit()
+                guard size > 0.18 else { continue }
+                let radius = size > 0.88 ? 23 : 8 + size * 10
+                PatronStar.strike(in: &context, at: CGPoint(x: x * unit, y: y * unit), radius: radius * unit,
+                                  faceted: radius * unit > 4, opacity: size > 0.9 ? 1 : 0.8)
+            }
+        }
+    }
+}
+
+/// SplitMix64, so the tesserae and the leaf are laid the same way on every render.
+struct VaultRandom {
+    private var state: UInt64
+    init(seed: UInt64) { state = seed }
+
+    mutating func unit() -> Double {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return Double((z ^ (z >> 31)) >> 11) / Double(1 << 53)
+    }
+}
+
+/// A horizontal line across the middle, for a row of beads.
+private struct MidLine: Shape {
+    var inset: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + inset, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX - inset, y: rect.midY))
+        return path
     }
 }
 

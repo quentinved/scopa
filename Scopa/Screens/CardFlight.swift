@@ -13,7 +13,8 @@ import ScopaCore
 /// last reported. See `TableScreen.tableFrames`.
 struct CardFlight: Identifiable {
     let id = UUID()
-    /// The card that was laid down. Nil for the round's leftovers, which nobody played.
+    /// The card that was laid down. Nil for the round's leftovers, which nobody played,
+    /// unless the round's last card took nothing and leads them across.
     let played: Card?
     /// What was taken, each from where it was sitting.
     let taken: [Placed]
@@ -39,6 +40,9 @@ struct CardFlight: Identifiable {
     let endsTheRound: Bool
     /// Coming your way, which is the only case the phone says anything about.
     let isMine: Bool
+    /// Whether the played card came out of your own hand, when that is not `isMine`: a card
+    /// laid down as the round's last joins the leftovers on their way to whoever took last.
+    var laidByYou: Bool?
     /// Nothing was taken: the card crosses to the cloth, is held up in the middle, then
     /// settles into its place in the row. See `TableScreen.settling`.
     var laysDown: Bool = false
@@ -77,6 +81,12 @@ struct CardFlight: Identifiable {
     /// A card of your own reaching the cloth. Shorter than `land`, which carries a card
     /// the width of the table from somebody else's hand.
     static let reach: TimeInterval = 0.26
+    /// The empty cloth, seen once the round's last cards have landed and before the
+    /// summary covers it, so the panel never cuts the last move short.
+    static let roundBeat: TimeInterval = 0.6
+
+    /// Whether the played card is your own, which is the way round it starts.
+    var playedByYou: Bool { laidByYou ?? isMine }
 
     /// How long the played card takes to reach the cloth.
     var travel: TimeInterval { laysDown && isMine ? Self.reach : Self.land }
@@ -205,7 +215,11 @@ struct CardFlightLayer: View {
                     .strokeBorder(flight.tint, lineWidth: 2.5)
                     .opacity(ringIsOn ? 1 : 0)
             }
-            .shadow(color: flight.tint.opacity(ringIsOn ? 0.55 : 0), radius: 10)
+            .background {
+                ShadowPlate(size: CGSize(width: placed.frame.width, height: placed.frame.width * 1.5),
+                            cornerRadius: placed.frame.width * 0.12, color: flight.tint.opacity(0.55), radius: 10)
+                    .opacity(ringIsOn ? 1 : 0)
+            }
             .scaleEffect(ghostScale(placed.frame.width))
             .rotationEffect(.degrees(gathered && !gone ? fanAngle(slot) : 0))
             .opacity(gone ? 0 : 1)
@@ -229,7 +243,6 @@ struct CardFlightLayer: View {
     /// lands crosswise on the pile and lies there face up a moment, as the marker would.
     private func playedCard(_ card: Card) -> some View {
         flipping(card)
-            .shadow(color: Palette.ink.opacity(0.45), radius: 12, y: 6)
             .rotationEffect(.degrees(playedAngle))
             .scaleEffect(playedScale)
             .position(playedPoint)
@@ -251,7 +264,7 @@ struct CardFlightLayer: View {
     /// The card turning over as it crosses. Your own card is already face up, so only a
     /// card coming in from somebody else is dealt back down first.
     @ViewBuilder private func flipping(_ card: Card) -> some View {
-        if flight.origin == nil || flight.isMine {
+        if flight.origin == nil || flight.playedByYou {
             ringed { CardView(card: card, width: flight.cardWidth) }
         } else {
             ZStack {
@@ -273,14 +286,19 @@ struct CardFlightLayer: View {
         }
     }
 
-    /// The winner's ring, drawn on the card itself so that it turns with it rather than
-    /// hanging in the air around a card seen edge on.
+    /// The winner's ring and the shadow the card throws in the air, drawn on the card itself
+    /// so that they turn with it rather than hanging around a card seen edge on.
     private func ringed(_ card: () -> some View) -> some View {
         card()
             .overlay {
                 RoundedRectangle(cornerRadius: flight.cardWidth * 0.12)
                     .strokeBorder(flight.tint, lineWidth: 3)
                     .opacity(ringIsOn ? 1 : 0)
+            }
+            .background {
+                ShadowPlate(size: CGSize(width: flight.cardWidth, height: flight.cardWidth * 1.5),
+                            cornerRadius: flight.cardWidth * 0.12, color: Palette.ink.opacity(0.45),
+                            radius: 12, y: 6)
             }
     }
 
@@ -296,7 +314,7 @@ struct CardFlightLayer: View {
             // Off a badge across the table it is a small thing growing into a card. Out
             // of your own hand it is already a card, at the size it was in your fingers.
             if flight.origin == nil { return 0.55 }
-            return flight.isMine ? 0.94 : 0.38
+            return flight.playedByYou ? 0.94 : 0.38
         }
         if flight.laysDown {
             guard gathered, let resting = flight.restingWidth else { return 1 }

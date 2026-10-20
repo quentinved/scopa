@@ -46,31 +46,69 @@ public enum GameCenter {
 
     /// Signs in, showing Apple's sheet through `present` if the device asks for one.
     /// A second call while signed in returns at once. Game Center keeps the handler and
-    /// calls it again on every sign-in change, so it is set once.
+    /// calls it again on every sign-in change.
+    ///
+    /// Every caller waiting at once is answered by the one handler. Each used to set its own,
+    /// and setting a handler replaces the last: an invitation accepted while the ranked button
+    /// was still signing in left the first caller waiting on a handler nobody called again.
     public static func signIn(present: @escaping @MainActor @Sendable (PlatformViewController) -> Void) async throws -> Player {
         if GKLocalPlayer.local.isAuthenticated {
             registerInviteListener()
             return player(for: GKLocalPlayer.local)
         }
         return try await withCheckedThrowingContinuation { continuation in
-            let box = OnceBox(continuation)
-            GKLocalPlayer.local.authenticateHandler = { controller, error in
-                if let controller {
-                    Task { @MainActor in present(controller) }
-                    return
-                }
-                if GKLocalPlayer.local.isAuthenticated {
-                    // This handler replaces the one `signInQuietly` left behind, so the
-                    // invite listener and the sign-in announcement have to happen here too.
-                    registerInviteListener()
-                    announceSignIn()
-                    box.resume(.success(player(for: GKLocalPlayer.local)))
-                } else {
-                    box.resume(.failure(GameCenterError.notSignedIn))
-                }
-            }
+            signInPresenter = present
+            guard let round = signInWaiters.add(OnceBox(continuation)) else { return }
+            GKLocalPlayer.local.authenticateHandler = { controller, _ in authenticated(showing: controller) }
+            Task { @MainActor in await watchSignIn(round) }
         }
     }
+
+    /// How long a sign-in may go unanswered with Apple's sheet nowhere on screen. Game Center
+    /// answers within a second or two, or puts its sheet up and waits for the player, which is
+    /// waited out for as long as it is up.
+    static let signInPatience: Duration = .seconds(20)
+    private nonisolated(unsafe) static weak var signInSheet: PlatformViewController?
+
+    /// Tells everyone waiting on sign-in `round` that it failed, once it has gone unanswered for
+    /// `signInPatience` and Apple's sheet is not up. A handler Game Center never calls back,
+    /// because its sheet could not be shown or went without a word, otherwise kept every later
+    /// caller waiting with it: only the first of a round asks Game Center anything.
+    @MainActor
+    private static func watchSignIn(_ round: Int) async {
+        try? await Task.sleep(for: signInPatience)
+        while signInWaiters.isWaiting(in: round), signInSheet?.presentingViewController != nil {
+            try? await Task.sleep(for: .seconds(1))
+        }
+        signInWaiters.answer(.failure(GameCenterError.notSignedIn), onlyIn: round)
+    }
+
+    /// Everything a sign-in change means, whoever set the handler: Apple's sheet shown if a
+    /// caller can show it, the invitation listener put back, and everyone waiting answered.
+    private static func authenticated(showing controller: PlatformViewController?) {
+        if let controller {
+            // The quiet sign-in has nobody to show it to, and leaves the player signed out.
+            guard let present = signInPresenter else { return }
+            Task { @MainActor in
+                signInSheet = controller
+                present(controller)
+            }
+            return
+        }
+        guard GKLocalPlayer.local.isAuthenticated else {
+            // Signed out, or the sheet turned down. The listener went with the player.
+            listeningFor = nil
+            signInWaiters.answer(.failure(GameCenterError.notSignedIn))
+            if let gone = signedOut { Task { @MainActor in gone() } }
+            return
+        }
+        registerInviteListener()
+        announceSignIn()
+        signInWaiters.answer(.success(player(for: GKLocalPlayer.local)))
+    }
+
+    private static let signInWaiters = SignInWaiters()
+    private nonisolated(unsafe) static var signInPresenter: (@MainActor @Sendable (PlatformViewController) -> Void)?
 
     /// Finds a table of `players`, and waits until everyone is connected.
     ///
@@ -105,25 +143,26 @@ public enum GameCenter {
     /// signed in to Game Center on the phone. Anyone else stays signed out until they choose
     /// to play online. `ready` is called on the main actor as soon as the player turns out
     /// to be signed in, so the ladder can be asked where they stand.
-    public static func signInQuietly(then ready: (@MainActor @Sendable () -> Void)? = nil) {
+    /// `gone` is told when the player turns out to be signed out, in Settings mid-session or
+    /// from the start, so nothing goes on acting for an account no longer there.
+    public static func signInQuietly(then ready: (@MainActor @Sendable () -> Void)? = nil,
+                                     whenSignedOut gone: (@MainActor @Sendable () -> Void)? = nil) {
         signInReady = ready
+        signedOut = gone
         guard !GKLocalPlayer.local.isAuthenticated else {
             registerInviteListener()
             announceSignIn()
             return
         }
         guard GKLocalPlayer.local.authenticateHandler == nil else { return }
-        GKLocalPlayer.local.authenticateHandler = { _, _ in
-            guard GKLocalPlayer.local.isAuthenticated else { return }
-            registerInviteListener()
-            announceSignIn()
-        }
+        GKLocalPlayer.local.authenticateHandler = { controller, _ in authenticated(showing: controller) }
     }
 
     /// Whoever asked to be told the moment the player turns out to be signed in. Kept here
     /// rather than closed over by one handler, because the sheet's sign-in replaces the
     /// quiet one's handler outright and would otherwise leave the waiting caller waiting.
     private nonisolated(unsafe) static var signInReady: (@MainActor @Sendable () -> Void)?
+    private nonisolated(unsafe) static var signedOut: (@MainActor @Sendable () -> Void)?
 
     private static func announceSignIn() {
         guard let ready = signInReady else { return }
@@ -209,51 +248,32 @@ public enum GameCenter {
 
     private nonisolated(unsafe) static var dismissingDelegate: DismissingDelegate?
 
-    /// A duo with no sheet anywhere: one friend invited by name, and nobody else.
+    /// A duo asked for through Apple's invitation sheet: the `friend` picked from Scopa's own
+    /// list already named on it, or nobody, so any Game Center friend can be.
     ///
-    /// The other two chairs are the host's to fill once both are seated. They used to be
-    /// asked of Game Center, which cannot answer: `addPlayers` matches against players
-    /// who are *searching*, and nothing in this app ever searches the duo pool, so the
-    /// table waited out its patience and the invited friend sat in the waiting room the
-    /// whole time looking like they could not join.
-    public static func makeDuo(with friend: GKPlayer) async throws -> GKMatch {
-        let invitation = GKMatchRequest()
-        invitation.minPlayers = 2
-        invitation.maxPlayers = 2
-        invitation.recipients = [friend]
-        invitation.inviteMessage = duoInviteMessage
-        // Travels with the invitation, so the friend's phone knows what it is accepting.
-        invitation.playerGroup = rankedDuoGroup
-        do {
-            let match = try await GKMatchmaker.shared().findMatch(for: invitation)
-            // A friend takes longer to answer a notification than a stranger takes to be found.
-            try await waitUntilFull(match, patience: 1800)
-            return match
-        } catch let error as GKError where error.code == .cancelled {
-            throw GameCenterError.cancelled
-        } catch let error as GameCenterError {
-            throw error
-        } catch {
-            throw GameCenterError.matchmakingFailed(error.localizedDescription)
-        }
-    }
-
-    /// A duo asked for through Apple's invitation sheet, where any Game Center friend can
-    /// be named rather than only the ones this app is allowed to list.
+    /// Both ways go through the sheet. The friend picked from the list used to be invited with
+    /// no sheet at all, through `GKMatchmaker.findMatch` with the friend as a recipient, and
+    /// that was the way that failed: the other phone accepts with Apple's sheet, and a sheet
+    /// at one end with the programmatic call at the other is a handshake neither end finishes.
+    /// The inviting phone showed nothing but a spinner, gave up after three minutes or when
+    /// the Ranked sheet was closed, and the friend who got through after restarting the app
+    /// sat at a table nobody was hosting any more. The sheet at both ends is the pairing that
+    /// has worked from the first day, and the sheet shows the inviter where the friend is.
     ///
-    /// `loadFriends` answers with the friends who have let *Scopa* see them, which in
-    /// practice is the friends who already play it; everybody else is missing from the
-    /// partner picker. Apple's friends page is no help either: it browses profiles and has
-    /// no way to invite anyone from it. This sheet is the one place the rest of the friend
-    /// list can be asked to a table, so it is what "invite someone else" opens.
+    /// `loadFriends` only answers with friends who already play Scopa, and Apple's friends page
+    /// has no way to invite anybody, so the empty sheet is also the one place the rest of the
+    /// friend list can be asked to a table.
     ///
     /// Comes back with the match once the friend has said yes. The sheet does the waiting.
     @MainActor
-    public static func inviteDuo(present: @escaping @MainActor @Sendable (PlatformViewController) -> Void) async throws -> GKMatch {
+    public static func inviteDuo(_ friend: GKPlayer? = nil,
+                                 present: @escaping @MainActor @Sendable (PlatformViewController) -> Void) async throws -> GKMatch {
         let request = GKMatchRequest()
         request.minPlayers = 2
         request.maxPlayers = 2
         request.inviteMessage = duoInviteMessage
+        // Named on the sheet, which sends the invitation the moment it is up.
+        if let friend { request.recipients = [friend] }
         // Travels with the invitation, so the friend's phone knows it is a duo it is accepting.
         request.playerGroup = rankedDuoGroup
         guard let controller = GKMatchmakerViewController(matchRequest: request) else {
@@ -265,12 +285,16 @@ public enum GameCenter {
     }
 
     @MainActor
-    public static func inviteFriends(players: ClosedRange<Int>, group: Int? = nil, fillingWithStrangers: Bool = false,
+    /// `naming` puts friends on the sheet already invited: the ones picked in the Games app
+    /// before it opened Scopa.
+    public static func inviteFriends(players: ClosedRange<Int>, naming friends: [GKPlayer] = [], group: Int? = nil,
+                                     fillingWithStrangers: Bool = false,
                                      present: @escaping @MainActor @Sendable (PlatformViewController) -> Void) async throws -> GKMatch {
         let request = GKMatchRequest()
         request.minPlayers = players.lowerBound
         request.maxPlayers = players.upperBound
         request.inviteMessage = "A game of Scopa?"
+        if !friends.isEmpty { request.recipients = Array(friends.prefix(players.upperBound - 1)) }
         if let group { request.playerGroup = group }
         guard let controller = GKMatchmakerViewController(matchRequest: request) else {
             throw GameCenterError.matchmakingFailed("No matchmaker")
@@ -297,17 +321,24 @@ public enum GameCenter {
         guard let controller = GKMatchmakerViewController(matchRequest: request) else { return }
         // Only the people named: a chair kept for a friend is not a chair for a stranger.
         controller.matchmakingMode = .inviteOnly
+        // One sheet at a time, as for every other: an invitation said yes to while this one is
+        // up takes it down rather than leaving it over the table that replaced this one.
+        putAwaySheet()
         // Cancelling is how this sheet ends even when an invitation went out, so the
-        // answer is thrown away either way.
-        _ = try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<GKMatch, Error>) in
+        // answer is thrown away either way: kept only if it is the table's own match, and let
+        // go otherwise, so no second match is left open beside the table.
+        let found = try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<GKMatch, Error>) in
             let delegate = MatchmakerDelegate(continuation)
             controller.matchmakerDelegate = delegate
             matchmakerDelegate = delegate
+            matchmakerSheet = controller
             present(controller)
             // After the sheet is up, the way Apple's own sample does it: this is what tells
             // the sheet it is filling a chair at `match` rather than opening a second table.
             controller.addPlayers(to: match)
+            watch(controller, answering: delegate)
         }
+        if let found, found !== match { found.disconnect() }
     }
 
     /// Apple's invitation sheet, asking a friend to a room of ours on the Worker rather
@@ -345,8 +376,15 @@ public enum GameCenter {
     /// Handed to Game Center only once the player is authenticated: a listener registered on
     /// a signed-out local player is never called. The app registers this on the first screen,
     /// before the quiet sign-in has answered, so it has to be held until then.
-    public static func listenForInvites(_ handler: @escaping @MainActor @Sendable (GKInvite) -> Void) {
-        inviteListener = InviteListener(handler)
+    ///
+    /// `requested` is handed the friends a player picked in the Games app before choosing to
+    /// play Scopa with them, which arrives here rather than as an invitation.
+    public static func listenForInvites(_ handler: @escaping @MainActor @Sendable (GKInvite) -> Void,
+                                        requested: (@MainActor @Sendable ([GKPlayer]) -> Void)? = nil) {
+        // One listener only: a second registered beside the first would accept every invitation twice.
+        if let old = inviteListener { GKLocalPlayer.local.unregisterListener(old) }
+        inviteListener = InviteListener(handler, requested: requested)
+        listeningFor = nil
         registerInviteListener()
     }
 
@@ -359,26 +397,87 @@ public enum GameCenter {
 
     /// Registers the invitation listener, if there is one and there is somebody to register
     /// it for. Called after every sign-in, and cheap to call when nothing has changed.
+    ///
+    /// Taken off first and put back, so a player who signed out and in again, or a different
+    /// player on the same phone, is listened for exactly once.
     private static func registerInviteListener() {
         guard let inviteListener, GKLocalPlayer.local.isAuthenticated else { return }
         let player = GKLocalPlayer.local.gamePlayerID
         guard listeningFor != player else { return }
         listeningFor = player
+        GKLocalPlayer.local.unregisterListener(inviteListener)
         GKLocalPlayer.local.register(inviteListener)
     }
 
     @MainActor
     private static func matchmaker(_ controller: GKMatchmakerViewController?, present: @escaping @MainActor @Sendable (PlatformViewController) -> Void) async throws -> GKMatch {
         guard let controller else { throw GameCenterError.matchmakingFailed("No matchmaker") }
+        putAwaySheet()
         return try await withCheckedThrowingContinuation { continuation in
             let delegate = MatchmakerDelegate(continuation)
             controller.matchmakerDelegate = delegate
             matchmakerDelegate = delegate
+            matchmakerSheet = controller
             present(controller)
+            watch(controller, answering: delegate)
         }
     }
 
     private nonisolated(unsafe) static var matchmakerDelegate: MatchmakerDelegate?
+    private nonisolated(unsafe) static weak var matchmakerSheet: GKMatchmakerViewController?
+
+    /// One sheet at a time: an invitation accepted while this phone's own sheet was up used to
+    /// leave the first one waiting on an answer that could no longer come.
+    @MainActor
+    private static func putAwaySheet() {
+        matchmakerDelegate?.give(up: GameCenterError.cancelled)
+        guard let old = matchmakerSheet, old.presentingViewController != nil else { return }
+        #if canImport(UIKit)
+        old.dismiss(animated: false)
+        #else
+        old.dismiss(nil)
+        #endif
+    }
+
+    /// Takes Apple's invitation sheet down from outside, when what it waited for happened
+    /// another way: a friend asked to a room by name who has already walked in by the code.
+    @MainActor
+    public static func takeDownMatchmaker() {
+        matchmakerDelegate?.give(up: GameCenterError.cancelled)
+        guard let sheet = matchmakerSheet, sheet.presentingViewController != nil else { return }
+        #if canImport(UIKit)
+        sheet.dismiss(animated: true)
+        #else
+        sheet.dismiss(nil)
+        #endif
+    }
+
+    /// Ends the wait if the sheet never got on screen, or left it without a word.
+    ///
+    /// Apple's sheet answers through its delegate, and only while it is up. Put on a SwiftUI
+    /// sheet that is on its way down, it goes with it and nothing is ever said: the phone that
+    /// accepted an invitation sat in "joining" until the app was killed.
+    @MainActor
+    private static func watch(_ controller: GKMatchmakerViewController, answering delegate: MatchmakerDelegate) {
+        Task { @MainActor [weak controller] in
+            var shown = false
+            for tick in 0... {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !delegate.isAnswered else { return }
+                // Presented rather than in a window: something Apple puts over its own sheet
+                // takes the sheet's view out of the window without the sheet having gone.
+                let onScreen = controller?.presentingViewController != nil
+                if onScreen { shown = true }
+                if shown, !onScreen {
+                    return delegate.give(up: GameCenterError.cancelled)
+                }
+                // Ten seconds and never up: the presenting screen refused it.
+                if !shown, tick >= 20 {
+                    return delegate.give(up: GameCenterError.matchmakingFailed("The Game Center sheet did not open"))
+                }
+            }
+        }
+    }
 
     /// Walks away from a match that was found but never sat at.
     public static func leave(_ match: GKMatch) {
@@ -402,9 +501,14 @@ public enum GameCenter {
     /// So the clock is held here, where the two phases can be told apart: it stops the
     /// moment a table is made, and the arrival is then waited for in full.
     public static func findMatch(players: Int, pool: String?, within seconds: TimeInterval) async throws -> GKMatch {
+        try await findMatch(players: players...players, pool: pool, within: seconds)
+    }
+
+    /// The same, taking any table size in `players`.
+    public static func findMatch(players: ClosedRange<Int>, pool: String?, within seconds: TimeInterval) async throws -> GKMatch {
         let request = GKMatchRequest()
-        request.minPlayers = players
-        request.maxPlayers = players
+        request.minPlayers = players.lowerBound
+        request.maxPlayers = players.upperBound
         if let pool, !pool.isEmpty { request.playerGroup = group(for: pool) }
         let deadline = Task {
             try? await Task.sleep(for: .seconds(seconds))

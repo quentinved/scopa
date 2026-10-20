@@ -48,6 +48,16 @@ extension DebugLaunch {
     }
     /// `-campaignCard 7` opens the map with stage seven's card up.
     static var campaignCard: Int? { number(after: "-campaignCard") }
+    /// `-ruleTutorial napola` sits straight down at a house rule's practice table: napola,
+    /// assoPigliaTutto, reBello or scopone.
+    static var ruleTutorial: HouseRule? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-ruleTutorial").flatMap { HouseRule(rawValue: arguments[safe: $0 + 1] ?? "") }
+        #else
+        nil
+        #endif
+    }
 
     static var showsCampaignBoard: Bool { has("-campaignBoard") }
     /// Sample faces on the map and a sample board, never the Worker's.
@@ -86,6 +96,7 @@ extension DebugLaunch {
         if let number = campaignReturn { book.pretendReturn(from: number, stars: campaignReturnStars) }
         if showsCampaign || showsCampaignFaces { book.showsMap = true }
         if let number = campaignPlay, let stage = Campaign.stage(number: number) { store.playCampaign(stage) }
+        if let rule = ruleTutorial { store.playPractice(rule) }
         #endif
     }
 }

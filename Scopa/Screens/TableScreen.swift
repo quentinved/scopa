@@ -11,11 +11,15 @@ struct TableScreen: View {
     @State private var selection = HandSelection()
     @Environment(\.locale) private var locale
     @State private var showsScopa = false
-    /// A take worth a plate: the seven of coins, or a house rule's moment. Never shown at
-    /// the same time as a sweep: a scopa that happens to take one keeps the floor.
+    /// A take worth a plate: the seven of coins, or a house rule's moment. A sweep's own
+    /// rides above its band instead: see `scopaPrize`.
     @State private var highlight: HighlightMoment?
     @State private var showsDeal = false
     @State private var dealtHand = 1
+    /// What each side took in the hand just played, told on the deal banner.
+    @State private var lastHandTaken: [HandTake] = []
+    /// Each side's pile when the last hand was dealt, and the round it was dealt in.
+    @State private var pilesAtDeal: (round: Int, counts: [Int]) = (0, [])
     /// What a ranked table is worth, over the opening deal. Nil on every other table, and
     /// on a ranked one until the ladder has said where the other chairs stand.
     @State private var stakes: RankedStakes.Odds?
@@ -56,14 +60,23 @@ struct TableScreen: View {
     /// The cards currently in the air, on their way to whoever took them.
     @State private var flight: CardFlight?
     /// The round's last cards, held where they lay while the play that ended the round
-    /// finishes crossing the cloth. See `sendLeftovers` and `CardHoldLayer`.
+    /// finishes crossing the cloth. See `follow(_:with:)` and `CardHoldLayer`.
     @State private var held: [CardFlight.Placed] = []
     /// The round is over but its last cards are still flying. The summary waits for them.
     @State private var holdsSummary = false
+    /// The deal whose hand is on screen. A hand dealt again is a deal past it until let in:
+    /// see `holdsHand`.
+    @State private var shownDeal: DealMark?
+    /// A held deal whose move has been seen, so the wait is now for that move to land.
+    @State private var flownDeal: DealMark?
     /// The last summary announced. See `announce`.
     @State private var announced: Announced?
     /// Whether the game that just ended earned a pack, for the line under the summary.
     @State private var earnedPack = false
+    /// What today's deal handed over besides its denari, and whether its card is being
+    /// turned over on the way out.
+    @State private var dailyGift: DailyGift?
+    @State private var showsDailyGift = false
     /// What the game that just ended was worth in experience, for the summary.
     @State private var gainedExperience: Experience.Gain?
     /// News from the game that just ended, held back until the summary has told who won:
@@ -79,6 +92,11 @@ struct TableScreen: View {
     @State private var scopaBy = ""
     /// The flourish of whoever swept: yours, or the one their seat carries to the table.
     @State private var scopaFlourish = Flourish.stendardo
+    /// What else the sweep took, on its plate above the band.
+    @State private var scopaPrize: TableHighlight?
+    /// The top of the last move's row, on screen. In portrait a sweep's prize goes above
+    /// it, so the tag and the cards fanned out on the cloth below stay in sight.
+    @State private var lastMoveTop: CGFloat?
     /// The last move anyone made, kept in the corner of the cloth until the next one. The
     /// move itself is played out by the cards: see `CardFlight`.
     @State private var lastMove: TableStore.Play?
@@ -104,8 +122,20 @@ struct TableScreen: View {
     @State private var doubled = false
     /// The last tap on the doubling found no video to show.
     @State private var noVideo = false
+    /// The offer to carry on the run a ranked loss broke, while it is up. See `KeepRunCard`.
+    @State private var runOffer: KeepRunCard.Phase?
+    @State private var runOffered: Ladder.RankAnswer.KeepableRun?
+    /// The ranked game whose run a video carried on, so its verdict says the run was kept.
+    @State private var keptRunFor: String?
+    /// A run of doubled games is being bought on the last summary, or was: bought there,
+    /// it doubled this game too. See `boostOffer`.
+    @State private var isBuyingBoost = false
+    @State private var boughtBoost = false
     /// Asked before leaving a table with a stake on it, because the stake stays behind.
     @State private var confirmsLeave = false
+    /// When the X was tapped. A ranked game's first two minutes are judged from it, so the
+    /// dialog's word holds however long it stays up.
+    @State private var leaveAskedAt: Date?
     /// The seat the phone is being handed to, on a table shared between people. While it
     /// is set, a curtain hides the cards until that player says the phone is theirs.
     @State private var curtainSeat: Int?
@@ -114,7 +144,6 @@ struct TableScreen: View {
     @State private var companionSpot: CGPoint?
     /// That square, in the same space.
     @State private var companionHome: CGPoint?
-    @Namespace private var reactionGlass
 
     @Environment(\.verticalSizeClass) private var heightClass
     @Environment(\.horizontalSizeClass) private var widthClass
@@ -135,10 +164,38 @@ struct TableScreen: View {
 
     private var view: PlayerView? { store.view }
 
-    /// The colour of one chair. In teams it is the side's colour rather than the seat's, so
-    /// the face across from you reads as yours. See `Palette.seat(_:teams:)`.
+    /// Every hand was just dealt again, but the move that emptied them is still crossing the
+    /// cloth. Your new cards wait for it to land, as the banner that brings them does, and so
+    /// does the turn they bring: "Your turn" over an empty hand read as cards gone missing.
+    ///
+    /// Read off the view rather than set when the move arrives. Online the move trails its
+    /// view, and the new hand came up in between, then went again for the flight.
+    private var holdsHand: Bool {
+        guard let view, let shownDeal else { return false }
+        return DealMark(view).follows(shownDeal)
+    }
+
+    /// The deal being held back, which keys the wait that lets it in.
+    private var heldDeal: DealMark? { holdsHand ? view.map(DealMark.init) : nil }
+
+    /// Your turn as the screen tells it, which waits for the hand that brings it.
+    private func turnIsShown(_ view: PlayerView) -> Bool { view.isMyTurn && !holdsHand }
+
+    /// The seat the table is shown waiting on. While the hand that brings your turn is held,
+    /// the move that dealt it is still on the cloth, so the turn stays with whoever made it:
+    /// the seat before yours, since play only ever passes on to the next.
+    private func shownTurnSeat(_ view: PlayerView) -> Int? {
+        guard view.isMyTurn, holdsHand else { return view.turnSeat }
+        let count = view.configuration.seatCount
+        return (view.seat + count - 1) % count
+    }
+
+    /// The colour of one chair, counted from this phone's own so yours is the terracotta of
+    /// "Your turn" and nobody else's is. In teams it is the side's colour rather than the
+    /// seat's, so the face across from you reads as yours. See `Palette.seat(_:teams:)`.
     private func seatTint(_ seat: Int) -> Color {
-        Palette.seat(seat, teams: view?.configuration.teams == true)
+        guard let view else { return Palette.seat(seat) }
+        return Palette.seat(seat, teams: view.configuration.teams, home: store.homeSeat)
     }
 
     /// Changes on a fresh hand and on every turn. Only the debug flag that picks a card
@@ -151,8 +208,10 @@ struct TableScreen: View {
     /// Every card in hand, weighed. Empty unless the coach is on, so nothing is spent
     /// thinking at the levels that would not show it.
     private var counsels: [Coach.Counsel] {
-        guard selection.assist.explains, let view, view.isMyTurn, !gameIsOver else { return [] }
-        return Coach.hand(view)
+        // Under Scatouch, the hand of the bot being played for when it is the one at the bottom.
+        guard selection.assist.explains, let view, !gameIsOver else { return [] }
+        let hand = acting(view)
+        return hand.isMyTurn ? Coach.hand(hand) : []
     }
 
     /// What is on the table at a wager game, for the warning before walking away from it.
@@ -162,13 +221,14 @@ struct TableScreen: View {
         if case .finished = view?.phase { true } else { false }
     }
 
-    /// How the game that just ended left this player, for the ad pacing. Nil while it is on.
-    private var ending: GameEnding? {
-        guard let view else { return nil }
+    /// The game is over, so the way out passes the ad. False while it is on, and at a
+    /// practice table, which is left in one tap with no ad on the way out.
+    private var leavesPastAnAd: Bool {
+        guard let view, store.practice == nil else { return false }
         switch view.phase {
-        case .finished(let winner): return store.stake != nil && winner != view.mySide ? .lostStake : .ordinary
-        case .roundOver where store.isDailyDeal: return .ordinary
-        default: return nil
+        case .finished: return true
+        case .roundOver: return store.isDailyDeal
+        default: return false
         }
     }
 
@@ -202,7 +262,7 @@ struct TableScreen: View {
         .background { TableGround() }
         // Your turn, said by the whole screen: a terracotta glow around the edge. The pill
         // says it in words, this says it from across the room.
-        .overlay { TurnEdge(isOn: (view?.isMyTurn ?? false) && !gameIsOver) }
+        .overlay { TurnEdge(isOn: (view.map(turnIsShown) ?? false) && !gameIsOver) }
         .overlay { roamingCompanion }
         // Turned sideways the cloth is somewhere else entirely, so the animal goes home.
         .onChange(of: stage) { companionSpot = nil }
@@ -219,9 +279,12 @@ struct TableScreen: View {
         content
             .overlay { highlightPlate }
             .overlay {
-                if showsScopa { ScopaBanner(by: scopaBy, flourish: scopaFlourish) }
+                if showsScopa {
+                    ScopaBanner(by: scopaBy, flourish: scopaFlourish, prize: scopaPrize,
+                                prizeFloor: stage.isWide ? nil : lastMoveTop)
+                }
             }
-            .overlay { if showsDeal { DealBanner(hand: dealtHand) } }
+            .overlay { if showsDeal { DealBanner(hand: dealtHand, taken: lastHandTaken) } }
             .task { await repeatMoments() }
             .overlay { stakesBanner }
             .onChange(of: stakes == nil) { _, gone in if gone, stakesTold { holdForStakes(false) } }
@@ -234,12 +297,18 @@ struct TableScreen: View {
             }
             .confirmation(isPresented: $confirmsLeave) {
                 Confirmation(Text("Leave the table?"), message: leaving.map { Text($0.cost) }, actions: [
-                    .init(title: Text(leaving?.action ?? "Leave"), role: .destructive) { store.leaveTable() },
+                    .init(title: Text(leaving?.action ?? "Leave"), role: .destructive) {
+                        store.leaveTable(askedAt: leaveAskedAt)
+                    },
                     .init(title: Text("Keep playing"), role: .cancel),
                 ])
             }
             .overlay { roundOverlay }
+            .overlay { keepRunOverlay }
+            .task(id: store.keepableRun) { await offerToKeepRun() }
             .overlay { passCurtain }
+            // A deck or a cloth tried for a game is used up by the first one to finish.
+            .onChange(of: store.finishedTally?.gameID) { _, id in if let id { store.tryOn.spend(on: id) } }
     }
 
     /// Placed rather than centred: see `highlightHeight`. The reader stays outside the `if`
@@ -258,15 +327,16 @@ struct TableScreen: View {
     }
 
     /// `-sweep` and `-highlight` play their moment every few seconds, `-theirs` as an
-    /// opponent's, so it can be watched without waiting for a real one.
+    /// opponent's, so it can be watched without waiting for a real one. Both together are a
+    /// sweep that took the prize; `-holdSweep` plays it once and leaves it up.
     private func repeatMoments() async {
         let sweeps = DebugLaunch.repeatsSweep
         let kind = DebugLaunch.highlight
         guard sweeps || kind != nil else { return }
         let by = DebugLaunch.showsTheirMoment ? "Lucia" : ""
         while !Task.isCancelled {
-            if sweeps { announceScopa(by: by) }
-            if let kind { showHighlight(kind, by: by) }
+            if sweeps { announceScopa(by: by, prize: kind) } else if let kind { showHighlight(kind, by: by) }
+            if sweeps, DebugLaunch.holdsSweep { return }
             try? await Task.sleep(for: .seconds(1.9))
         }
     }
@@ -310,11 +380,13 @@ struct TableScreen: View {
         sessionReactions(clockReactions(playReactions(noticeReactions(content))))
     }
 
-    /// The banners: a round dealt away, a sweep called.
+    /// The banners: a round dealt away, a sweep called, a hand dealt again.
     private func noticeReactions(_ content: some View) -> some View {
         content
             .onChange(of: view?.roundNumber) { _, _ in startRound() }
             .onChange(of: store.notice) { _, notice in handleNotice(notice) }
+            .onChange(of: view.map(DealMark.init), initial: true) { _, deal in noteDeal(deal) }
+            .task(id: [heldDeal, flownDeal]) { await letHandIn() }
     }
 
     /// A move landing: the cards in the air, the haptics, the coach and the pile pop.
@@ -322,13 +394,12 @@ struct TableScreen: View {
         content
             .onChange(of: store.lastPlay?.id) { _, _ in announceLastPlay() }
             .task(id: lastMove?.id) { await fadeReading() }
-            .onChange(of: store.leftovers) { _, leftovers in handleLeftovers(leftovers) }
             .task(id: flight?.id) { await runFlight() }
             .task(id: pilePop?.id) { await fadePilePop() }
             .task(id: highlight?.id) { await fadeHighlight() }
             .sensoryFeedback(trigger: store.lastPlay?.id) { _, _ in playFeedback() }
             .sensoryFeedback(trigger: selection.card) { _, picked in picked == nil ? nil : Haptic.pick }
-            .onChange(of: view?.isMyTurn == true && !gameIsOver) { was, now in feelTurn(was: was, now: now) }
+            .onChange(of: view.map(turnIsShown) == true && !gameIsOver) { was, now in feelTurn(was: was, now: now) }
             .tableSounds(store, view: view, picked: selection.card)
     }
 
@@ -336,10 +407,14 @@ struct TableScreen: View {
     private func clockReactions(_ content: some View) -> some View {
         content
             .onChange(of: view?.turnSeat) { _, _ in handleTurn() }
+            // A hand let in starts the clock its turn was waiting on.
+            .onChange(of: holdsHand) { _, held in if !held { restartClock() } }
             .onChange(of: view?.phase) { _, _ in restartClock() }
+            // The match-found moment covers the table: the turn under it starts when it lifts.
+            .onChange(of: store.matchFound == nil) { _, _ in restartClock() }
             .onAppear { restartClock() }
             .task(id: deadline) { await runClock() }
-            .onAppear { selection.assist = store.assist }
+            .onAppear { selection.assist = store.tableAssist }
             .onChange(of: store.assist) { _, level in handleAssist(level) }
             .onChange(of: view?.configuration.house, initial: true) { _, house in selection.house = house ?? [] }
     }
@@ -348,17 +423,17 @@ struct TableScreen: View {
     /// pile sheet and the payout of a game that has been dealt away.
     private func sessionReactions(_ content: some View) -> some View {
         content
-            .task(id: view?.turnSeat) { await playForMe() }
+            .task(id: [view?.turnSeat, holdsHand ? 1 : 0]) { await playForMe() }
             .task(id: view?.phase) { await dealForMe() }
             .task(id: handAndTurn) { await selectFirstCard() }
             .onChange(of: view?.hand, initial: true) { _, hand in noticeSevens(hand) }
             .task { warmAds() }
-            // Again at every round's end: a load that failed or went stale gets another try
-            // while the summary is still telling the round.
-            .onChange(of: view?.phase == .playing) { _, playing in if !playing { ads.prepareForEndOfGame() } }
+            // Again at every round's start and end, a game dealt again included: a load that
+            // failed or went stale gets another try well before the game is over.
+            .onChange(of: view?.phase == .playing) { _, _ in ads.prepareForEndOfGame() }
             .task(id: store.view?.configuration.players.map(\.id)) { await loadRanks() }
             .sheet(isPresented: $showsPile) { if let view = store.view { PileSheet(view: view) } }
-            .onChange(of: store.view?.isFinished) { _, finished in clearEarnings(finished: finished) }
+            .onChange(of: store.view?.isFinished) { was, now in clearEarnings(was: was, finished: now) }
     }
 
     // MARK: - Notices
@@ -368,6 +443,7 @@ struct TableScreen: View {
     private func startRound() {
         summaryToldIt = false
         held = []
+        holdsSummary = false
     }
 
     private func handleNotice(_ notice: TableStore.Notice?) {
@@ -378,18 +454,37 @@ struct TableScreen: View {
         }
     }
 
-    private func announceScopa(by name: String) {
+    /// `prize` stands in for what the sweep took, for `-sweep -highlight`.
+    private func announceScopa(by name: String, prize: TableHighlight? = nil) {
         let seat = store.lastPlay?.seat
-        scopaBy = seat == view?.seat ? "" : name
+        // No play behind it is `-sweep`, which names its own sweeper.
+        scopaBy = seat != nil && seat == view?.seat ? "" : name
         scopaFlourish = flourish(ofSeat: seat)
+        scopaPrize = prize ?? sweptPrize
         withAnimation(.spring(duration: 0.35)) { showsScopa = true }
+        feelPrize(scopaPrize, mine: scopaBy.isEmpty)
         scopaTimer?.cancel()
         let length = ScopaBanner.length(for: scopaFlourish)
         scopaTimer = Task {
             try? await Task.sleep(for: .seconds(length))
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !DebugLaunch.holdsSweep else { return }
             withAnimation(.easeOut(duration: 0.3)) { showsScopa = false }
             store.clearNotice()
+        }
+    }
+
+    /// What else the sweep just called took, for the plate over its band.
+    private var sweptPrize: TableHighlight? {
+        guard let play = store.lastPlay, play.sweeps, let view else { return nil }
+        return TableHighlight.of(play, in: view)
+    }
+
+    /// Felt as the plate lands over the band, once the sweep's own pattern has had its say.
+    private func feelPrize(_ prize: TableHighlight?, mine: Bool) {
+        guard let prize else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(ScopaBanner.prizeTime))
+            prize.feel(mine: mine, afterSweep: true)
         }
     }
 
@@ -403,11 +498,16 @@ struct TableScreen: View {
         return worn.flatMap(Flourish.init(rawValue:)) ?? .stendardo
     }
 
+    /// Once the move that emptied the hands has landed: the banner sits over the middle of
+    /// the cloth, where that card is held up to be read.
     private func announceDeal() {
         dealtHand = view?.handNumber ?? 1
-        withAnimation(.spring(duration: 0.4, bounce: 0.28)) { showsDeal = true }
+        lastHandTaken = takenSinceLastDeal()
         dealTimer?.cancel()
         dealTimer = Task {
+            await waitForTheCardsToLand()
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(duration: 0.4, bounce: 0.28)) { showsDeal = true }
             try? await Task.sleep(for: .seconds(1.9))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { showsDeal = false }
@@ -426,9 +526,15 @@ struct TableScreen: View {
         }
         // First, before anything else looks at the cloth: this is the last moment the
         // cards this play took are still where the layout put them.
-        sendFlight(for: play, in: view)
+        if view.phase == .playing {
+            if holdsHand { flownDeal = DealMark(view) }
+            sendFlight(for: play, in: view)
+        } else {
+            endRound(on: play, in: view)
+        }
         feel(play, in: view)
-        if let kind = TableHighlight.of(play, in: view) {
+        // A sweep's prize rides on its band. See `announceScopa`.
+        if !play.sweeps, let kind = TableHighlight.of(play, in: view) {
             showHighlight(kind, by: play.seat == view.seat ? "" : play.name)
         }
         withAnimation(.spring(duration: 0.38, bounce: 0.22)) { lastMove = play }
@@ -468,11 +574,41 @@ struct TableScreen: View {
         withAnimation(.easeOut(duration: 0.3)) { reading = nil }
     }
 
-    /// The round's last cards, swept up by whoever captured last. Nobody plays them, so
-    /// nothing else on the table would ever show them moving.
-    private func handleLeftovers(_ leftovers: TableStore.Leftovers?) {
-        guard let leftovers, let view else { return }
-        sendLeftovers(leftovers, in: view)
+    /// A hand dealt again mid-round leaves the deal before it on screen until `letHandIn`.
+    /// Anything else, a round's first deal or a table sat down at, shows as it comes.
+    private func noteDeal(_ deal: DealMark?) {
+        guard let deal else { return }
+        if let shownDeal, deal.follows(shownDeal) { return }
+        shownDeal = deal
+    }
+
+    /// How long a held hand waits for the move that dealt it to turn up behind its view. A
+    /// view with no move behind it, sent again after a lost line, waits only this.
+    private static let moveLag: TimeInterval = 1.5
+    /// The most the cards in the air are waited for, so a flight that never lands cannot
+    /// keep a hand, a banner or a turn off the screen.
+    private static let landingLimit: TimeInterval = 4
+
+    /// Keeps the hand just dealt off the screen until the move that emptied every hand has
+    /// landed. Three new cards arriving while it was still in the air hid it, and a quick
+    /// tap on one of them knocked it out of the air. A few seconds at most, whatever happens.
+    private func letHandIn() async {
+        guard let deal = heldDeal else { return }
+        // Seeing the move restarts this, past the wait.
+        if flownDeal != deal { try? await Task.sleep(for: .seconds(Self.moveLag)) }
+        await waitForTheCardsToLand()
+        guard !Task.isCancelled else { return }
+        shownDeal = deal
+    }
+
+    /// Returns once nothing is in the air or settling into the row, a few seconds at most.
+    /// A beat first: a card laid down takes to the air a couple of frames after its move.
+    private func waitForTheCardsToLand() async {
+        try? await Task.sleep(for: .milliseconds(80))
+        let deadline = Date.now.addingTimeInterval(Self.landingLimit)
+        while flight != nil || settling != nil, Date.now < deadline, !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(80))
+        }
     }
 
     // MARK: - Cards in the air
@@ -513,7 +649,27 @@ struct TableScreen: View {
         }
         guard !Task.isCancelled else { return }
         flight = nil
-        if current.endsTheRound { holdsSummary = false }
+        if current.endsTheRound { releaseSummary() }
+    }
+
+    /// Keeps the summary back while the round's last cards cross the cloth. Let go once they
+    /// land, or after a few seconds whatever happens, so a flight that never finishes cannot
+    /// keep the round from ending.
+    private func holdSummary() {
+        holdsSummary = true
+        let round = view?.roundNumber
+        Task {
+            try? await Task.sleep(for: .seconds(8))
+            if view?.roundNumber == round { holdsSummary = false }
+        }
+    }
+
+    /// The empty cloth for a beat, then the summary over it.
+    private func releaseSummary() {
+        Task {
+            try? await Task.sleep(for: .seconds(CardFlight.roundBeat))
+            holdsSummary = false
+        }
     }
 
     private func fadePilePop() async {
@@ -574,10 +730,12 @@ struct TableScreen: View {
     // MARK: - Session
 
     private func playForMe() async {
-        guard DebugLaunch.playsItself, let view, view.isMyTurn else { return }
+        guard DebugLaunch.playsItself, let view, turnIsShown(view) else { return }
         // A person's pace rather than a machine's, so the flights and pops that follow the
         // other side's moves can actually be watched.
         try? await Task.sleep(for: .milliseconds(2600))
+        // A practice hand only takes the move it teaches.
+        if let move = store.practice?.expected(in: view) { return store.play(move.card, capturing: move.captures) }
         guard let card = view.hand.randomElement() else { return }
         let capture = view.captureOptions(for: card).randomElement() ?? []
         store.play(card, capturing: capture)
@@ -627,12 +785,18 @@ struct TableScreen: View {
     }
 
     /// The host dealt again: the payout and the offer belonged to the game that ended.
-    private func clearEarnings(finished: Bool?) {
+    ///
+    /// A guest is dealt the next game by the host's "Play again" and never passes a button
+    /// of its own, so the ad that follows every game comes here, as the new one is dealt.
+    private func clearEarnings(was: Bool?, finished: Bool?) {
         guard finished == false else { return }
+        if was == true, !store.isHost, !isLeaving { Task { await ads.endOfGame() } }
         earnings = []
         doubled = false
         isDoubling = false
         noVideo = false
+        isBuyingBoost = false
+        boughtBoost = false
         gainedExperience = nil
         earnedPack = false
     }
@@ -656,6 +820,13 @@ struct TableScreen: View {
 
     // MARK: Layouts
 
+    /// The seat the cards at the bottom play for: yours, or under Scatouch the bot on the
+    /// move, once nothing is still in the air.
+    private func acting(_ view: PlayerView) -> PlayerView {
+        guard flight == nil, settling == nil, let puppet = store.scatouch?.puppet(over: view) else { return view }
+        return puppet
+    }
+
     /// Portrait: one column, read top to bottom the way the cards are dealt.
     private func tallLayout(_ view: PlayerView) -> some View {
         let counsels = counsels
@@ -666,8 +837,8 @@ struct TableScreen: View {
             reactionRow
             statusRow(view)
             VStack(spacing: 0) {
-                actionBar(view)
-                handCards(view, counsels: counsels)
+                actionBar(acting(view))
+                handCards(acting(view), counsels: counsels)
             }
             advice(view, counsels: counsels)
         }
@@ -709,9 +880,15 @@ struct TableScreen: View {
     /// well as one for four.
     private static let railWidth: CGFloat = 76
 
-    /// Where everyone else is sitting, in landscape. Play passes on round the table, so the
-    /// seat that plays after this one is on the right, the one that plays before it is on
-    /// the left, and at a table for four the seat opposite goes across the top.
+    /// Where everyone else is sitting, counted round the table from this seat. Play passes
+    /// to the right, as it does in Italy, so the seat that plays after this one is on the
+    /// right, the one that plays before it is on the left, and at a table for four the seat
+    /// opposite, your partner's in teams, goes across the top.
+    ///
+    /// Both orientations draw from this, and so does the waiting room, so every phone at the
+    /// table sees the turn go the same way round. Laid out by seat number instead, portrait
+    /// put the next player on the right on one phone and in the middle on another, and a
+    /// partner anywhere but across.
     private func seating(_ view: PlayerView) -> (left: PlayerView.Opponent?, across: PlayerView.Opponent?, right: PlayerView.Opponent?) {
         let count = view.configuration.seatCount
         let ordered = (1..<max(count, 1)).compactMap { step -> PlayerView.Opponent? in
@@ -743,15 +920,16 @@ struct TableScreen: View {
     /// they have taken, in a column narrow enough to leave the cloth the room it needs.
     private func railTag(_ opponent: PlayerView.Opponent, in view: PlayerView,
                          alignment: HorizontalAlignment) -> some View {
-        let isTheirTurn = view.turnSeat == opponent.seat
+        let isTheirTurn = shownTurnSeat(view) == opponent.seat
         // A rail on an iPad is the same rail, drawn at the size the rest of the cloth is:
         // left at the phone's points it read as a row of specks beside cards half a foot tall.
         return VStack(alignment: alignment, spacing: 5 * lift) {
-            HiddenHand(count: opponent.cardsInHand, width: 20 * lift)
+            SeatHand(count: opponent.cardsInHand, cards: store.scatouch?.hand(ofSeat: opponent.seat, in: view),
+                     width: 20 * lift)
             PlayerBadge(name: opponent.player.name, isBot: store.isBot(opponent.player),
-                        tint: seatTint(opponent.seat), size: 24 * lift,
-                        mark: SeatMark(opponent.player), cornice: Cornice(opponent.player),
-                        livery: SeatLivery(opponent.player))
+                        tint: seatTint(opponent.seat), size: 24 * lift, mark: SeatMark(opponent.player),
+                        honoured: ChallengeBook.honours(opponent.player.honour, on: store.challenges.week),
+                        cornice: Cornice(opponent.player), livery: SeatLivery(opponent.player))
                 .overlay { if isTheirTurn { TurnRing(padding: 3 * lift) } }
             Text(opponent.player.name)
                 .font(.system(size: 12 * lift, weight: .semibold))
@@ -773,8 +951,8 @@ struct TableScreen: View {
                 advice(view, counsels: counsels)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            handCards(view, counsels: counsels)
-            actionBar(view)
+            handCards(acting(view), counsels: counsels)
+            actionBar(acting(view))
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.bottom, 6)
@@ -804,16 +982,14 @@ struct TableScreen: View {
     /// In landscape it also carries the opponents and the reactions, which have no row of
     /// their own once the height halves.
     private func topStrip(_ view: PlayerView) -> some View {
-        GlassGroup(spacing: 10) {
-            HStack(spacing: 8) {
-                scoreChips(view)
-                    // The scores keep their width; the spacer and the buttons give way first.
-                    .layoutPriority(1)
-                Spacer(minLength: 6)
-                if stage.isWide { wideStripExtras(view) }
-                RulesButton { showsRules = true }
-                leaveButton
-            }
+        HStack(spacing: 8) {
+            scoreChips(view)
+                // The scores keep their width; the spacer and the buttons give way first.
+                .layoutPriority(1)
+            Spacer(minLength: 6)
+            if stage.isWide { wideStripExtras(view) }
+            RulesButton { showsRules = true }
+            leaveButton
         }
         .padding(.top, stage.pick(tall: 12, wide: 4))
     }
@@ -825,7 +1001,7 @@ struct TableScreen: View {
                 ScoreChip(
                     label: view.scores.count > 2 ? nil : sideName(side, in: view),
                     badge: view.scores.count > 2 ? sideName(side, in: view) : nil,
-                    tint: Palette.seat(side, teams: view.configuration.teams),
+                    tint: Palette.side(side, teams: view.configuration.teams, home: store.homeSeat),
                     score: stripScore(side, in: view),
                     emphasised: side == view.mySide,
                     swatch: view.configuration.teams
@@ -853,10 +1029,16 @@ struct TableScreen: View {
     /// leaving costs nothing and the X needs no dialog at all.
     ///
     /// A ranked game is lost the moment it is left — see `TableStore.leaveTable` — so the
-    /// wording is what happens, not a warning that something might.
+    /// wording is what happens, not a warning that something might. In its first two minutes
+    /// it is not, and the dialog still comes up to say so: a stranger's game ended by a stray
+    /// tap is worth a second one.
     private var leaving: (action: LocalizedStringKey, cost: LocalizedStringKey)? {
         guard !gameIsOver else { return nil }
-        let ranked = store.isRanked && store.ladderTable != nil
+        let free = store.leavesFree(at: leaveAskedAt ?? .now)
+        if free, store.stake == nil {
+            return ("Leave", "In its first two minutes a ranked game can be left for nothing: no points lost, and your run stands.")
+        }
+        let ranked = store.isRanked && store.ladderTable != nil && !free
         switch (ranked, store.stake != nil) {
         case (true, true):
             return ("Leave, and lose the game and the stake",
@@ -873,8 +1055,9 @@ struct TableScreen: View {
     private var leaveButton: some View {
         Button {
             // A finished game leaves the way the summary's button does, ad pacing and all.
-            if let ending {
-                leave(after: ending)
+            leaveAskedAt = .now
+            if leavesPastAnAd {
+                leave()
             } else if leaving != nil {
                 confirmsLeave = true
             } else {
@@ -884,16 +1067,19 @@ struct TableScreen: View {
             Image(systemName: "xmark")
                 .font(.system(size: 16, weight: .semibold))
                 .frame(width: 38, height: 38)
-                .glass(.riviera(interactive: true), in: .circle)
+                .glass(.riviera(), in: .circle)
                 .contentShape(.circle)
         }
         .foregroundStyle(Palette.onTable)
     }
 
+    /// The row along the top in portrait: left, across and right, as they sit. The turn
+    /// leaves you to the right, crosses the row and comes back from the left.
     private func opponents(_ view: PlayerView) -> some View {
-        HStack(alignment: stage.pick(tall: VerticalAlignment.bottom, wide: .center),
-               spacing: stage.pick(tall: 16, wide: 12)) {
-            ForEach(view.opponents, id: \.seat) { opponent in
+        let seated = seating(view)
+        return HStack(alignment: stage.pick(tall: VerticalAlignment.bottom, wide: .center),
+                      spacing: stage.pick(tall: 16, wide: 12)) {
+            ForEach([seated.left, seated.across, seated.right].compactMap { $0 }, id: \.seat) { opponent in
                 opponentTag(opponent, in: view)
                     .seatAnchor(opponent.seat, in: Self.tableSpace, into: anchors)
             }
@@ -912,7 +1098,7 @@ struct TableScreen: View {
                 seatBadge(opponent, in: view)
                 seatName(opponent, in: view)
                 overTheirSeat(opponent, in: view, width: 15 * lift)
-                seatTally(ofSide: side, in: view)
+                seatFoot(opponent, in: view)
             }
             .animation(.spring(duration: 0.4, bounce: 0.25), value: view.scope[side])
         } else {
@@ -925,10 +1111,10 @@ struct TableScreen: View {
                 HStack(spacing: 6) {
                     seatBadge(opponent, in: view)
                     seatName(opponent, in: view)
-                    if !crowded { seatTally(ofSide: side, in: view) }
+                    if !crowded { seatFoot(opponent, in: view) }
                 }
                 if crowded {
-                    HStack(spacing: 6) { seatTally(ofSide: side, in: view) }
+                    HStack(spacing: 6) { seatFoot(opponent, in: view) }
                 }
             }
             .animation(.spring(duration: 0.4, bounce: 0.25), value: view.scope[side])
@@ -941,7 +1127,7 @@ struct TableScreen: View {
                     size: stage.pick(tall: 22, wide: 20), mark: SeatMark(opponent.player),
                     honoured: ChallengeBook.honours(opponent.player.honour, on: store.challenges.week),
                     cornice: Cornice(opponent.player), livery: SeatLivery(opponent.player))
-            .overlay { if view.turnSeat == opponent.seat { TurnRing(padding: 3) } }
+            .overlay { if shownTurnSeat(view) == opponent.seat { TurnRing(padding: 3) } }
     }
 
     /// The face already says it is a bot, and a tag beside the name would crowd four seats.
@@ -952,11 +1138,22 @@ struct TableScreen: View {
             // A long name in the landscape strip gives up a little size before it gives up
             // letters: four names and two buttons share that row.
             .minimumScaleFactor(0.75)
-            .foregroundStyle(view.turnSeat == opponent.seat ? Palette.goldLight : Palette.onTable)
+            .foregroundStyle(shownTurnSeat(view) == opponent.seat ? Palette.goldLight : Palette.onTable)
+    }
+
+    /// What goes under a seat's name: their side's tally, or for your partner the word
+    /// partner. A partner's pile is your own, already counted by your hand as "taken by us".
+    @ViewBuilder private func seatFoot(_ opponent: PlayerView.Opponent, in view: PlayerView) -> some View {
+        let side = view.configuration.side(ofSeat: opponent.seat)
+        if view.configuration.teams, side == view.mySide {
+            PartnerTag(tint: seatTint(opponent.seat))
+        } else {
+            seatTally(ofSide: side, in: view)
+        }
     }
 
     /// What that side has taken, and how often it has swept. Sweeps are counted by side
-    /// like the pile, so in teams both partners show the side's total.
+    /// like the pile, so in teams both opponents show their side's total.
     @ViewBuilder private func seatTally(ofSide side: Int, in view: PlayerView) -> some View {
         PileCount(count: view.captureCounts[side], width: 11)
         if (view.scope[safe: side] ?? 0) > 0 {
@@ -975,7 +1172,8 @@ struct TableScreen: View {
         let pet = Companion(opponent.player)
         HStack(alignment: .bottom, spacing: 3) {
             opponentLeague(opponent.player)
-            HiddenHand(count: opponent.cardsInHand, width: width)
+            SeatHand(count: opponent.cardsInHand, cards: store.scatouch?.hand(ofSeat: opponent.seat, in: view),
+                     width: width)
             if pet != .nessuno {
                 CompanionView(companion: pet, size: width,
                               mood: companionMood(ofSeat: opponent.seat, in: view), calm: true)
@@ -1039,7 +1237,7 @@ struct TableScreen: View {
             // the spacer is capped at both ends and the cards sit in the middle of it.
             Spacer(minLength: 4)
                 .frame(maxHeight: widthClass == .regular ? gap : nil)
-            clothRow(view)
+            clothRow(acting(view))
             stockLabel(view)
             // Capped, so the slack falls mostly above the cards and the cloth sits low in
             // its band rather than in the middle of all that green.
@@ -1067,7 +1265,8 @@ struct TableScreen: View {
 
     /// The cards on the table, in one row that never wraps.
     private func clothRow(_ view: PlayerView) -> some View {
-        let takeable = capturable
+        // A practice hand outlines what the starred card is to take before it is even picked.
+        let takeable = capturable.union(store.practice?.expected(in: view)?.captures ?? [])
         let cardWidth = tableCardWidth
         return OverlapRow(spacing: 12) {
             ForEach(Array(view.table.enumerated()), id: \.element) { index, card in
@@ -1134,9 +1333,15 @@ struct TableScreen: View {
 
     private func stockLabel(_ view: PlayerView) -> some View {
         HStack(spacing: 16) {
-            HStack(spacing: 6) {
-                CardBack(width: 14 * lift)
-                Text("\(view.stockCount) left")
+            if let scatouch = store.scatouch {
+                ScatouchStock(scatouch: scatouch, count: view.stockCount, lift: lift) {
+                    selection.clear()
+                }
+            } else {
+                HStack(spacing: 6) {
+                    CardBack(width: 14 * lift)
+                    Text("\(view.stockCount) left")
+                }
             }
             if view.table.isEmpty { Text("Table is clear") }
         }
@@ -1161,6 +1366,7 @@ struct TableScreen: View {
             Spacer(minLength: 0)
         }
         .frame(height: LastMoveTag.height(compact: stage.isWide), alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { lastMoveTop = $0 }
     }
 
     // MARK: Cards in the air
@@ -1179,19 +1385,38 @@ struct TableScreen: View {
             sendLayDown(play, in: view)
             return
         }
+        if let take = captureFlight(for: play, in: view, endsTheRound: false) { flight = take }
+    }
+
+    private func captureFlight(for play: TableStore.Play, in view: PlayerView, endsTheRound: Bool) -> CardFlight? {
         let placed = play.captures.compactMap { card in
             tableFrames.frames[card].map { CardFlight.Placed(card: card, frame: $0) }
         }
         // No frames means the cards were never drawn: a move read back from a saved game,
         // or a table that has not laid out yet.
-        guard !placed.isEmpty, let destination = anchors.seats[play.seat] else { return }
-        flight = CardFlight(played: play.card, taken: placed,
-                            origin: play.seat == view.seat ? nil : anchors.seats[play.seat],
-                            from: cloth(around: placed), to: destination,
-                            cardWidth: flightCardWidth,
-                            tint: seatTint(play.seat),
-                            caption: nil, sweeps: play.sweeps, endsTheRound: false,
-                            isMine: play.seat == view.seat)
+        guard !placed.isEmpty, let destination = anchors.seats[play.seat] else { return nil }
+        return CardFlight(played: play.card, taken: placed,
+                          origin: play.seat == view.seat ? nil : anchors.seats[play.seat],
+                          from: cloth(around: placed), to: destination,
+                          cardWidth: flightCardWidth,
+                          tint: seatTint(play.seat),
+                          caption: nil, sweeps: play.sweeps, endsTheRound: endsTheRound,
+                          isMine: play.seat == view.seat)
+    }
+
+    /// The round's last move, then its leftovers, then a beat of empty cloth, then the
+    /// summary. The model has already swept the cloth, so all of it is told from here.
+    ///
+    /// A last card that takes nothing never had a place in the row: it leads the leftovers
+    /// across instead, rather than vanishing into them unseen as it used to.
+    private func endRound(on play: TableStore.Play, in view: PlayerView) {
+        let laid = play.captures.isEmpty ? play : nil
+        let leftovers = store.leftovers.flatMap { leftoverFlight($0, in: view, laid: laid) }
+        let take = laid == nil ? captureFlight(for: play, in: view, endsTheRound: leftovers == nil) : nil
+        guard let first = take ?? leftovers else { return }
+        holdSummary()
+        flight = first
+        if let take, let leftovers { follow(take, with: leftovers) }
     }
 
     /// Carries a card that took nothing to the place the cloth has made for it.
@@ -1205,12 +1430,7 @@ struct TableScreen: View {
     /// the card is hidden until the cloth reports the place it made.
     private func sendLayDown(_ play: TableStore.Play, in view: PlayerView) {
         let mine = play.seat == view.seat
-        // Read after the card has already gone from your hand, which is why the frames are
-        // a box: what it last reported stays behind, and that is where it was played from.
-        let origin = mine
-            ? handFrames.frames[play.card].map { CGPoint(x: $0.midX, y: $0.midY) }
-            : anchors.seats[play.seat]
-        guard let origin, mine || anchors.cloth != .zero else { return }
+        guard let origin = origin(of: play, in: view), mine || anchors.cloth != .zero else { return }
         settling = play.card
         Task { await flyLayDown(play, from: origin, mine: mine) }
     }
@@ -1219,8 +1439,7 @@ struct TableScreen: View {
         // Two frames, which is a layout pass and the geometry read that follows it.
         try? await Task.sleep(for: .milliseconds(40))
         guard settling == play.card else { return }
-        // Something else took to the air in the meantime: the round ended on this card and
-        // its leftovers are already crossing the cloth. They have the floor.
+        // Something else took to the air in the meantime, and it has the floor.
         guard flight == nil else {
             settling = nil
             return
@@ -1242,23 +1461,15 @@ struct TableScreen: View {
                             isMine: mine, laysDown: true, restingWidth: slot.width)
     }
 
-    /// Sends the round's last cards to the side that swept them up. The rule surprises
-    /// everyone the first time, and until now the cards simply vanished.
-    private func sendLeftovers(_ leftovers: TableStore.Leftovers, in view: PlayerView) {
-        guard let last = leftoverFlight(leftovers, in: view) else { return }
-        // The summary waits for them. Set here rather than when the flight starts, so a
-        // round whose leftovers cannot be drawn is never held back for a flight that will
-        // never come.
-        holdsSummary = true
-        // The play that ended the round may still be crossing the cloth. These follow it
-        // rather than knocking it out of the air, a beat clear of its own tidying up.
-        let wait = flight.map { $0.duration + 0.2 } ?? 0
-        guard wait > 0 else { flight = last; return }
+    /// Sends the round's last cards after the take that ended the round, rather than
+    /// knocking it out of the air, a beat clear of its own tidying up. Nobody plays them,
+    /// so nothing else on the table would ever show them moving.
+    private func follow(_ take: CardFlight, with last: CardFlight) {
         // Off the cloth already and not in the air for another second: held where they lay
         // in between, rather than fading out and coming back to be taken.
         held = last.taken
         Task {
-            try? await Task.sleep(for: .seconds(wait))
+            try? await Task.sleep(for: .seconds(take.duration + 0.2))
             // Handed over on one frame: the flight's own copies start at these very places,
             // at this very size.
             flight = last
@@ -1266,27 +1477,42 @@ struct TableScreen: View {
         }
     }
 
-    private func leftoverFlight(_ leftovers: TableStore.Leftovers, in view: PlayerView) -> CardFlight? {
-        guard !leftovers.cards.isEmpty else { return nil }
-        let placed = leftovers.cards.compactMap { card in
+    /// The leftovers on their way to the side that took last, led by the round's last card
+    /// when it was `laid` down and took nothing.
+    private func leftoverFlight(_ leftovers: TableStore.Leftovers, in view: PlayerView,
+                                laid: TableStore.Play?) -> CardFlight? {
+        let placed = leftovers.cards.filter { $0 != laid?.card }.compactMap { card in
             tableFrames.frames[card].map { CardFlight.Placed(card: card, frame: $0) }
         }
-        // The side is put back on a seat: yours if it is yours, otherwise whoever from that
-        // side is on screen. At a table of four either partner will do, since the pile they
-        // are going into is shared.
-        let seat = view.configuration.side(ofSeat: view.seat) == leftovers.side
-            ? view.seat
-            : view.opponents.first { view.configuration.side(ofSeat: $0.seat) == leftovers.side }?.seat
-        guard !placed.isEmpty, let seat, let destination = anchors.seats[seat] else { return nil }
+        guard !placed.isEmpty || laid != nil, let seat = seat(onSide: leftovers.side, in: view),
+              let destination = anchors.seats[seat] else { return nil }
         let name = seat == view.seat
             ? String(localized: "you", locale: locale)
             : (view.configuration.players[safe: seat]?.name ?? "").shortName()
-        return CardFlight(played: nil, taken: placed, origin: nil,
-                          from: cloth(around: placed), to: destination,
-                          cardWidth: flightCardWidth,
-                          tint: seatTint(seat),
-                          caption: String(localized: "Last cards to \(name)", locale: locale),
-                          sweeps: false, endsTheRound: true, isMine: seat == view.seat)
+        var last = CardFlight(played: laid?.card, taken: placed, origin: laid.flatMap { origin(of: $0, in: view) },
+                              from: cloth(around: placed), to: destination,
+                              cardWidth: flightCardWidth,
+                              tint: seatTint(seat),
+                              caption: String(localized: "Last cards to \(name)", locale: locale),
+                              sweeps: false, endsTheRound: true, isMine: seat == view.seat)
+        if let laid { last.laidByYou = laid.seat == view.seat }
+        return last
+    }
+
+    /// A side put back on a seat: yours if it is yours, otherwise whoever from that side is
+    /// on screen. At a table of four either partner will do, since the pile is shared.
+    private func seat(onSide side: Int, in view: PlayerView) -> Int? {
+        view.configuration.side(ofSeat: view.seat) == side
+            ? view.seat
+            : view.opponents.first { view.configuration.side(ofSeat: $0.seat) == side }?.seat
+    }
+
+    /// Where a played card comes from: the slot it left in your hand, or the badge of
+    /// whoever else laid it. Read after the card has already gone from your hand, which is
+    /// why the frames are a box: what it last reported stays behind.
+    private func origin(of play: TableStore.Play, in view: PlayerView) -> CGPoint? {
+        guard play.seat == view.seat else { return anchors.seats[play.seat] }
+        return handFrames.frames[play.card].map { CGPoint(x: $0.midX, y: $0.midY) }
     }
 
     /// Where a played card lands, and where a caption sits: the middle of the cloth, or the
@@ -1303,7 +1529,8 @@ struct TableScreen: View {
     /// pill said the second and nobody could tell what a pile was, so this draws it.
     private func statusRow(_ view: PlayerView) -> some View {
         HStack(spacing: 8) {
-            TurnPill(view: view, name: turnName(view))
+            TurnPill(view: view, seat: shownTurnSeat(view), name: turnName(view), home: store.homeSeat,
+                     steered: acting(view).seat != view.seat)
             Spacer(minLength: 0)
             // Whoever you brought with you lives in the slack above your own hand.
             companionSquare
@@ -1380,12 +1607,12 @@ struct TableScreen: View {
     /// By seat rather than by `view`, so each animal reacts to its own player.
     private func companionMood(ofSeat seat: Int, in view: PlayerView) -> Companion.Mood {
         if showsScopa, store.lastPlay?.seat == seat { return .delighted }
-        return view.turnSeat == seat && !gameIsOver ? .watching : .resting
+        return shownTurnSeat(view) == seat && !gameIsOver ? .watching : .resting
     }
 
     /// Whose turn it is, by name. Blank when it is yours, which the pill says itself.
     private func turnName(_ view: PlayerView) -> String {
-        guard !view.isMyTurn, let seat = view.turnSeat else { return "" }
+        guard let seat = shownTurnSeat(view), seat != view.seat else { return "" }
         return (view.configuration.players[safe: seat]?.name ?? "").shortName()
     }
 
@@ -1397,9 +1624,10 @@ struct TableScreen: View {
     /// card, the card let go.
     private func handCards(_ view: PlayerView, counsels: [Coach.Counsel]) -> some View {
         HandCards(
-            hand: view.hand,
+            hand: holdsHand ? [] : view.hand,
             picked: selection.card,
-            marks: Dictionary(counsels.map { ($0.card, $0.standing) }, uniquingKeysWith: { first, _ in first }),
+            marks: store.practice?.marks(in: view)
+                ?? Dictionary(counsels.map { ($0.card, $0.standing) }, uniquingKeysWith: { first, _ in first }),
             playsAtOnce: selection.playsOnTap(in: view, oneTap: store.oneTapPlays),
             isMyTurn: view.isMyTurn,
             stage: stage,
@@ -1535,8 +1763,10 @@ struct TableScreen: View {
                 minHeight: stage.pick(tall: 52, wide: 46)
             ))
             .disabled(!action.isPlayable)
-            .glassMaterialize()
             .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if let scatouch = store.scatouch, view.seat != self.view?.seat {
+            ScatouchTurnBar(name: (view.configuration.players[safe: view.seat]?.name ?? "").shortName(),
+                            height: stage.pick(tall: 52, wide: 46)) { scatouch.letBotPlay() }
         } else {
             Color.clear.frame(height: stage.pick(tall: 52, wide: 46))
         }
@@ -1552,9 +1782,10 @@ struct TableScreen: View {
     ///
     /// Four steps a second rather than twenty: every step redraws the bar and its glass for
     /// thirty seconds of every turn. A smooth animation would be worse still, since it keeps
-    /// the screen compositing for the whole turn.
+    /// the screen compositing for the whole turn. Stops at empty, which a remote player's
+    /// move can be a long while behind.
     private func turnClockBar(_ view: PlayerView) -> some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { timeline in
+        TimelineView(.explicit(Self.clockTicks(until: deadline))) { timeline in
             let remaining = deadline.map { max($0.timeIntervalSince(timeline.date), 0) } ?? 0
             let total = Double(view.configuration.turnClock.seconds ?? 1)
             let fraction = min(remaining / total, 1)
@@ -1579,12 +1810,21 @@ struct TableScreen: View {
         }
     }
 
+    private static func clockTicks(until deadline: Date?) -> [Date] {
+        guard let deadline else { return [] }
+        return Array(stride(from: Date.now, to: deadline, by: 0.25)) + [deadline]
+    }
+
     private func restartClock() {
-        guard let seconds = view?.configuration.turnClock.seconds, view?.phase == .playing else {
+        guard let seconds = view?.configuration.turnClock.seconds, view?.phase == .playing,
+              store.matchFound == nil else {
             deadline = nil
             return
         }
-        deadline = Date().addingTimeInterval(TimeInterval(seconds))
+        // A hand held back has not been dealt as far as anyone can see: the clock waits full
+        // past the longest hold, and starts again when the cards come in.
+        let hold = holdsHand ? Self.moveLag + Self.landingLimit + 1 : 0
+        deadline = Date().addingTimeInterval(TimeInterval(seconds) + hold)
     }
 
     /// When the clock runs out, the table plays the best move for whoever was thinking.
@@ -1604,23 +1844,20 @@ struct TableScreen: View {
     /// scrolls rather than shrinking the words down to something nobody can read, and the
     /// button that opens it stays put on the right.
     private var reactionRow: some View {
-        GlassGroup(spacing: 16) {
-            HStack(spacing: 8) {
-                if showsReactions { reactionChoices }
-                Button {
-                    withAnimation(.spring(duration: 0.42, bounce: 0.25)) { showsReactions.toggle() }
-                } label: {
-                    // An emoji here would be interface, not content, so this one is a symbol.
-                    Image(systemName: showsReactions ? "xmark" : "face.smiling")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Palette.onTable)
-                        .frame(width: 38, height: 38)
-                }
-                .buttonStyle(.plain)
-                .glass(.riviera(interactive: true), in: .circle)
-                .contentShape(.circle)
-                .glassID("reactions", in: reactionGlass)
+        HStack(spacing: 8) {
+            if showsReactions { reactionChoices }
+            Button {
+                withAnimation(.spring(duration: 0.42, bounce: 0.25)) { showsReactions.toggle() }
+            } label: {
+                // An emoji here would be interface, not content, so this one is a symbol.
+                Image(systemName: showsReactions ? "xmark" : "face.smiling")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Palette.onTable)
+                    .frame(width: 38, height: 38)
             }
+            .buttonStyle(.plain)
+            .glass(.riviera(), in: .circle)
+            .contentShape(.circle)
         }
         .padding(.bottom, stage.pick(tall: 6, wide: 0))
     }
@@ -1639,19 +1876,21 @@ struct TableScreen: View {
                             .frame(height: 38)
                     }
                     .buttonStyle(.plain)
-                    .glass(.riviera(interactive: true), in: .capsule)
+                    .glass(.riviera(), in: .capsule)
                     .contentShape(.capsule)
-                    .glassID(reaction, in: reactionGlass)
                 }
             }
-            // Room for the glass to bulge without the scroll view clipping it.
             .padding(.vertical, 3)
         }
         .scrollClipDisabled()
     }
 
     @ViewBuilder private func advice(_ view: PlayerView, counsels: [Coach.Counsel]) -> some View {
-        if selection.assist.explains {
+        if let practice = store.practice {
+            PracticeCoach(store: store, practice: practice, view: view, stage: stage)
+                .padding(.top, stage.pick(tall: 8, wide: 0))
+                .padding(.bottom, stage.pick(tall: 10, wide: 0))
+        } else if selection.assist.explains {
             CoachStrip(say: say(in: view, counsels: counsels), stage: stage, oneTap: store.oneTapPlays)
                 .padding(.top, stage.pick(tall: 8, wide: 0))
                 .padding(.bottom, stage.pick(tall: 10, wide: 0))
@@ -1671,9 +1910,9 @@ struct TableScreen: View {
         // While their move is still being shown on the cloth, the strip belongs to them:
         // a learner needs telling what just happened before being asked what to do about it.
         if let reading, let lastMove, lastMove.seat != view.seat {
-            return .theirMove(reading, name: lastMove.name.shortName())
+            return .theirMove(reading, name: lastMove.name.shortName(), yoursNext: turnIsShown(view))
         }
-        guard view.isMyTurn else { return .waiting(turnName(view)) }
+        guard acting(view).isMyTurn, !holdsHand else { return .waiting(turnName(view)) }
         return .lookingAt(counsels)
     }
 
@@ -1695,6 +1934,8 @@ struct TableScreen: View {
         // the rule is worth watching, so the summary waits.
         if let view, !holdsSummary {
             switch view.phase {
+            case _ where store.practice?.summarises(view.phase) == true:
+                practiceSummary(in: view).onAppear { announce(.round(view.roundNumber)) }
             case .roundOver(let score) where store.isDailyDeal:
                 dailySummary(score, in: view).onAppear { announce(.round(view.roundNumber)) }
             case .roundOver(let score):
@@ -1716,7 +1957,7 @@ struct TableScreen: View {
     /// It used to sit on `RoundSummary`'s own `onAppear`, which is one appearance too
     /// many. A round with leftovers takes the panel off screen again the moment it is
     /// built — the cards are still crossing the cloth to whoever swept them up, and
-    /// `sendLeftovers` holds the summary back for them — and then builds it a second time
+    /// `endRound` holds the summary back for them — and then builds it a second time
     /// when they land. Two panels, one round: the chime was heard opening and closing.
     /// Whether it happened at all came down to whether a frame was drawn between the two
     /// halves of the round's arrival, which is why it was only sometimes.
@@ -1726,18 +1967,26 @@ struct TableScreen: View {
         Audio.shared.play(.roundOver)
     }
 
+    @ViewBuilder private func practiceSummary(in view: PlayerView) -> some View {
+        if let practice = store.practice {
+            PracticeSummary(store: store, practice: practice, view: view, totalsTold: $summaryToldIt)
+        }
+    }
+
     /// Today's deal is one round, so its end is the end: the same final summary, with the
     /// margin over the bot for a headline.
     private func dailySummary(_ score: RoundScore, in view: PlayerView) -> some View {
-        RoundSummary(score: score, view: view, showsAction: true,
+        RoundSummary(score: score, view: view, home: store.homeSeat, showsAction: true,
                      caption: String(localized: "Today's deal", locale: locale),
                      title: dailyHeadline(score, in: view),
                      isFinal: true, totalsTold: $summaryToldIt,
-                     earnings: earnings, doubling: doubling, experience: gainedExperience,
+                     earnings: earnings, doubling: doubling, boost: boostOffer,
+                     experience: gainedExperience,
                      review: store.review == nil ? nil : { showsReview = true },
                      glance: reviewGlance(),
-                     showsTarget: false) {
-            leave(after: .ordinary)
+                     showsTarget: false,
+                     leaveTitle: dailyGift?.hasCard == true ? "Turn over today's card" : "Back to the lobby") {
+            leaveDaily()
         }
         .task(id: store.finishedTally?.gameID) {
             guard let tally = store.finishedTally else { return }
@@ -1745,12 +1994,26 @@ struct TableScreen: View {
             if !paid.isEmpty { withAnimation(.spring(duration: 0.45, bounce: 0.2)) { earnings = paid } }
         }
         .onChange(of: summaryToldIt && !pendingToasts.isEmpty) { _, ready in if ready { deliverToasts() } }
+        .overlay { dailyCardReveal }
+    }
+
+    /// Today's card is turned over on the way out, and the lobby follows it.
+    private func leaveDaily() {
+        guard dailyGift?.hasCard == true, !showsDailyGift else { return leave() }
+        withAnimation(.easeInOut(duration: 0.35)) { showsDailyGift = true }
+    }
+
+    @ViewBuilder private var dailyCardReveal: some View {
+        if showsDailyGift, let dailyGift {
+            DailyCardReveal(gift: dailyGift, name: store.playerName) { leave() }
+                .transition(.opacity)
+        }
     }
 
     /// Only the host can deal the next round, so only the host gets a button. The review so
     /// far is offered here too: a lesson from round one is worth more before round two.
     private func roundSummary(_ score: RoundScore, in view: PlayerView) -> some View {
-        RoundSummary(score: score, view: view, showsAction: store.isHost,
+        RoundSummary(score: score, view: view, home: store.homeSeat, showsAction: store.isHost,
                      caption: String(localized: "Round \(view.roundNumber)", locale: locale),
                      title: roundHeadline(score, in: view), isFinal: false,
                      totalsTold: $summaryToldIt,
@@ -1763,11 +2026,12 @@ struct TableScreen: View {
     /// The game is over for everyone, so every player can leave, host or not. The breakdown
     /// comes from the store: the phase only carries the winner.
     private func finalSummary(winner: Int, in view: PlayerView) -> some View {
-        RoundSummary(score: store.lastRoundScore, view: view, showsAction: true,
+        RoundSummary(score: store.lastRoundScore, view: view, home: store.homeSeat, showsAction: true,
                      caption: store.campaignStage?.place ?? String(localized: "Game over", locale: locale),
                      title: winnerHeadline(winner, in: view),
                      isFinal: true, totalsTold: $summaryToldIt,
-                     earnings: earnings, doubling: doubling, experience: gainedExperience,
+                     earnings: earnings, doubling: doubling, boost: boostOffer,
+                     experience: gainedExperience,
                      review: store.review == nil ? nil : { showsReview = true },
                      glance: reviewGlance(),
                      footnote: summaryFootnote,
@@ -1775,9 +2039,7 @@ struct TableScreen: View {
                      awaitingLadder: store.isAwaitingLadder,
                      again: playAgainIfAllowed,
                      leaveTitle: store.campaignStage == nil ? "Back to the lobby" : "Back to the map") {
-            // Losing a stake is enough for one game: the pacing rules take that ending off
-            // the table rather than charging for it twice.
-            leave(after: store.stake != nil && winner != view.mySide ? .lostStake : .ordinary)
+            leave()
         }
         // Paid the moment the summary appears, so the denari are banked by the time anyone
         // taps away. Safe to run twice, because settling is — but the second run pays
@@ -1870,6 +2132,24 @@ struct TableScreen: View {
             : String(localized: "Them", locale: locale)
     }
 
+    /// What each side took since the last deal, you first, and the piles noted for the next.
+    /// A new round's piles start again from nothing.
+    private func takenSinceLastDeal() -> [HandTake] {
+        guard let view else { return [] }
+        let now = view.captureCounts
+        let before = pilesAtDeal.round == view.roundNumber && pilesAtDeal.counts.count == now.count
+            ? pilesAtDeal.counts : Array(repeating: 0, count: now.count)
+        pilesAtDeal = (view.roundNumber, now)
+        // The first hand of a round has nothing before it to count.
+        guard view.handNumber > 1 else { return [] }
+        let sides = now.indices.sorted { a, b in a == view.mySide ? true : b == view.mySide ? false : a < b }
+        return sides.map { side in
+            let name = side == view.mySide && !view.configuration.teams
+                ? String(localized: "You", locale: locale) : sideName(side, in: view)
+            return HandTake(side: side, name: name, cards: max(now[side] - before[side], 0))
+        }
+    }
+
     /// Where a highlight's plate sits, as a fraction of the table's height.
     ///
     /// Not centred: the prize is on its way to somebody's pile, so the banner sits on that
@@ -1910,6 +2190,9 @@ struct TableScreen: View {
 
     /// "Silver II · +20", once the ladder has answered a ranked game.
     private var rankFootnote: String? {
+        if store.isRanked, store.isCalledOff {
+            return String(localized: "Off the ladder: somebody left early", locale: locale)
+        }
         guard store.isRanked, let rank = store.rank else { return nil }
         let title = rank.standing.leagueTitle(locale: locale)
         guard let change = store.rankChange else { return title }
@@ -1924,7 +2207,51 @@ struct TableScreen: View {
         // The change the Worker sends is the one it *applied*, floor and ceiling included,
         // so the rating before the game is exactly the rating after it less the change.
         return RankedVerdict.Move(before: rank.rating - change, after: rank.rating, won: won,
-                                  streak: rank.streak ?? 0, isHouse: store.ladderTable == .house)
+                                  streak: rank.streak ?? 0, isHouse: store.ladderTable == .house,
+                                  wasSaved: keptRunFor == store.rankedID.uuidString)
+    }
+
+    // MARK: Keeping a run
+
+    @ViewBuilder private var keepRunOverlay: some View {
+        if let runOffer, let runOffered {
+            KeepRunCard(run: runOffered.run, phase: runOffer, keep: keepRun) {
+                withAnimation(.easeOut(duration: 0.2)) { self.runOffer = nil }
+            }
+            .transition(.opacity)
+        }
+    }
+
+    /// Asked once per ranked loss that broke a run of two or more, after the verdict's bar
+    /// has run: the loss is told before it is softened.
+    private func offerToKeepRun() async {
+        guard let keep = store.keepableRun, ads.isReady, runOffered != keep else { return }
+        ads.prepareReward(.keepRun)
+        try? await Task.sleep(for: .seconds(3.2))
+        guard !Task.isCancelled, store.keepableRun == keep, !isLeaving else { return }
+        runOffered = keep
+        withAnimation(.easeOut(duration: 0.2)) { runOffer = .offered }
+    }
+
+    /// The video, then the ladder. A ladder out of reach is asked again without a second video.
+    private func keepRun() {
+        guard let phase = runOffer, phase != .watching, phase != .kept, let gameID = runOffered?.gameID else { return }
+        runOffer = .watching
+        Task {
+            if phase != .unsent {
+                switch await ads.watchRewarded(.keepRun) {
+                case .watched: break
+                case .unavailable: runOffer = .noVideo; return
+                case .closedEarly: runOffer = .offered; return
+                }
+            }
+            guard await store.keepRun() else { runOffer = .unsent; return }
+            keptRunFor = gameID
+            Audio.shared.play(.purchase)
+            runOffer = .kept
+            try? await Task.sleep(for: .seconds(1.8))
+            withAnimation(.easeOut(duration: 0.25)) { runOffer = nil }
+        }
     }
 
     /// What this ranked table pays, over the deal that opens it.
@@ -1938,8 +2265,10 @@ struct TableScreen: View {
         // nothing once it is spent. The banner says whichever it is.
         guard store.ladderTable != nil, !stakesTold, let odds = rankedOdds() else { return }
         holdForStakes(true)
-        // Behind the hand banner, which owns the first beat of a deal.
+        // Behind the hand banner, which owns the first beat of a deal, and never under the
+        // match-found moment, which covers the table while it is up.
         try? await Task.sleep(for: .milliseconds(2600))
+        while store.matchFound != nil, !Task.isCancelled { try? await Task.sleep(for: .milliseconds(150)) }
         // Marked told only once it is actually being told: this task is keyed on who is
         // sitting at the table, and a chair filling during the wait cancels it.
         guard !Task.isCancelled, !stakesTold else { return holdForStakes(false) }
@@ -1994,14 +2323,37 @@ struct TableScreen: View {
     /// again, or the ad's own `reward` if the game paid less. Only a game that paid
     /// something, only once, and never a wager.
     private var doubling: Doubling? {
-        // Only what the game itself earned. A level, a task, a streak or a campaign prize is
-        // paid once, so an ad does not pay it a second time.
-        let total = earnings.filter { Earning(rawValue: $0.id) != nil }.reduce(Denari.zero) { $0 + $1.value }
+        let total = gameEarned
         guard !doubled, store.stake == nil, total.isCredit, ads.isReady,
               let gameID = store.finishedTally?.gameID else { return nil }
         let amount = max(total, ads.reward)
         return Doubling(amount: amount, repeatsGame: amount == total, isWatching: isDoubling,
                         noVideo: noVideo) { double(amount, gameID: gameID) }
+    }
+
+    /// Only what the game itself earned. A level, a task, a streak or a campaign prize is
+    /// paid once, so neither an ad nor a run of doubled games pays it a second time.
+    private var gameEarned: Denari {
+        earnings.filter { Earning(rawValue: $0.id) != nil }.reduce(Denari.zero) { $0 + $1.value }
+    }
+
+    /// A run of doubled games, offered where it pays: under a game that just paid, while no
+    /// run is going and the purse can cover one. Never on a wager, which pays only the pot.
+    private var boostOffer: BoostOffer? {
+        guard store.stake == nil, gameEarned.isCredit, let gameID = store.finishedTally?.gameID else { return nil }
+        let left = purse.purse.boostedGamesLeft
+        let phase: BoostOffer.Phase
+        if boughtBoost {
+            phase = .running(left: left)
+        } else if isBuyingBoost {
+            phase = .buying
+        } else if left == 0, purse.purse.canAffordBoost {
+            // This game spent the last of a run: a new one starts with the next game.
+            phase = .offered(renews: earnings.contains { $0.id == Boost.note })
+        } else {
+            return nil
+        }
+        return BoostOffer(phase: phase, leaves: purse.balance - Boost.price) { buyBoost(gameID: gameID) }
     }
 
     /// Today's deal, paid: the deal itself, and the mark on the run if this one reached it.
@@ -2012,6 +2364,11 @@ struct TableScreen: View {
         if let milestone = store.streakMilestone, let day = store.dailyDay,
            let credited = await purse.award(milestone, day: day) {
             paid.append(PayoutLine(id: "streak", title: streakTitle(milestone), value: credited))
+        }
+        // Settling twice hands nothing over the second time, so it must not clear the first.
+        if let day = store.dailyDay, let gift = await DailyCardPayout.settle(
+            tally, day: day, store: store, purse: purse, toaster: toaster, locale: locale, offersVideo: ads.isReady) {
+            dailyGift = gift
         }
         paid += await settleChallenge(tally, won: tally.outcome == .won)
         Achievements.record(tally, won: tally.outcome == .won, streak: store.dailyStreak)
@@ -2110,14 +2467,23 @@ struct TableScreen: View {
     }
 
     /// Back to the lobby, with whatever ad the pacing allows on the way. Once per game.
-    private func leave(after ending: GameEnding) {
+    private func leave() {
         guard !isLeaving else { return }
         isLeaving = true
         Task {
-            await ads.endOfGame(ending)
+            await ads.endOfGame()
+            if let toast = endTrial() { toaster.hold(toast) }
             store.leaveTable()
             isLeaving = false
         }
+    }
+
+    /// Takes off what was tried for the game just finished, and says what keeping it costs.
+    private func endTrial() -> Toast? {
+        guard let item = store.tryOn.endIfSpent() else { return nil }
+        return Toast(symbol: "tag.fill", tint: Palette.gold,
+                     title: String(localized: "\(item.title) went back to the shop", locale: locale),
+                     detail: String(localized: "Yours to keep for \(item.price.coins) denari", locale: locale))
     }
 
     /// The button's action, or nothing where this phone cannot deal again.
@@ -2131,7 +2497,8 @@ struct TableScreen: View {
         guard !isLeaving else { return }
         isLeaving = true
         Task {
-            await ads.endOfGame(ending ?? .ordinary)
+            await ads.endOfGame()
+            if let toast = endTrial() { toaster.post(toast) }
             store.playAgain()
             isLeaving = false
         }
@@ -2160,6 +2527,29 @@ struct TableScreen: View {
         }
     }
 
+    /// Buys the run on the summary and spends its first game on this one, so the double lands
+    /// in the payout as the player watches and the total goes up by it. A game that already
+    /// spent the last of a run is not paid again: the ledger has its double.
+    private func buyBoost(gameID: UUID) {
+        guard !isBuyingBoost, !boughtBoost else { return }
+        let earned = gameEarned
+        isBuyingBoost = true
+        Task {
+            defer { isBuyingBoost = false }
+            // A shortfall or a failed save shows through the purse's problem.
+            guard await purse.buyBoost() else { return }
+            let lines = await boosts(on: earned, gameID: gameID, counting: false)
+            // Beside the game's own lines and the pass's, not under a level or a task: the
+            // double is those lines again.
+            let slot = earnings.lastIndex { Earning(rawValue: $0.id) != nil || $0.id == Boost.passNote }
+            withAnimation(.spring(duration: 0.45, bounce: 0.2)) {
+                earnings.insert(contentsOf: lines, at: slot.map { $0 + 1 } ?? earnings.endIndex)
+                boughtBoost = true
+            }
+            Audio.shared.play(.purchase)
+        }
+    }
+
     /// What the game paid. A wager table pays the pot and nothing else; the stake is
     /// already gone, so a loss is shown as the loss it was rather than as nothing.
     private func settle(_ tally: RewardTally, won: Bool, players: Int) async -> [PayoutLine] {
@@ -2179,23 +2569,33 @@ struct TableScreen: View {
     /// The no-ads pass's half again and a bought run's double, on what the game itself just
     /// paid. Nothing when it paid nothing fresh, so a summary drawn twice adds no line.
     private func boosts(on awards: [Award], gameID: UUID) async -> [PayoutLine] {
-        let earned = awards.reduce(Denari.zero) { $0 + $1.value }
-        return await purse.boost(earned, gameID: gameID, withPass: ads.pass.isOwned).map { entry in
+        await boosts(on: awards.reduce(Denari.zero) { $0 + $1.value }, gameID: gameID)
+    }
+
+    /// `counting` puts the games left on the double's line. Not for a run bought on the
+    /// summary, whose ticket already says it.
+    private func boosts(on earned: Denari, gameID: UUID, counting: Bool = true) async -> [PayoutLine] {
+        await purse.boost(earned, gameID: gameID, withPass: ads.pass.isOwned).map { entry in
             guard case .granted(Boost.note) = entry.reason else {
                 return PayoutLine(id: Boost.passNote, title: String(localized: "Ad-free bonus", locale: locale),
                                   value: entry.amount)
             }
-            let left = purse.purse.boostedGamesLeft
-            return PayoutLine(id: Boost.note, title: String(localized: "Double winnings · \(left) left", locale: locale),
-                              value: entry.amount)
+            return PayoutLine(id: Boost.note, title: boostTitle(counting: counting), value: entry.amount)
         }
+    }
+
+    private func boostTitle(counting: Bool) -> String {
+        let left = purse.purse.boostedGamesLeft
+        guard counting else { return String(localized: "Double winnings", locale: locale) }
+        if left == 0 { return String(localized: "Double winnings · last game", locale: locale) }
+        return String(localized: "Double winnings · \(left) left", locale: locale)
     }
 
     /// Who won the game, said to whoever is holding the phone.
     private func winnerHeadline(_ winner: Int, in view: PlayerView) -> String {
         // Ranked is told in the ladder's own words: what follows the headline there is a
-        // league moving rather than a row of denari.
-        if store.isRanked {
+        // league moving rather than a row of denari. Not a game called off, which moved nothing.
+        if store.isRanked, !store.isCalledOff {
             return winner == view.mySide
                 ? String(localized: "Victory", locale: locale)
                 : String(localized: "Defeat", locale: locale)
@@ -2236,7 +2636,7 @@ struct TableScreen: View {
 
     private func hintText(_ view: PlayerView) -> LocalizedStringKey {
         // The turn pill already names who is playing, so there is nothing to add.
-        guard view.isMyTurn else { return " " }
+        guard turnIsShown(view) else { return " " }
         switch selection.action(in: view) {
         case .none: return store.oneTapPlays ? "Tap a card to play it" : "Tap a card, or swipe it up to play"
         case .lay:

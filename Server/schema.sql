@@ -36,6 +36,12 @@ CREATE TABLE IF NOT EXISTS ratings (
   -- Ranked wins standing in a row. Lengthened by a win over people, ended by a loss to
   -- them, untouched by the house, and given back with the divisions at a season's end.
   streak     INTEGER NOT NULL DEFAULT 0,
+  -- The run the latest game broke while it can still be kept for an ad, 0 when none, and
+  -- the game that broke it. The next game closes it. `run_kept` is 1 while the run standing
+  -- is one that was kept, so it cannot be kept twice. See /v1/ranked/keep-run.
+  broken_run INTEGER NOT NULL DEFAULT 0,
+  broken_game TEXT,
+  run_kept   INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL
 );
 
@@ -220,3 +226,20 @@ INSERT OR IGNORE INTO campaign_road (tables) VALUES (36);
 
 CREATE INDEX IF NOT EXISTS campaign_by_stars ON campaign_progress (stars DESC, stage DESC, updated_at ASC);
 CREATE INDEX IF NOT EXISTS campaign_by_stage ON campaign_progress (stage, updated_at DESC);
+
+-- Cards given between friends, one a day per sender by their own calendar. `id` is the
+-- phone's own, so a retry is the same gift; `collected_at` is set once the friend's phone
+-- has the card. See gifts.ts.
+CREATE TABLE IF NOT EXISTS card_gifts (
+  id            TEXT PRIMARY KEY,
+  sender_id     TEXT NOT NULL REFERENCES players(id),
+  sender_name   TEXT NOT NULL,
+  recipient_id  TEXT NOT NULL REFERENCES players(id),
+  card          TEXT NOT NULL CHECK (card <> '7d'),  -- "7c"; never the settebello
+  day           TEXT NOT NULL,
+  sent_at       TEXT NOT NULL,
+  collected_at  TEXT,
+  UNIQUE (sender_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS card_gifts_waiting ON card_gifts (recipient_id, collected_at, sent_at);

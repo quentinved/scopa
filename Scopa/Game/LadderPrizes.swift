@@ -129,8 +129,11 @@ enum LadderIcon: String, CaseIterable, Identifiable {
 
     /// Puts an icon on the home screen, or the classic one back for nil. iOS says so itself
     /// with an alert of its own.
+    ///
+    /// Compared by name rather than through `current`, which reads nil for the patron's icon
+    /// as it does for the classic one: asking for the classic back would otherwise do nothing.
     static func use(_ icon: LadderIcon?) async {
-        guard isSupported, current != icon else { return }
+        guard isSupported, UIApplication.shared.alternateIconName != icon?.assetName else { return }
         do {
             try await UIApplication.shared.setAlternateIconName(icon?.assetName)
         } catch {

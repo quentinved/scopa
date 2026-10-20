@@ -146,6 +146,12 @@ public struct GameConfiguration: Hashable, Codable, Sendable {
     /// The scoring side a seat belongs to.
     public func side(ofSeat seat: Int) -> Int { teams ? seat % 2 : seat }
 
+    /// The first seat on a side other than `seat`'s: who a game is reported won by when that
+    /// seat walks out of it. Never the seat's own partner.
+    public func seat(across seat: Int) -> Int? {
+        players.indices.first { side(ofSeat: $0) != side(ofSeat: seat) }
+    }
+
     public func seat(of player: PlayerID) -> Int? { players.firstIndex { $0.id == player } }
 
     public func nextSeat(after seat: Int) -> Int { (seat + 1) % seatCount }

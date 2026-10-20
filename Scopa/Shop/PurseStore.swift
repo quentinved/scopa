@@ -309,6 +309,19 @@ final class PurseStore {
         }
     }
 
+    /// Records a reward that is not denari as handed over: today's card, a run's pack. True
+    /// the first time, false when it already was, here or on another device; nil on failure.
+    func claim(_ key: String) async -> Bool? {
+        do {
+            let fresh = try await wallet.grant(.zero, note: key, key: key)
+            purse = try await wallet.purse()
+            return !fresh.isEmpty
+        } catch {
+            problem = "Today's card could not be saved."
+            return nil
+        }
+    }
+
     /// Pays for reaching a level. Keyed on the level, so the same level reached on two
     /// devices, or a summary shown twice, pays once. Nil when it was already paid — which is
     /// also how the caller knows whether the milestone pack is still owed.
@@ -421,6 +434,21 @@ final class PurseStore {
         }
     }
 
+    /// A bag bought on the App Store. True when its denari landed now, false when that
+    /// transaction had already paid, nil when it could not be written down: the caller then
+    /// leaves the purchase open, and the App Store hands it over again on the next launch.
+    func credit(_ bag: DenariBag, transaction: UInt64) async -> Bool? {
+        do {
+            let fresh = try await wallet.credit(bag, transaction: transaction)
+            purse = try await wallet.purse()
+            problem = nil
+            return !fresh.isEmpty
+        } catch {
+            problem = "Your denari are paid for but not saved yet. They arrive the next time Scopa opens."
+            return nil
+        }
+    }
+
     /// A run of doubled games, for denari. False, with the shortfall in `problem`, when the
     /// purse cannot cover it.
     func buyBoost() async -> Bool {
@@ -449,17 +477,20 @@ final class PurseStore {
         }
     }
 
-    /// The no-ads pass's denari, once per account: keyed on the pass rather than the device,
-    /// so a restore on a second phone pays nothing more. True only when it was paid now.
-    @discardableResult
-    func grantPassGift() async -> Bool {
+    /// The no-ads pass's denari, pack and thank-you, once per account: keyed on the pass rather
+    /// than the device, so a restore on a second phone pays nothing more. Only what was paid
+    /// now: the denari, whether the pack is still owed, and whether the thank-you was all of
+    /// it. Nil when nothing was.
+    func grantPassGift() async -> (denari: Denari, pack: Bool, thanksAlone: Bool)? {
         do {
-            let fresh = try await wallet.grant(Boost.passGift, note: Boost.passNote, key: Boost.passGiftKey)
+            let fresh = try await wallet.credit(Boost.passGiftEntries())
             purse = try await wallet.purse()
-            return !fresh.isEmpty
+            guard !fresh.isEmpty else { return nil }
+            return (fresh.reduce(.zero) { $0 + $1.amount }, fresh.contains { $0.key == Boost.passPackKey },
+                    fresh.allSatisfy { $0.key == Boost.passThanksKey })
         } catch {
             problem = "Your denari could not be saved on this device."
-            return false
+            return nil
         }
     }
 
@@ -478,6 +509,35 @@ final class PurseStore {
         }
     }
 
+    /// Takes a trade's spares out of the album: one keyed line each, in one write, so they
+    /// all leave or none do. True once written; nil when it could not be saved.
+    func recordDepartures(_ keys: [String], note: String) async -> Bool? {
+        let entries = keys.map { LedgerEntry(date: .now, amount: .zero, reason: .granted(note), key: $0) }
+        do {
+            try await wallet.credit(entries)
+            purse = try await wallet.purse()
+            return true
+        } catch {
+            problem = "Your trade could not be saved."
+            return nil
+        }
+    }
+
+    /// Pays a stop on the album's road, with any stops behind it written down as paid with
+    /// nothing, in one write. True when the stop was paid now; nil when it could not be saved.
+    func awardAlbumStop(_ amount: Denari, key: String, waiving waived: [String] = []) async -> Bool? {
+        let entries = waived.map { LedgerEntry(date: .now, amount: .zero, reason: .granted("album"), key: $0) }
+            + [LedgerEntry(date: .now, amount: amount, reason: .granted("album"), key: key)]
+        do {
+            let fresh = try await wallet.credit(entries)
+            purse = try await wallet.purse()
+            return fresh.contains { $0.key == key }
+        } catch {
+            problem = "Your album prize could not be saved."
+            return nil
+        }
+    }
+
     #if DEBUG
     /// Debug only. Moves the purse to exactly `amount`, up or down.
     ///
@@ -488,6 +548,23 @@ final class PurseStore {
         let difference = amount - balance
         guard !difference.isZero else { return }
         _ = try? await wallet.grant(difference, note: "debug", key: "debug/purse/\(UUID().uuidString)")
+        await update { try await wallet.purse() }
+    }
+
+    /// Debug only. Leaves exactly `left` doubled games, whatever the ledger has seen: runs
+    /// bought with denari granted for them, games spent at a denaro each.
+    func setBoostForDebugging(left: Int) async {
+        guard var current = try? await wallet.purse() else { return }
+        while current.boostedGamesLeft < left {
+            _ = try? await wallet.grant(Boost.price, note: "debug", key: "debug/boost/\(UUID().uuidString)")
+            guard let bought = try? await wallet.buyBoost() else { break }
+            current = bought
+        }
+        while current.boostedGamesLeft > left {
+            guard let spent = try? await wallet.boost(Denari(1), gameID: UUID(), withPass: false), !spent.isEmpty,
+                  let after = try? await wallet.purse() else { break }
+            current = after
+        }
         await update { try await wallet.purse() }
     }
 

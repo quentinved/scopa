@@ -8,43 +8,51 @@ struct HouseRuleLesson: View {
     let rules: [HouseRule]
     /// Deals the table from the last page. Nil when the lesson is only being read again.
     var onFinish: (() -> Void)?
+    /// Sits down at a rule's practice table once the lesson is gone. Nil where there is none.
+    var practise: ((HouseRule) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var page: HouseRule?
 
+    /// No navigation stack: inside one, the sheet's banner inset never reached the footer.
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                TabView(selection: $page) {
-                    ForEach(rules, id: \.self) { rule in
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 18) {
-                                Caption(text: onFinish == nil ? "House rule" : "New rule at this table")
-                                HouseRulePage(rule: rule)
-                            }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 8)
-                            .padding(.bottom, 24)
+        VStack(spacing: 0) {
+            topBar
+            TabView(selection: $page) {
+                ForEach(rules, id: \.self) { rule in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            Caption(text: onFinish == nil ? "House rule" : "New rule at this table")
+                            HouseRulePage(rule: rule)
+                            if practise != nil { tryButton(rule) }
                         }
-                        .scrollIndicators(.hidden)
-                        .scrollBounceBehavior(.basedOnSize)
-                        .tag(Optional(rule))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
                     }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                footer
-            }
-            .background { TableGround() }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(onFinish == nil ? "Done" : "Not now") { dismiss() }
-                        .tint(Palette.goldLight)
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize)
+                    .tag(Optional(rule))
                 }
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            footer
         }
+        .background { TableGround() }
         .onAppear { page = page ?? rules.first }
         .sensoryFeedback(.selection, trigger: page)
         .sound(.tap, trigger: page)
+    }
+
+    private var topBar: some View {
+        HStack {
+            Button(onFinish == nil ? "Done" : "Not now") { dismiss() }
+                .font(.system(size: 17))
+                .foregroundStyle(Palette.goldLight)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 56)
     }
 
     private var footer: some View {
@@ -68,6 +76,18 @@ struct HouseRuleLesson: View {
     }
 
     private var closing: Bool { page == rules.last }
+
+    /// The last thing on a rule's page: a hand of it, laid out to show it all.
+    private func tryButton(_ rule: HouseRule) -> some View {
+        Button {
+            practise?(rule)
+            dismiss()
+        } label: {
+            Label("Try it at a table", systemImage: "graduationcap.fill")
+        }
+        .buttonStyle(OutlineButtonStyle(minHeight: 50))
+        .padding(.top, 4)
+    }
 
     private var finishTitle: LocalizedStringKey { onFinish == nil ? "Got it" : "Deal the cards" }
 

@@ -48,6 +48,9 @@ struct OnlineSheet: View {
             actions
         }
         .onAppear { store.refreshRank() }
+        // The match-found moment is drawn over the whole app, under this sheet: it goes, so
+        // the moment is seen rather than played out behind it.
+        .onChange(of: store.matchFound?.id) { _, found in if found != nil { dismiss() } }
         .animation(.easeInOut(duration: 0.2), value: mode)
         .animation(.easeInOut(duration: 0.2), value: store.onlineStatus)
         .sheet(isPresented: Binding(get: { friends != nil }, set: { if !$0 { friends = nil } })) {
@@ -55,7 +58,8 @@ struct OnlineSheet: View {
                           invite: { store.inviteRankedDuo() },
                           addFriends: { store.showGameCenterFriends { pickPartner() } },
                           retry: { pickPartner() }) { friend in
-                friends = nil
+                // The picker stays up under Apple's sheet, as it does for "Invite someone
+                // else": a sheet put on one that is closing goes down with it.
                 store.playRankedDuo(with: friend)
             }
             .coversBanner()
@@ -159,7 +163,7 @@ struct OnlineSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .animation(.easeInOut(duration: 0.2), value: store.rankedSolo)
             }
-            Text("If nobody turns up within a few seconds, you can play the house instead, in the same seats. Duo is you and a friend against two of the house, rated together. Only real players are rated, and a league reached is yours for the season. A game against the house counts ten times a day; a game against somebody real always counts.")
+            Text("If nobody turns up within a few seconds, you can play the house instead, in the same seats. Duo is you and a friend: once they accept, it looks for another pair, and after a few seconds you can play two of the house instead. Only real players are rated, and a league reached is yours for the season. A game against the house counts up to \(Ranking.houseGamesPerDay) times a day; a game against somebody real always counts.")
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.onTableSoft)
                 .fixedSize(horizontal: false, vertical: true)

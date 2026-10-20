@@ -5,7 +5,7 @@ import ScopaRewards
 /// Today's deck, as a card on the lobby: the date, and either an invitation or the result.
 ///
 /// Two sizes. The long one is kept for the first visit, when it has something to teach,
-/// and the walk back from a deal just played. Every other visit it is half a row.
+/// and the walk back from a deal just played. Every other visit it is a third of a row.
 struct TodaysDealCard: View {
     @Environment(\.lift) private var lift
     let book: DailyDealBook
@@ -86,19 +86,27 @@ struct TodaysDealCard: View {
     }
 
     /// The next mark on the run, and what it pays.
+    /// Before the first deal ever, what every deal pays instead; the same single line.
     @ViewBuilder private var nextStreakLine: some View {
-        if let next = Streaks.next(after: streak) {
-            let more = next.days - streak
-            Group {
+        let pack = DailyCard.nextPack(after: streak)
+        Group {
+            if book.results.isEmpty {
+                Text("Every deal you finish puts a card in your album")
+            } else if let next = Streaks.next(after: streak), next.days <= pack {
+                let more = next.days - streak
                 if let felt = next.felt {
                     Text("\(more) more days for the \(felt.title) felt")
                 } else {
                     Text("\(more) more days for +\(next.denari.coins) denari")
                 }
+            } else if let tier = DailyCard.pack(onStreak: pack) {
+                Text("\(pack - streak) more days for a \(tier.title) pack")
             }
-            .font(.system(size: 11 * lift, weight: .medium))
-            .foregroundStyle(Palette.onTableSoft)
         }
+        .font(.system(size: 11 * lift, weight: .medium))
+        .foregroundStyle(Palette.onTableSoft)
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
     }
 
     private func celebrate() async {
@@ -179,7 +187,7 @@ struct TodaysDealCard: View {
     /// Not played yet: the coin that plays it, the streak, and the number to beat.
     private var unplayedTile: some View {
         Button(action: play) {
-            GoalTile(title: Text("Today's deal"), tint: Palette.gold.opacity(0.16), interactive: true) {
+            GoalTile(title: Text("Today's deal"), tint: Palette.gold.opacity(0.16)) {
                 ZStack {
                     Circle().fill(Palette.goldSheen)
                     Image(systemName: "play.fill")
@@ -187,7 +195,7 @@ struct TodaysDealCard: View {
                         .foregroundStyle(Palette.ink)
                         .offset(x: 1 * lift)
                 }
-                .frame(width: 30 * lift, height: 30 * lift)
+                .frame(width: 28 * lift, height: 28 * lift)
             } stat: {
                 Streak(days: streak, tight: true)
             } foot: {
@@ -195,7 +203,11 @@ struct TodaysDealCard: View {
                     if let best {
                         Text("\(signed(best.margin)) to beat")
                     } else {
-                        Text("One round, one go")
+                        // The long line where it fits; French and Italian take the short one.
+                        ViewThatFits(in: .horizontal) {
+                            Text("One round, one go")
+                            Text("One go")
+                        }
                     }
                 }
                 .font(.system(size: 11 * lift, weight: .medium))
@@ -212,8 +224,10 @@ struct TodaysDealCard: View {
     private func playedTile(_ result: DailyDealResult) -> some View {
         GoalTile(title: Text("Today's deal")) {
             Text(verbatim: signed(result.margin))
-                .font(.display(26 * lift))
+                .font(.display(24 * lift))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .foregroundStyle(result.won ? AnyShapeStyle(Palette.goldSheen) : AnyShapeStyle(Palette.onTable))
         } stat: {
             Streak(days: streak, tight: true)
@@ -272,7 +286,8 @@ struct TodaysDealCard: View {
                             .monospacedDigit()
                             .foregroundStyle(Palette.onTable)
                             .lineLimit(1)
-                            .fixedSize()
+                            // Shrinks rather than wraps beside a two-figure margin.
+                            .minimumScaleFactor(0.7)
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("\(days) day streak"))
@@ -302,14 +317,13 @@ struct TodaysDealCard: View {
 /// system prompt.
 struct ReminderOffer: View {
     let reminders: Reminders
-    let book: DailyDealBook
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "bell.badge")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Palette.goldLight)
-            Text("A nudge when tomorrow's wheel is ready?")
+            Text("A nudge when the wheel and the deal are waiting?")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Palette.onTable)
                 .fixedSize(horizontal: false, vertical: true)
@@ -317,7 +331,7 @@ struct ReminderOffer: View {
             Button("No") { withAnimation { reminders.decline() } }
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Palette.onTableSoft)
-            Button("Yes") { Task { await reminders.turnOn(book) } }
+            Button("Yes") { Task { await reminders.turnOn() } }
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Palette.goldLight)
         }

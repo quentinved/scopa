@@ -3,7 +3,8 @@ import ScopaCore
 
 /// One suit, drawn the way its style draws it. The flat style keeps the icon's geometry,
 /// the other two follow the southern pattern: rosette coins, bellied cups, short straight
-/// swords and knobbly cudgels, with the woodcut hatching its own.
+/// swords and knobbly cudgels, with the woodcut hatching its own. The painted decks paint
+/// their own and only come here for a mark in one colour, cut like the classica's.
 struct SuitArt: View {
     let style: CardStyle
     let suit: Suit
@@ -52,7 +53,7 @@ struct SuitArt: View {
                 Circle().stroke(ink.opacity(0.55), lineWidth: max(0.8, s * 0.05)).frame(width: s * 0.50)
                 Circle().fill(ink.opacity(0.55)).frame(width: s * 0.14)
             }
-        case .classica:
+        case .classica, .maiolica, .mosaico, .carnevale, .intarsio, .merletto, .tarocchi:
             // A rosette: eight petals around a bezel, the way southern coins are cut.
             ZStack {
                 drawn(Circle(), colour).frame(width: s * 0.88)
@@ -112,7 +113,7 @@ struct SuitArt: View {
                 Rectangle().fill(colour).frame(width: s * 0.11, height: s * 0.16)
                 Capsule().fill(colour).frame(width: s * 0.48, height: s * 0.10)
             }
-        case .classica:
+        case .classica, .maiolica, .mosaico, .carnevale, .intarsio, .merletto, .tarocchi:
             // Round and bellied, with a lid knop on top and a turned foot.
             VStack(spacing: 0) {
                 Circle().fill(accent).frame(width: s * 0.14).offset(y: s * 0.04)
@@ -165,7 +166,7 @@ struct SuitArt: View {
                 Rectangle().fill(colour).frame(width: s * 0.10, height: s * 0.14)
                 Circle().fill(accent).frame(width: s * 0.15)
             }
-        case .classica:
+        case .classica, .maiolica, .mosaico, .carnevale, .intarsio, .merletto, .tarocchi:
             // Short, straight and blunt-shouldered, with a broad guard: the southern sword.
             VStack(spacing: 0) {
                 drawn(SwordBlade(), colour).frame(width: s * 0.30, height: s * 0.48)
@@ -225,7 +226,7 @@ struct SuitArt: View {
                     .offset(x: s * 0.13, y: -s * 0.19)
             }
             .rotationEffect(.degrees(-26))
-        case .classica:
+        case .classica, .maiolica, .mosaico, .carnevale, .intarsio, .merletto, .tarocchi:
             // A knobbly cudgel: thicker at the head, lumpy down the shaft.
             ZStack {
                 drawn(Cudgel(), colour).frame(width: s * 0.34, height: s * 0.94)

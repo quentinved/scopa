@@ -75,8 +75,10 @@ final class AdsStore {
         await consent.gather()
         guard consent.isReady else { return }
         gateway.begin()
-        // The shop may have asked for a rewarded ad before the SDK was up.
-        if wantsReward { gateway.preloadRewarded() }
+        // The shop or a table may have asked before the SDK was up: a game resumed at launch
+        // can end before consent has settled, and its ad would never have been fetched.
+        for slot in wantsReward { gateway.preloadRewarded(slot) }
+        if wantsInterstitial { gateway.preloadInterstitial() }
         #if DEBUG
         if DebugLaunch.showsAdInspector { GoogleAds.presentInspector() }
         #endif
@@ -102,23 +104,27 @@ final class AdsStore {
 
     // MARK: The interruption
 
-    /// Called when a round ends, so the ad is warm by the time the game is. Skipped when the
-    /// pacing will not allow one after this game: a fetched ad that is never shown earns
-    /// nothing and only widens the gap between requests and impressions.
+    /// Called as a table is sat at and whenever a round starts or ends, so the ad is warm by
+    /// the time the game is over, and one that failed or went stale gets another try. Skipped
+    /// in a new player's grace games: a fetched ad that is never shown earns nothing and only
+    /// widens the gap between requests and impressions.
     func prepareForEndOfGame() {
-        guard interrupts, policy.mayAllowInterstitialAfterThisGame() else { return }
+        guard interrupts, policy.allowsInterstitialAfterThisGame else { return }
+        wantsInterstitial = true
         gateway.preloadInterstitial()
     }
 
-    /// A game is over and the player is leaving the table. `AdPolicy` decides whether an
-    /// ad follows.
-    func endOfGame(_ ending: GameEnding) async {
+    /// A table has asked for the full screen ad, so `start()` warms it as soon as the SDK is up.
+    private var wantsInterstitial = false
+
+    /// A game is over and the player is leaving it, for the lobby or the next game. Every
+    /// game is followed by an ad past a new player's first two; the gateway fetches the next
+    /// one as soon as this one is dismissed.
+    func endOfGame() async {
         guard adsAreOn else { return }
         policy.finishedGame()
-        guard !pass.isOwned, policy.allowsInterstitial(after: ending) else { return }
-        // Counted only once the network confirms it appeared, so a failed presentation
-        // does not spend the day's allowance.
-        if await gateway.showInterstitial() { policy.showedInterstitial() }
+        guard !pass.isOwned, policy.allowsInterstitial else { return }
+        await gateway.showInterstitial()
     }
 
     #if DEBUG
@@ -140,16 +146,16 @@ final class AdsStore {
 
     // MARK: The one they choose
 
-    /// Warms the opt-in ad. Called when the shop opens, the only place it is offered.
-    func prepareReward() {
+    /// Warms the opt-in ad for an offer, as the screen that makes it opens.
+    func prepareReward(_ slot: RewardedSlot = .denari) {
         guard adsAreOn else { return }
-        wantsReward = true
-        gateway.preloadRewarded()
+        wantsReward.insert(slot)
+        gateway.preloadRewarded(slot)
     }
 
-    /// The opt-in ad has been asked for once, so `start()` warms it as soon as the SDK is
-    /// up. A game started at launch reaches its summary before consent has settled.
-    private var wantsReward = false
+    /// The offers whose opt-in ad has been asked for, so `start()` warms them as soon as the
+    /// SDK is up. A game started at launch reaches its summary before consent has settled.
+    private var wantsReward: Set<RewardedSlot> = []
 
     /// What one watched ad is worth, at the least.
     var reward: Denari { AdPolicy.reward }
@@ -170,23 +176,23 @@ final class AdsStore {
     /// Shows the opt-in ad and says whether it earned payment. The caller decides the
     /// amount: the shop pays `reward`, the end of a game its earnings again or `reward`,
     /// whichever is more.
-    func watchRewarded() async -> RewardOutcome {
+    func watchRewarded(_ slot: RewardedSlot = .denari) async -> RewardOutcome {
         guard isReady else { return .unavailable }
-        guard await rewardHasLoaded() else { return .unavailable }
-        guard await gateway.showRewarded() else { return .closedEarly }
+        guard await rewardHasLoaded(slot) else { return .unavailable }
+        guard await gateway.showRewarded(slot) else { return .closedEarly }
         policy.watchedReward()
         return .watched
     }
 
     /// Asks for the opt-in ad if none is loaded and waits up to eight seconds for it. AdMob
     /// usually answers in one or two; a request it has nothing for fails sooner still.
-    private func rewardHasLoaded() async -> Bool {
-        gateway.preloadRewarded()
+    private func rewardHasLoaded(_ slot: RewardedSlot) async -> Bool {
+        gateway.preloadRewarded(slot)
         for _ in 0..<32 {
-            if gateway.isRewardedReady { return true }
+            if gateway.isRewardedReady(slot) { return true }
             try? await Task.sleep(for: .milliseconds(250))
         }
-        return gateway.isRewardedReady
+        return gateway.isRewardedReady(slot)
     }
 
     // MARK: Coup de balai

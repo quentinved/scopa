@@ -35,10 +35,9 @@ terminate_quietly() {
 }
 
 # Matched on the device's name, so a UDID works as well as "iPad Pro 13-inch (M5)".
-case "$(xcrun simctl list devices | grep -F "$device" | head -1)" in
-    *iPad*) shopAds=-noAds ;;
-    *)      shopAds=-placeholderAds ;;
-esac
+# The shop sheet carries the banner on both devices since 1.3, so neither may show the
+# stand-in strip in a store shot.
+shopAds=-noAds
 
 # Erased first: a tracking prompt left unanswered by an earlier launch stays queued on
 # the device and will sit in front of every shot, however the app is launched.
@@ -112,9 +111,10 @@ for locale in $languages; do
     rank="-rank 1480 -rankGames 42"
     # Part way down the road and through the album. The album is kept in the defaults, so
     # every shot with the lobby in it is given the same one rather than whatever the shot
-    # before left behind.
+    # before left behind. Merletto, the ninth volume, so the page is one of the new decks
+    # and the tenth still waits locked on the shelf.
     road="-campaignStage 8"
-    album="-volume pergamena -collected 26 -packs 1"
+    album="-volume merletto -collected 26 -packs 1"
     # Ten seconds: at seven the deal is not finished and the shot is of the lobby. Check
     # what landed, and shoot it again if the bot swept first and left a bare cloth.
     # -assist normal: the coach turned on by 2-coach outlives the launch, and would
@@ -133,10 +133,8 @@ for locale in $languages; do
     # $road walks the campaign part way, for the door that leads to it. The quick games
     # shot above leave one saved, which would turn the quick door into a resume door.
     shot 5-lobby   11 -noAds $rank -denari 2000 $road $album -savedGame none
-    # On the phone the shop sheet covers the screen and no ad slot shows, so the drawn
-    # stand-ins are safe. On an iPad the sheet floats over the lobby and the stand-in
-    # banner would show underneath, so that shot takes -noAds instead. Opened on the
-    # cloths, the shelf that changes the whole table.
+    # Opened on the cloths, the shelf that changes the whole table. No ads on either
+    # device: the sheet carries the banner, and a stand-in strip has no place in the store.
     shot 6-shop    16 $shopAds -shop -shelf tapis -denari 2000 $album
     shot 7-rules   13 -noAds -rules
     # Every way to play people you know: the store's "play with friends" frame.
@@ -146,9 +144,11 @@ for locale in $languages; do
     shot 9-campaign 14 -noAds $road -campaign
     # Before the turn, so the gran premio sits at the top where the pointer is.
     shot 10-wheel  12 -noAds $rank -denari 2000 $album -wheelReset -wheel
-    # Two volumes full and a third under way, so the shelf of books along the top shows
+    # Eight volumes full and the ninth under way, so the shelf of books along the top shows
     # gold, a page part filled, and the last one still locked.
-    shot 11-album  12 -noAds $rank -denari 2000 $album -album
+    # Scrolled down to the cards themselves, so the page shows the new volume's drawing,
+    # and further on than the lobby's album so the page is mostly full, a few gaps to go.
+    shot 11-album  15 -noAds $rank -denari 2000 -volume merletto -collected 36 -packs 1 -album -albumEnd
 done
 
 terminate_quietly

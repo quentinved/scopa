@@ -2,34 +2,25 @@ import ScopaCore
 import ScopaRewards
 import SwiftUI
 
-/// The album's volumes along the top of its page, as the books themselves: a cloth cover in
-/// the colours of the deck inside, its number and its name. Tapping one turns to it.
+/// One volume on the album's shelf, as the book itself: a cloth cover in the colours of the
+/// deck inside, its number and its name, and how far in it is.
 ///
 /// A volume not open yet is still on the shelf, dimmed and locked, because the reason to
 /// finish this one is knowing what is behind it.
-struct VolumeShelf: View {
+struct VolumeSpine: View {
     let book: AlbumBook
-    let shown: Volume
-    let turn: (Volume) -> Void
+    let volume: Volume
+    /// It is the volume on the page.
+    let isShown: Bool
+    let width: CGFloat
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            ForEach(Volume.allCases) { volume in
-                Button { turn(volume) } label: { spine(volume) }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .sensoryFeedback(.selection, trigger: shown)
-    }
-
-    private func spine(_ volume: Volume) -> some View {
         let isOpen = volume.isOpen(given: book.album(_:))
         let album = book.album(volume)
-        return VStack(spacing: 6) {
-            VolumeCover(volume: volume, width: volume == shown ? 70 : 62)
+        VStack(spacing: 6) {
+            VolumeCover(volume: volume, width: width)
                 .overlay {
-                    if volume == shown {
+                    if isShown {
                         RoundedRectangle(cornerRadius: 7)
                             .strokeBorder(Palette.goldLight, lineWidth: 2)
                             .padding(-4)
@@ -50,13 +41,12 @@ struct VolumeShelf: View {
             }
             .frame(height: 14)
         }
-        .animation(.spring(duration: 0.35, bounce: 0.3), value: shown)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "\(volume.numeral) · \(volume.title)"))
         .accessibilityValue(isOpen
                             ? Text("\(album.found) of \(Album.size) cards found")
                             : Text("Locked"))
-        .accessibilityAddTraits(volume == shown ? .isSelected : [])
+        .accessibilityAddTraits(isShown ? .isSelected : [])
     }
 }
 
@@ -80,6 +70,8 @@ struct VolumeCover: View {
             VStack(spacing: width * 0.05) {
                 Text(verbatim: volume.numeral)
                     .font(.system(size: width * 0.26, weight: .bold, design: .serif))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                 Text(verbatim: volume.title.uppercased())
                     .font(.system(size: width * 0.095, weight: .heavy))
                     .tracking(width * 0.006)
@@ -87,6 +79,7 @@ struct VolumeCover: View {
                     .minimumScaleFactor(0.5)
                     // Clear of the rule, so PERGAMENA shrinks rather than running into it.
                     .padding(.horizontal, width * 0.05)
+                if volume.holdsBack > 0 { lozenges }
             }
             .foregroundStyle(volume.lettering)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,16 +93,33 @@ struct VolumeCover: View {
         .frame(width: width, height: height)
         .shadow(color: .black.opacity(0.35), radius: width * 0.1, y: width * 0.07)
     }
+
+    /// A printer's lozenge under the name for each step the volume holds its good cards
+    /// back, the way a binder marks a later printing. The page says what they mean.
+    private var lozenges: some View {
+        HStack(spacing: width * 0.04) {
+            ForEach(0..<volume.holdsBack, id: \.self) { _ in
+                Rectangle()
+                    .frame(width: width * 0.05, height: width * 0.05)
+                    .rotationEffect(.degrees(45))
+            }
+        }
+        .frame(height: width * 0.07)
+    }
 }
 
 /// What a volume after the first pays, shown as the thing itself: the card back on a card,
-/// the flourish running, the companion sat there. The first volume has its own case, with
-/// the marks, in `AlbumPrizes`.
+/// the flourish running, the companion sat there, the song on a plate that plays it, the
+/// frame round a badge, the phrases in their bubbles, the cloth under a hand, the lace on a
+/// badge, the icon as the home screen shows it. The first volume has its own case, with the
+/// marks, in `AlbumPrizes`.
 struct VolumePrize: View {
     let volume: Volume
     let album: Album
     /// Whether the volume can be collected yet.
     let isOpen: Bool
+    /// Whose initial a badge prize is previewed wearing.
+    var name = ""
 
     @Environment(\.tableFelt) private var felt
 
@@ -135,10 +145,11 @@ struct VolumePrize: View {
                         .font(.system(size: 12))
                         .foregroundStyle(Palette.onTableSoft)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Plus \(volume.theme.style.title) · \(volume.title) to play with")
+                    Text("Plus \(volume.theme.style.title) · \(volume.theme.skin.title) to play with")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Palette.onTable)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let line = volume.scarcityLine { scarcity(line) }
                     payout(Album.deckBonus, size: 16)
                 }
                 Spacer(minLength: 0)
@@ -176,7 +187,33 @@ struct VolumePrize: View {
             FlourishSwatch(flourish: flourish, felt: felt)
         case .companion(let companion):
             CompanionView(companion: companion, size: 70, mood: .watching, interactive: false)
+        case .song(let song):
+            SongPlate(song: song)
+        case .cornice(let cornice):
+            SeatBadge(name: "", tint: Palette.seat(0), size: 58, cornice: cornice)
+        case .phrases(let pack):
+            PhrasesSwatch(reactions: pack.reactions)
+        case .tapis(let tapis):
+            TapisSwatch(tapis: tapis, felt: felt, height: 104)
+        case .livery(let livery):
+            SeatBadge(name: name, tint: Palette.seat(0), size: 64, livery: livery)
+        case .icon:
+            ViscontiIconArt(size: 76)
+                .shadow(color: .black.opacity(0.35), radius: 8, y: 5)
         }
+    }
+
+    /// That this volume is the harder one to fill, said the way the album says everything
+    /// else: a line, and the cover's lozenges beside it.
+    private func scarcity(_ line: LocalizedStringKey) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 10, weight: .bold))
+            Text(line)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 11.5, weight: .semibold))
+        .foregroundStyle(Palette.goldLight)
     }
 
     /// Won, how far there is still to go, or which volume opens it.
@@ -244,5 +281,25 @@ struct VolumePrize: View {
                 .monospacedDigit()
                 .foregroundStyle(Palette.goldLight)
         }
+    }
+}
+
+/// A set of phrases as they arrive at the table, small enough to stand in for a prize.
+struct PhrasesSwatch: View {
+    let reactions: [Reaction]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach(Array(reactions.enumerated()), id: \.offset) { place, reaction in
+                SaidLine(reaction: reaction, size: 9.5, tint: Palette.cream)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3.5)
+                    .background(Capsule().fill(.black.opacity(0.26)))
+                    .overlay { Capsule().strokeBorder(Palette.gold.opacity(0.3)) }
+                    // Staggered, the way they float up beside the table.
+                    .offset(x: place.isMultiple(of: 2) ? 0 : 8)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

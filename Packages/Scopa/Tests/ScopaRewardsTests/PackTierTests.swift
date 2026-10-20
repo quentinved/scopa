@@ -71,16 +71,14 @@ import ScopaCore
         }
     }
 
-    /// The shop's packs are priced off what they promise, so opening one and getting
-    /// exactly the floor is breaking even rather than being taken. What is paid for is the
-    /// chance of better; what is given up is the choosing.
-    @Test func aShopPackCostsAboutWhatItPromises() {
+    /// The shop's packs are priced off what they promise: since 1.4 about twice it, once
+    /// denari came far more freely. Never more than double, never under half again.
+    @Test func aShopPackCostsAboutTwiceWhatItPromises() {
         for tier in PackTier.on(.shop) {
             guard let price = tier.price else { continue }
             let floor = Grade.denari(for: tier.floorGrade) * tier.cosmetics
-            #expect(price <= floor)
-            // And not a giveaway: never less than three-quarters of it.
-            #expect(price.coins * 4 >= floor.coins * 3)
+            #expect(price.coins <= floor.coins * 2)
+            #expect(price.coins * 2 >= floor.coins * 3)
         }
     }
 
@@ -212,6 +210,45 @@ import ScopaCore
             let printed = Pack.packChance(ofAtLeast: .settebello, in: tier)
             #expect(abs(measured - printed) < 0.02)
         }
+    }
+
+    /// The preview prints one line per rarity, exactly that rarity, promise kept. These
+    /// are the packs it describes.
+    @Test func thePreviewsOddsPerRarityAreTheOnesYouLiveWith() {
+        var generator = SeededGenerator(seed: 20_261_017)
+        let packs = 6_000
+        for tier in PackTier.on(.album) {
+            let drawn = (0..<packs).map { _ in Pack.draw(tier, using: &generator) }
+            for rarity in Rarity.allCases {
+                let hits = drawn.count { $0.cards.contains { $0.rarity == rarity } }
+                let measured = Double(hits) / Double(packs)
+                #expect(abs(measured - Pack.packChance(of: rarity, in: tier)) < 0.02)
+            }
+            // Nothing beats the settebello, so "exactly" and "or better" are one figure.
+            #expect(abs(Pack.packChance(of: .settebello, in: tier)
+                        - Pack.packChance(ofAtLeast: .settebello, in: tier)) < 1e-9)
+        }
+    }
+
+    /// A card not found yet prints its own odds in every pack. These are the packs it means,
+    /// in a later volume too, where the good cards are held back harder.
+    @Test func aMissingCardsOddsAreTheOnesYouLiveWith() {
+        var generator = SeededGenerator(seed: 20_261_018)
+        let packs = 20_000
+        let cards = [Card(.two, of: .cups), Card(.king, of: .swords), Card(.seven, of: .clubs), .settebello]
+        for volume in [Volume.riviera, .tarocchi] {
+            for tier in PackTier.on(.album) {
+                let drawn = (0..<packs).map { _ in Pack.draw(tier, volume: volume, using: &generator) }
+                for card in cards {
+                    let measured = Double(drawn.count { $0.cards.contains(card) }) / Double(packs)
+                    let printed = Pack.packChance(finding: card, in: tier, volume: volume)
+                    #expect(abs(measured - printed) < max(0.006, printed * 0.12))
+                }
+            }
+        }
+        // The one settebello is its whole rarity, so its odds are the rarity's.
+        #expect(abs(Pack.packChance(finding: .settebello, in: .velluto)
+                    - Pack.packChance(of: Rarity.settebello, in: .velluto)) < 1e-9)
     }
 
     // MARK: Grades

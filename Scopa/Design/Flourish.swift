@@ -179,10 +179,11 @@ struct FlourishView: View {
 }
 
 extension EnvironmentValues {
-    /// The shortest gap between a flourish's frames. Nil is the display's own rate, which
-    /// the table's sweep gets; a swatch looping in the shop asks for thirty a second, since
-    /// five of them playing on and on at the full rate were most of what the shop cost.
-    @Entry var flourishFrameGap: TimeInterval? = nil
+    /// The shortest gap between a flourish's frames. The table's sweep gets sixty a second,
+    /// which is all anybody sees of it on a ProMotion screen; a swatch looping in the shop
+    /// asks for thirty, since five of them playing on and on at the full rate were most of
+    /// what the shop cost.
+    @Entry var flourishFrameGap: TimeInterval? = 1.0 / 60.0
 }
 
 /// The three flourishes made of motes, painted on one clock.
@@ -210,6 +211,9 @@ private struct Motes: View {
                 if kind == .coin { DenariMark(size: CoinFountain.drawn).tag(CoinFountain.symbol) }
             }
         }
+        // On the GPU: on the CPU a canvas the size of the screen is a fresh bitmap to
+        // upload every frame, on top of the band's own broom. See `SweepStroke`.
+        .drawingGroup()
         // Stops the clock once everything has gone, so a banner that lingers costs nothing.
         .task {
             try? await Task.sleep(for: .seconds(FlourishView.length + 0.1))
@@ -465,6 +469,8 @@ private struct Aureola: View {
                 paint(&context, size: size, phase: phase)
             }
         }
+        // Flattened on the GPU first, so the light still adds onto the cloth under it.
+        .drawingGroup()
         .blendMode(.plusLighter)
         // Stops the clock once it has all faded, so a banner that lingers costs nothing.
         .task {

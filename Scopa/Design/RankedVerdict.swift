@@ -24,14 +24,16 @@ struct RankedVerdict: View {
         var streak: Int = 0
         /// A game against the house, part of the run unless the day's ration was spent.
         var isHouse = false
+        /// A loss whose run a video carried on. See `KeepRunCard`.
+        var wasSaved = false
 
         var change: Int { after - before }
         /// A run worth saying out loud: the second win of one is where it starts paying.
         var isOnARun: Bool { won && streak >= 2 && !keepsRun }
-        /// A run a house game past the ration left alone, said so that a win is not read as
-        /// the run growing, nor a loss as the run lost. Read off the result: a counted house
+        /// A run a house game past the ration left alone, or a video carried past a loss, said
+        /// so that a win is not read as the run growing, nor a loss as the run lost. Read off the result: a counted house
         /// win always pays and a counted house loss always ends the run.
-        var keepsRun: Bool { isHouse && streak > 0 && (!won || change == 0) }
+        var keepsRun: Bool { (isHouse || wasSaved) && streak > 0 && (!won || change == 0) }
         /// A loss the floor swallowed.
         var isHeld: Bool { !won && change == 0 }
     }

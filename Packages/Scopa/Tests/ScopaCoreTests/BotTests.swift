@@ -399,6 +399,26 @@ private func duplicate(_ a: BotLevel, _ b: BotLevel, deals: Int) -> (a: Int, b: 
         #expect(maestro.follows < BotLevel.hard.strength.follows)
     }
 
+    /// Diamond is where players were losing round after round; it now plays about the way
+    /// Platinum did, and still harder than anything below it.
+    @Test func diamondPlaysTheWayPlatinumUsedTo() {
+        let diamondOne = BotStrength.house(atStep: BotStrength.houseSearchesFrom - 1)
+        #expect(!diamondOne.searches)
+        #expect(abs(diamondOne.follows - 0.80) < 0.001)
+        #expect(BotStrength.house(atStep: 5) == BotStrength(searches: false, follows: 0.5 + 0.45 * 5 / 17))
+    }
+
+    /// A bad run gets a kinder table, three notches at most, and a win puts it back.
+    @Test func aLosingRunGetsAKinderHouse() {
+        let step = 14
+        let calm = BotStrength.house(atStep: step)
+        #expect(BotStrength.house(atStep: step, losing: 0) == calm)
+        #expect(BotStrength.house(atStep: step, losing: 1).follows < calm.follows)
+        #expect(BotStrength.house(atStep: step, losing: 3).follows < BotStrength.house(atStep: step, losing: 2).follows)
+        #expect(BotStrength.house(atStep: step, losing: 9) == BotStrength.house(atStep: step, losing: 3))
+        #expect(BotStrength.house(atStep: 0, losing: 3).follows > 0)
+    }
+
     /// Unranked and the bottom of Bronze are the same opponent: a phone that has never
     /// played a ranked game is not owed the hardest bot in the app.
     @Test func theRampIsClampedAtBothEnds() {
@@ -413,6 +433,23 @@ private func duplicate(_ a: BotLevel, _ b: BotLevel, deals: Int) -> (a: Int, b: 
     /// it was played, so a handful of them is mostly the shuffle even played from both
     /// sides, and the whole ramp is only worth about a point a round. Twelve is where that
     /// stops being noise, and the search is by a distance the slowest thing in this package.
+    /// A league up beats the league below it on the same cards, from the bottom of the ladder
+    /// to Gold, the middle division of each against the middle of the one under it. This is
+    /// where the house's ramp bites hardest: each of these is worth near a point every two rounds.
+    @Test(arguments: [(4, 1), (7, 4)])
+    func aLeagueUpOutplaysTheLeagueBelow(_ steps: (up: Int, below: Int)) {
+        let points = duplicate(BotStrength.house(atStep: steps.up), BotStrength.house(atStep: steps.below), deals: 24)
+        #expect(points.a >= points.b + 25, "step \(steps.up) \(points.a) – \(points.b) step \(steps.below) over 48 rounds")
+    }
+
+    /// Above Gold the weighing bot gains less for every point of `follows`, so a league's worth
+    /// is under the noise of a few dozen rounds (Diamond II against Platinum II came out level
+    /// over 96). Two leagues apart, over 192 rounds, it still shows: Diamond above Gold.
+    @Test func diamondOutplaysGoldOnTheSameCards() {
+        let points = duplicate(BotStrength.house(atStep: 13), BotStrength.house(atStep: 7), deals: 96)
+        #expect(points.a >= points.b + 30, "Diamond II \(points.a) – \(points.b) Gold II over 192 rounds")
+    }
+
     @Test func theTopOfTheLadderOutplaysTheBottomOnTheSameCards() {
         let points = duplicate(BotStrength.house(atStep: BotStrength.topStep),
                                BotStrength.house(atStep: 0), deals: 12)

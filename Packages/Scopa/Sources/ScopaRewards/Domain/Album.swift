@@ -123,13 +123,17 @@ public struct Pack: Hashable, Sendable, Codable {
     /// The card that keeps a promise is capped at `Rarity.guaranteed`, so making good on
     /// "a seven or better" cannot quietly be the way the settebello is handed out. See
     /// that constant for why the uncapped version was so much more generous than it read.
-    public static func draw(_ tier: PackTier = .mazzetto,
+    ///
+    /// `volume` is the one the pack goes into: a later volume holds its good cards back
+    /// harder, by its `scarcity`.
+    public static func draw(_ tier: PackTier = .mazzetto, volume: Volume = .riviera,
                             using generator: inout some RandomNumberGenerator) -> Pack {
-        var cards = (0..<tier.cards).map { _ in drawOne(luck: tier.luck, using: &generator) }
+        let luck = luck(tier, volume)
+        var cards = (0..<tier.cards).map { _ in drawOne(luck: luck, using: &generator) }
         if let floor = tier.floorCard, !cards.contains(where: { $0.rarity >= floor }) {
             let weakest = cards.indices.min { cards[$0].rarity < cards[$1].rarity } ?? 0
             cards[weakest] = drawOne(atLeast: floor, atMost: Rarity.guaranteed,
-                                     luck: tier.luck, using: &generator)
+                                     luck: luck, using: &generator)
         }
         let cosmetics = (0..<tier.cosmetics).map { _ in
             Grade.draw(atLeast: tier.floorGrade, using: &generator)
@@ -168,10 +172,19 @@ public struct Pack: Hashable, Sendable, Codable {
     /// What share of the cards in a pack of this tier come up at the given rarity, before
     /// the guarantee is applied. The shop and the album print these rather than describing
     /// the odds in words, because a number is the only description of odds worth trusting.
-    public static func chance(of rarity: Rarity, in tier: PackTier) -> Double {
-        let deck = Deck.standard
+    public static func chance(of rarity: Rarity, in tier: PackTier, volume: Volume = .riviera) -> Double {
+        share(of: rarity, among: Deck.standard, luck: luck(tier, volume))
+    }
+
+    /// The thumb on the scale for everything above a numeral: the tier's, less the volume's.
+    static func luck(_ tier: PackTier, _ volume: Volume) -> Double {
+        tier.luck / volume.scarcity
+    }
+
+    /// What share of a draw from these cards comes up at the given rarity.
+    private static func share(of rarity: Rarity, among deck: [Card], luck: Double) -> Double {
         func weight(_ card: Card) -> Double {
-            card.rarity == .plain ? card.rarity.weight : card.rarity.weight * tier.luck
+            card.rarity == .plain ? card.rarity.weight : card.rarity.weight * luck
         }
         let total = deck.reduce(0.0) { $0 + weight($1) }
         guard total > 0 else { return 0 }
@@ -184,11 +197,67 @@ public struct Pack: Hashable, Sendable, Codable {
     /// makes rather than "exactly a court".
     ///
     /// A tier that guarantees this rarity answers 1, because it does.
-    public static func packChance(ofAtLeast rarity: Rarity, in tier: PackTier) -> Double {
+    public static func packChance(ofAtLeast rarity: Rarity, in tier: PackTier,
+                                  volume: Volume = .riviera) -> Double {
         if let floor = tier.floorCard, floor >= rarity { return 1 }
         let hit = Rarity.allCases.filter { $0 >= rarity }
-            .reduce(0.0) { $0 + chance(of: $1, in: tier) }
+            .reduce(0.0) { $0 + chance(of: $1, in: tier, volume: volume) }
         return 1 - pow(1 - hit, Double(tier.cards))
+    }
+
+    /// The odds of at least one card of exactly this rarity in a pack, promise kept. The
+    /// pack preview prints one per rarity, so "a court" there means a court and not
+    /// "a court or better".
+    public static func packChance(of rarity: Rarity, in tier: PackTier,
+                                  volume: Volume = .riviera) -> Double {
+        outcomes(in: tier, volume: volume).filter { $0.0.contains(rarity) }.reduce(0.0) { $0 + $1.1 }
+    }
+
+    /// The odds of this very card somewhere in a pack, promise kept. Cards of one rarity
+    /// weigh the same, in the draw and in the swap, so each slot of its rarity is one try
+    /// at it among that many alike. The album prints this under a card not found yet.
+    public static func packChance(finding card: Card, in tier: PackTier, volume: Volume = .riviera) -> Double {
+        let rarity = card.rarity
+        let alike = Double(Deck.standard.count { $0.rarity == rarity })
+        return outcomes(in: tier, volume: volume).reduce(0.0) { sum, outcome in
+            let tries = Double(outcome.0.count { $0 == rarity })
+            return sum + outcome.1 * (1 - pow(1 - 1 / alike, tries))
+        }
+    }
+
+    /// What share of a pack's cards come up at the given rarity once its promise is kept: the
+    /// draw's own odds with the swap counted in. Oro reads it to keep its gold in order.
+    public static func keptChance(of rarity: Rarity, in tier: PackTier, volume: Volume = .riviera) -> Double {
+        guard tier.cards > 0 else { return 0 }
+        let expected = outcomes(in: tier, volume: volume)
+            .reduce(0.0) { $0 + $1.1 * Double($1.0.count { $0 == rarity }) }
+        return expected / Double(tier.cards)
+    }
+
+    /// Every way a pack's rarities can fall, promise kept, with the chance of each. Walked
+    /// rather than worked out by formula, four to the fifth at most, so the swap that keeps a
+    /// promise is the same swap `draw` makes and the two cannot drift apart.
+    private static func outcomes(in tier: PackTier, volume: Volume) -> [([Rarity], Double)] {
+        let odds = Rarity.allCases.map { ($0, chance(of: $0, in: tier, volume: volume)) }
+        let runs = (0..<tier.cards).reduce([([Rarity](), 1.0)]) { runs, _ in
+            runs.flatMap { run, chance in odds.map { (run + [$0.0], chance * $0.1) } }
+        }
+        let luck = luck(tier, volume)
+        return runs.flatMap { run, chance in kept(run, in: tier, luck: luck).map { ($0.0, chance * $0.1) } }
+    }
+
+    /// A drawn run of rarities once the tier's promise is kept: as it was, or with its
+    /// weakest swapped for each rarity the promise can pay in, with the chance of each.
+    private static func kept(_ drawn: [Rarity], in tier: PackTier, luck: Double) -> [([Rarity], Double)] {
+        guard let floor = tier.floorCard, !drawn.contains(where: { $0 >= floor }),
+              let weakest = drawn.indices.min(by: { drawn[$0] < drawn[$1] }) else { return [(drawn, 1)] }
+        let top = max(Rarity.guaranteed, floor)
+        let deck = Deck.standard.filter { $0.rarity >= floor && $0.rarity <= top }
+        return Rarity.allCases.filter { $0 >= floor && $0 <= top }.map { swap in
+            var run = drawn
+            run[weakest] = swap
+            return (run, share(of: swap, among: deck, luck: luck))
+        }
     }
 }
 

@@ -130,7 +130,7 @@ struct PackArt: View {
     }
 
     private var glintSweep: some View {
-        AmbientClock { time in
+        AmbientClock(period: 3.1) { time in
             sheen.offset(x: Self.glint(at: time) * width * 1.5)
         }
         .allowsHitTesting(false)
@@ -151,7 +151,7 @@ struct PackArt: View {
     /// The rays behind the dear packs, the same wheel a sovereign seat mark wears.
     private var rays: some View {
         RarityBurst(count: PackLook.rays(tier),
-                    tint: PackLook.accent(tier), size: width * 1.6)
+                    tint: PackLook.accent(tier), size: width * 1.6, turns: alive)
             .opacity(0.55)
     }
 

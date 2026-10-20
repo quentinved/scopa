@@ -247,6 +247,63 @@ private func playGame(seats: Int, seed: UInt64, choose: (GameState) -> Move) asy
     }
 }
 
+@Suite struct Rereading {
+    /// Every seat lays whenever it can, which leaves lessons for the second look to price.
+    private func carelessGame() async throws -> GameRecord {
+        let session = try await playGame(seats: 2, seed: 8) { state in
+            let round = state.round!
+            let hand = round.hands[round.turnSeat]
+            if let lay = hand.first(where: { Rules.captureOptions(for: $0, on: round.table).isEmpty }) {
+                return Move(seat: round.turnSeat, card: lay)
+            }
+            let card = hand[0]
+            let take = Rules.captureOptions(for: card, on: round.table).min { $0.count < $1.count }!
+            return Move(seat: round.turnSeat, card: card, captures: take)
+        }
+        return await session.record
+    }
+
+    private func firstRounds(_ count: Int, of record: GameRecord) -> GameRecord {
+        GameRecord(configuration: record.configuration, dealerSeat: record.dealerSeat,
+                   rounds: Array(record.rounds.prefix(count)))
+    }
+
+    /// Leaving the bots out changes nothing about the person's own verdicts.
+    @Test func oneSeatReadsAsItDoesInTheWholeReview() async throws {
+        let record = try await carelessGame()
+        let mine = Reviewer.review(record, seats: [0])
+        #expect(mine.moves.allSatisfy { $0.seat == 0 })
+        #expect(mine.moves == Reviewer.review(record).moves(forSeat: 0))
+    }
+
+    /// Read a round at a time, the game comes out as if read once at the end: the same moves,
+    /// and every round kept as it was first judged.
+    @Test func roundsAlreadyReadAreKept() async throws {
+        let record = try await carelessGame()
+        #expect(record.rounds.count > 2, "the game has to run past two rounds for this to mean anything")
+        var review: GameReview?
+        for count in 1...record.rounds.count {
+            let next = Reviewer.review(firstRounds(count, of: record), seats: [0], after: review)
+            if let review { #expect(Array(next.moves.prefix(review.moves.count)) == review.moves) }
+            review = next
+        }
+        let once = Reviewer.review(record, seats: [0])
+        #expect(review?.moves.map(\.id) == once.moves.map(\.id))
+        #expect(review?.moves.map(\.move) == once.moves.map(\.move))
+    }
+
+    /// Another game at the same table starts from nothing, whatever was read before it.
+    @Test func anotherGameIsReadFromTheStart() async throws {
+        let record = try await carelessGame()
+        let other = await (try playGame(seats: 2, seed: 12) { Rules.automaticMove(in: $0)! }).record
+        let earlier = Reviewer.review(firstRounds(1, of: record), seats: [0])
+        #expect(Reviewer.review(other, seats: [0], after: earlier).moves == Reviewer.review(other, seats: [0]).moves)
+        // Nor is a review from other seats carried over.
+        let theirs = Reviewer.review(firstRounds(1, of: record), seats: [1])
+        #expect(Reviewer.review(record, seats: [0], after: theirs).moves == Reviewer.review(record, seats: [0]).moves)
+    }
+}
+
 @Suite struct DailyDeals {
     @Test func theSameDayDealsTheSameDeck() {
         var a = DailyDeal.generator(for: "2026-09-08")

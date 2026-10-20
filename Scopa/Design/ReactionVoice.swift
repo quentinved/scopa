@@ -26,6 +26,10 @@ extension Reaction {
         case .taught: "Nonna taught me."
         case .patience: "Patience."
         case .told: "I told you so."
+        case .masked: "Who, me?"
+        case .carnival: "It's Carnevale!"
+        case .unmasked: "Unmasked!"
+        case .confetti: "Confetti for you."
         }
     }
 }

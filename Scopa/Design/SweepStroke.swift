@@ -5,6 +5,10 @@ import SwiftUI
 ///
 /// It runs with the scopa band, which enters from the same side, so the band reads as
 /// having been swept in. Painted on one clock that stops when the last mote is out.
+///
+/// Drawn on the GPU at sixty a second at most. On the CPU a canvas the size of the screen
+/// is a fresh bitmap to upload every frame, and at a ProMotion rate that, under the band
+/// sliding in, was the scopa stuttering.
 struct SweepStroke: View {
     /// Your own sweep gets the full broom; anyone else's is thinner and paler.
     var mine: Bool
@@ -26,7 +30,7 @@ struct SweepStroke: View {
 
     var body: some View {
         if !reduceMotion {
-            TimelineView(.animation(paused: isDone)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: isDone)) { timeline in
                 let age = CGFloat(timeline.date.timeIntervalSince(start))
                 Canvas { context, size in
                     guard age < CGFloat(Self.length) else { return }
@@ -35,6 +39,7 @@ struct SweepStroke: View {
                     paintDust(&context, size: size, age: age)
                 }
             }
+            .drawingGroup()
             .allowsHitTesting(false)
             .task {
                 try? await Task.sleep(for: .seconds(Self.length + 0.05))

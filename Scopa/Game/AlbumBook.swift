@@ -46,6 +46,12 @@ final class AlbumBook {
     /// Written down as "velluto,velluto" rather than as an array so it travels between
     /// devices as one plain preference, the latest word like `waiting` beside it.
     private(set) var gifts: [PackTier]
+    /// The gold album's foils, kept beside the volumes. See `AlbumBook+Oro`.
+    var oro = Album() { didSet { Self.store(oro, in: defaults) } }
+    /// The pearl album's, which take over once Oro is full.
+    var perla = Album() { didSet { Self.store(perla, as: .perla, in: defaults) } }
+    /// Cards given away, as the ledger has them. See `AlbumBook+Departures`.
+    var departures = Departures()
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -54,6 +60,8 @@ final class AlbumBook {
         self.games = defaults.integer(forKey: Key.games)
         self.unannounced = defaults.integer(forKey: Key.announced)
         self.gifts = Self.gifts(in: defaults)
+        self.oro = Self.oro(in: defaults)
+        self.perla = Self.foils(.perla, in: defaults)
     }
 
     // MARK: Volumes
@@ -118,6 +126,8 @@ final class AlbumBook {
         games = defaults.integer(forKey: Key.games)
         unannounced = defaults.integer(forKey: Key.announced)
         gifts = Self.gifts(in: defaults)
+        oro = Self.oro(in: defaults)
+        perla = Self.foils(.perla, in: defaults)
     }
 
     // MARK: The two shelves
@@ -229,16 +239,13 @@ final class AlbumBook {
     /// drawn without it would hand over a felt somebody already has.
     private func open(tier: PackTier, owned: Set<ShopItem.ID>) -> Opening {
         var generator = SystemRandomNumberGenerator()
-        var pack = Pack.draw(tier, using: &generator)
+        // Drawn at the odds of the volume it is going into, which `fold` then fills.
+        var pack = Pack.draw(tier, volume: openVolume, using: &generator)
         if let rigged = DebugLaunch.packCards {
             pack = Pack(cards: rigged, tier: tier, cosmetics: pack.cosmetics)
         }
-        let volume = openVolume
-        var collected = album(volume)
-        let opened = collected.open(pack)
-        albums[volume] = collected
-        store(volume)
-        let (suits, deck) = settle(opened, in: volume)
+        let gilt = gild(&pack)
+        let (volume, found, suits, deck) = fold(pack)
 
         var taken: Set<ShopItem.ID> = []
         var won: [Won] = []
@@ -258,10 +265,31 @@ final class AlbumBook {
         }
         if let finale = DebugLaunch.packFinale {
             let suit = Suit.allCases.first { "\($0)" == finale }
-            return Opening(volume: volume, tier: tier, found: opened.found,
-                           suits: suit.map { [$0] } ?? [], deck: finale == "deck", won: won)
+            return Opening(volume: volume, tier: tier, found: found,
+                           suits: suit.map { [$0] } ?? [], deck: finale == "deck", won: won, gilt: gilt)
         }
-        return Opening(volume: volume, tier: tier, found: opened.found, suits: suits, deck: deck, won: won)
+        return Opening(volume: volume, tier: tier, found: found, suits: suits, deck: deck, won: won, gilt: gilt)
+    }
+
+    /// One card handed over on its own, by today's deal: into the open volume like a pack's,
+    /// with the odds it was drawn at standing in for the tier. Only a drawn card may come out
+    /// foil: one traded or given never does, or trading would be a way to farm Oro.
+    func openCard(_ card: Card, odds tier: PackTier, drawn: Bool = false) -> Opening {
+        var pack = Pack(cards: [card], tier: tier)
+        let gilt = drawn ? gild(&pack) : Gilt()
+        let (volume, found, suits, deck) = fold(pack)
+        return Opening(volume: volume, tier: tier, found: found, suits: suits, deck: deck, won: [], gilt: gilt)
+    }
+
+    /// Puts a pack's cards in the open volume and writes it down, with the bonuses it earned.
+    private func fold(_ pack: Pack) -> (Volume, [Album.Found], [Suit], Bool) {
+        let volume = openVolume
+        var collected = album(volume)
+        let opened = collected.open(pack)
+        albums[volume] = collected
+        store(volume)
+        let (suits, deck) = settle(opened, in: volume)
+        return (volume, opened.found, suits, deck)
     }
 
     /// Which of the bonuses an opening finished have not been paid before, written down as
@@ -314,6 +342,8 @@ final class AlbumBook {
         let deck: Bool
         /// What came off the shelves with it. Empty for the cheap tiers.
         let won: [Won]
+        /// What its foils did in Oro. Empty when none came out foil.
+        var gilt = Gilt()
 
         var cards: [Card] { found.map(\.card) }
         /// The best card in it, which is the one the pack is remembered by.
@@ -329,6 +359,7 @@ final class AlbumBook {
                 + Album.suitBonus * suits.count
                 + (deck ? Album.deckBonus : .zero)
                 + won.reduce(.zero) { $0 + $1.denari }
+                + gilt.denari
         }
 
         /// What names it in the ledger, so a grant retried pays once — and so two packs

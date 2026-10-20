@@ -75,6 +75,8 @@ struct WonItemCard: View {
             }
         case .cardTheme, .cardSkin:
             deckPreview
+        case .cardEdge:
+            CardView(card: .settebello, width: 68).environment(\.cardEdge, CardEdge.of(item.id) ?? .oro)
         case .flourish:
             if let flourish = Cosmetics.flourish(of: item.id) {
                 FlourishSwatch(flourish: flourish, felt: .riviera)

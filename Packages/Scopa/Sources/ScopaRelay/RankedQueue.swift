@@ -3,6 +3,9 @@ import ScopaCore
 
 /// The ranked queue on the Worker: one line for every ranked search, paired as soon as two
 /// players are in it, and seated at a room both phones join. See `Server/src/queue.ts`.
+///
+/// A duo searches as one: the inviting phone seeks with its teammate named, and the teammate's
+/// phone follows that search. Pairs only meet pairs, at a room for four.
 public struct RankedQueue: Sendable {
     public let baseURL: URL
 
@@ -15,28 +18,46 @@ public struct RankedQueue: Sendable {
         public let code: String
         /// The player id that deals.
         public let host: String
-        /// "1v1" or "2v2": the host's choice, which both phones play.
+        /// "1v1", "2v2" or "duo": the host's choice, which both phones play.
         public let format: String
         public let opponent: String
+        /// A duo's whole other side, their leader first. Nil for a solo pairing.
+        public let opponents: [String]?
     }
 
     public struct Answer: Sendable, Hashable, Decodable {
-        /// Other players waiting right now.
+        /// Others waiting who could be paired with this search: pairs for a duo.
         public let searching: Int
         public let pairing: Pairing?
+        /// For a follow: whether the leader is in the line with this phone. Nil for a seek.
+        public let inLine: Bool?
     }
 
     /// One poll. The app asks again about every 1.5 s while it searches. `search` is the same
     /// for every poll of one search, so a new search never inherits the last one's pairing.
-    public func seek(as player: Player, format: String, search: String) async throws -> Answer {
+    /// A duo's leader names its `teammate`, whose phone then follows this search.
+    public func seek(as player: Player, format: String, search: String, teammate: Player? = nil) async throws -> Answer {
         struct Body: Encodable {
             let player: String
             let name: String
             let format: String
             let search: String
+            let teammate: String?
+            let teammateName: String?
         }
         return try await post("v1/ranked/queue", Body(player: player.id.rawValue, name: player.name, format: format,
-                                                      search: search))
+                                                      search: search, teammate: teammate?.id.rawValue,
+                                                      teammateName: teammate?.name))
+    }
+
+    /// One poll from a duo's second phone: its leader's search, and the pairing once the leader
+    /// has heard of it. This phone is never in the line itself.
+    public func follow(as player: Player, leader: PlayerID) async throws -> Answer {
+        struct Body: Encodable {
+            let player: String
+            let leader: String
+        }
+        return try await post("v1/ranked/queue/follow", Body(player: player.id.rawValue, leader: leader.rawValue))
     }
 
     /// Takes the player out of the line. Best effort: a phone that stops asking drops out anyway.

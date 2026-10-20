@@ -27,6 +27,7 @@ enum DebugLaunch {
 
     /// `-waiting` opens the waiting room. Pair it with `-bots 2` for chairs the host has
     /// filled, `-invited` for a table of invited friends, or `-room` for a real table.
+    /// `-bots 3 -teams` seats a table of four already paired off.
     static var showsWaitingRoom: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains("-waiting")
@@ -45,6 +46,16 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-keepRun 4` opens the offer to carry on a run of four after a ranked loss.
+    static var keepRun: Int? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-keepRun").map { Int(arguments[safe: $0 + 1] ?? "") ?? 4 }
+        #else
+        nil
+        #endif
+    }
+
     /// `-verdict end` opens that sheet scrolled to its foot, where the runs and the house are.
     static var verdictOpensAtEnd: Bool {
         #if DEBUG
@@ -52,6 +63,18 @@ enum DebugLaunch {
         return arguments.firstIndex(of: "-verdict").flatMap { arguments[safe: $0 + 1] } == "end"
         #else
         false
+        #endif
+    }
+
+    /// `-deckDraft maiolica [2]` opens a deck still being drawn instead of the game.
+    static var deckDraft: (draft: DeckDraft, page: Int)? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-deckDraft"),
+              let draft = arguments[safe: index + 1].flatMap(DeckDraft.init(rawValue:)) else { return nil }
+        return (draft, arguments[safe: index + 2].flatMap(Int.init) ?? 1)
+        #else
+        nil
         #endif
     }
 
@@ -148,7 +171,7 @@ enum DebugLaunch {
     /// `-settings` opens the settings sheet.
     static var showsSettings: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-settings")
+        ProcessInfo.processInfo.arguments.contains("-settings") || showsIcons
         #else
         false
         #endif
@@ -230,6 +253,19 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-matchFound Giulia` plays the moment a search finds somebody, against that name, every
+    /// few seconds over whatever is on screen. `-matchFound Giulia,Marco` finds two,
+    /// `-matchFound house` the house heads-up and `-matchFound house,2` two of it across a duo.
+    static var matchFoundNames: [String]? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-matchFound") else { return nil }
+        return arguments[safe: index + 1]?.split(separator: ",").map(String.init)
+        #else
+        nil
+        #endif
+    }
+
     /// `-season` opens the season's ranked board over the ranked sheet, filled with a sample
     /// board rather than the Worker's, so it can be judged with nobody on the ladder.
     static var showsSeasonBoard: Bool {
@@ -301,8 +337,21 @@ enum DebugLaunch {
     static var showsShop: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains("-shop") || promoCode != nil || shelf != nil || confirmsPurchase
+            || shopTour != nil || showsDenariSheet || showsPatron
         #else
         false
+        #endif
+    }
+
+    /// `-shopTour 20` opens the shop, waits that many seconds, then scrolls it up and down
+    /// through its sections until it closes, so scrolling can be profiled without a finger.
+    static var shopTour: Int? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-shopTour") else { return nil }
+        return Int(arguments[safe: index + 1] ?? "") ?? 0
+        #else
+        nil
         #endif
     }
 
@@ -326,7 +375,8 @@ enum DebugLaunch {
     }
 
     /// `-promoCode` opens the shop at its foot with the code panel up. `-promoCode row` leaves
-    /// the panel down, to see the row it opens from; `-promoCode paid` shows a sample reward.
+    /// the panel down, to see the row it opens from; `-promoCode paid` shows a sample reward,
+    /// and `-promoCode scatouch` the god mode's answer, switching nothing on.
     static var promoCode: String? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -361,8 +411,19 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-sweep -holdSweep` plays the sweep once and leaves the band up, so a screenshot can
+    /// catch it at its height.
+    static var holdsSweep: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-holdSweep")
+        #else
+        false
+        #endif
+    }
+
     /// `-highlight settebello` puts that plate on the cloth every few seconds, as `-sweep`
-    /// does the band. Also `reBello`, `napola` and `asso`.
+    /// does the band. Also `reBello`, `napola` and `asso`. With `-sweep` it rides above the
+    /// band, as on a sweep that took it.
     static var highlight: TableHighlight? {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
@@ -483,10 +544,21 @@ enum DebugLaunch {
     }
 
     /// `-adFree` plays as though the no-ads pass had been bought: no strip and no
-    /// interruption, but the opt-in video is still offered. Nothing is written down.
+    /// interruption, but the opt-in video is still offered. Nothing is written down, though
+    /// the pass's gift is paid into the ledger as for a real owner. `-patron` implies it.
     static var ownsAdFree: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-adFree")
+        ProcessInfo.processInfo.arguments.contains("-adFree") || showsPatron
+        #else
+        false
+        #endif
+    }
+
+    /// `-denariSheet` opens the shop on the bags of denari, priced in sample euros when the
+    /// App Store has not answered, which on a simulator launched outside Xcode it never does.
+    static var showsDenariSheet: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-denariSheet")
         #else
         false
         #endif
@@ -508,6 +580,37 @@ enum DebugLaunch {
         ProcessInfo.processInfo.arguments.contains("-noGameCenter")
         #else
         false
+        #endif
+    }
+
+    /// `-name "Massimiliano Bartolomeo"` sits down under that name for this launch only, so a
+    /// long one can be laid out. Nothing is saved.
+    static var playerName: String? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-name").flatMap { arguments[safe: $0 + 1] }
+        #else
+        nil
+        #endif
+    }
+
+    /// `-honour` wears this week's laurel for this launch only, without finishing the week.
+    static var wearsHonour: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-honour")
+        #else
+        false
+        #endif
+    }
+
+    /// `-updateAvailable 1.4` pretends the App Store has that version, so the card asking for
+    /// an update can be shot. Nothing is fetched and nothing is written down.
+    static var storeVersion: String? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.firstIndex(of: "-updateAvailable").flatMap { arguments[safe: $0 + 1] }
+        #else
+        nil
         #endif
     }
 
@@ -545,7 +648,8 @@ enum DebugLaunch {
     /// Pair it with `-collected 18` and `-packs 2` for a page with something on it.
     static var showsAlbum: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-album")
+        ProcessInfo.processInfo.arguments.contains("-album") || showsOro || showsPerla || giftCard != nil
+            || scambio != nil || albumMilestone != nil
         #else
         false
         #endif
@@ -568,7 +672,7 @@ enum DebugLaunch {
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.firstIndex(of: "-albumZoom")
             .flatMap { arguments[safe: $0 + 1] }
-            .flatMap { name in Deck.standard.first { $0.description == name } }
+            .flatMap { name in Deck.standard.first { $0.description == name } } ?? giftCard
         #else
         return nil
         #endif
@@ -733,6 +837,15 @@ enum DebugLaunch {
         #endif
     }
 
+    /// `-scatouchDeck`, with `-scatouch`: opens the deck as soon as the table has dealt.
+    static var opensScatouchDeck: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-scatouchDeck")
+        #else
+        false
+        #endif
+    }
+
     /// `-selectFirst` picks the first card in hand on arrival, for the action bar.
     static var selectsFirstCard: Bool {
         #if DEBUG
@@ -747,6 +860,7 @@ enum DebugLaunch {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         dress(store, with: arguments)
+        captureFrames(with: arguments)
         guard !openTable(store, with: arguments) else { return }
         startLocalTable(store, with: arguments)
         #endif
@@ -767,6 +881,8 @@ enum DebugLaunch {
             Experience.pretend(total: total)
         }
         plantAlbum(store.albumBook, with: arguments)
+        if let found = oroFound { store.albumBook.pretend(oro: found) }
+        if let found = perlaFound { store.albumBook.pretend(perla: found) }
         // `-mark coins` wears a mark without earning it first.
         if let index = arguments.firstIndex(of: "-mark"),
            let mark = arguments[safe: index + 1].flatMap(SeatMark.init(rawValue:)) {
@@ -842,6 +958,8 @@ enum DebugLaunch {
         if arguments.contains("-joinFirst") { store.joinFirstTableFound(); return true }
         // `-quickGame` deals a quick table at whichever size the lobby's pills are set to.
         if arguments.contains("-quickGame") { store.playQuickGame(); return true }
+        // `-scatouch` deals the same with every card face up, whatever the settings say.
+        if arguments.contains("-scatouch") { store.playQuickGame(scatouch: true); return true }
         if arguments.contains("-dailyDeal") { store.playTodaysDeal(); return true }
         // `-resume` picks the saved game back up without going through the lobby card.
         if arguments.contains("-resume") { store.loadSavedGame(); store.resumeSavedGame(); return true }
@@ -853,14 +971,21 @@ enum DebugLaunch {
             store.pretendRankedHouse(targetScore: target)
             return true
         }
-        return false
+        // `-duoSearch` holds a ranked duo in the waiting room looking for another pair, the house
+        // offered after five seconds. `-duoSearch partner` shows the invited phone instead.
+        if let index = arguments.firstIndex(of: "-duoSearch") {
+            store.pretendDuoSearch(leads: arguments[safe: index + 1] != "partner")
+            return true
+        }
+        // `-lastCard` deals a short scripted round. See `DebugLaunch+Table.swift`.
+        return startLastCardTable(store, with: arguments)
     }
 
     /// `-room` opens a real table on the Worker, code and all. Anything else is a nearby table,
     /// which needs nothing but this phone.
     @MainActor
     private static func openWaitingRoom(_ store: TableStore, with arguments: [String]) {
-        if arguments.contains("-room") { store.openRoom() } else { store.host(teams: false) }
+        if arguments.contains("-room") { store.openRoom() } else { store.host(teams: arguments.contains("-teams")) }
         store.pretendsInvited = arguments.contains("-invited")
         let seated = arguments.firstIndex(of: "-bots").flatMap { Int(arguments[safe: $0 + 1] ?? "") } ?? 0
         for _ in 0..<seated { store.addBot() }

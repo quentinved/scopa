@@ -19,6 +19,7 @@ enum Cosmetics {
                   + SeatMark.allCases.compactMap { item(for: $0) }
                   + Cornice.allCases.compactMap { item(for: $0) }
                   + CardBackPattern.allCases.compactMap { item(for: $0) }
+                  + CardEdge.allCases.compactMap(\.shopItem)
                   + Companion.allCases.compactMap { item(for: $0) }
                   + SeatLivery.allCases.compactMap { item(for: $0) }
                   + Flourish.allCases.compactMap { item(for: $0) }
@@ -37,6 +38,9 @@ enum Cosmetics {
         case .classica: 300
         case .antica: 400
         case .litografia: 550
+        // The decks drawn for albums V to X are never sold: finishing the album is the only
+        // way to one, at the owner's word. Zero is how the shop says "not for sale".
+        case .maiolica, .mosaico, .carnevale, .intarsio, .merletto, .tarocchi: .zero
         }
     }
 
@@ -50,6 +54,8 @@ enum Cosmetics {
         case .bergamasca: 150
         case .pergamena: 200
         case .notturna: 250
+        // The colourways made for albums VII to X come with their album, like its deck.
+        case .veneziana, .sorrentina, .buranella, .milanese: .zero
         }
     }
 
@@ -60,7 +66,7 @@ enum Cosmetics {
         switch style {
         case .moderna: .comune
         case .classica, .antica: .raro
-        case .litografia: .prezioso
+        case .litografia, .maiolica, .mosaico, .carnevale, .intarsio, .merletto, .tarocchi: .prezioso
         }
     }
 
@@ -75,8 +81,8 @@ enum Cosmetics {
     /// paper rather than the ink are not.
     private static func grade(of skin: CardSkin) -> Grade {
         switch skin {
-        case .riviera, .napoletana, .piacentina, .bergamasca: .comune
-        case .pergamena, .notturna: .raro
+        case .riviera, .napoletana, .piacentina, .bergamasca, .veneziana, .buranella: .comune
+        case .pergamena, .notturna, .sorrentina, .milanese: .raro
         }
     }
 
@@ -133,6 +139,9 @@ enum Cosmetics {
         case .maiolica: 220
         case .ventaglio: 260
         case .velluto: 900
+        // Earned rather than bought: the Intarsio album hands it over, and the zero price is
+        // what lets the ledger record it as owned.
+        case .cubi: .zero
         }
     }
 
@@ -144,6 +153,8 @@ enum Cosmetics {
         case .lino, .maiolica: .raro
         case .ventaglio: .prezioso
         case .velluto: .leggendario
+        // Graded like the other things only an album gives.
+        case .cubi: .prezioso
         }
     }
 
@@ -183,14 +194,22 @@ enum Cosmetics {
 
     /// Priced with the seat marks: a cornice is the other half of the same thing.
     private static func price(of cornice: Cornice) -> Denari? {
-        cornice == .none ? nil : 200
+        switch cornice {
+        case .none: nil
+        // Earned rather than bought: the Mosaico album hands it over, and the zero price is
+        // what lets the ledger record it as owned.
+        case .tessere: .zero
+        case .corda, .fiori, .nastro, .onde: 200
+        }
     }
 
     static func item(for cornice: Cornice) -> ShopItem? {
         guard let price = price(of: cornice) else { return nil }
         // With the marks: a cornice is the other half of the same thing, and just as seen.
+        // The album's is graded like the other things only an album gives.
         return ShopItem(id: ShopItem.ID("cornice.\(cornice.rawValue)"), kind: .cornice,
-                        title: cornice.title, detail: cornice.detail, price: price, grade: .raro)
+                        title: cornice.title, detail: cornice.detail, price: price,
+                        grade: cornice == .tessere ? .prezioso : .raro)
     }
 
     // MARK: Companions
@@ -254,6 +273,9 @@ enum Cosmetics {
         // The only thing in the shop that is neither a colour nor a picture but a
         // procession of colours, and priced as the one thing nobody else will have.
         case .iride: 950
+        // Earned rather than bought: the Merletto album hands it over, and the zero price is
+        // what lets the ledger record it as owned.
+        case .trina: .zero
         }
     }
 
@@ -354,17 +376,21 @@ enum Cosmetics {
     ///
     /// A pack is four sentences in one voice, so the shop prints the lines rather than a
     /// row of faces.
-    struct ReactionPack: Identifiable {
+    struct ReactionPack: Identifiable, Equatable {
         let id: ShopItem.ID
         let title: String
         let detail: LocalizedStringKey
         let reactions: [Reaction]
         let price: Denari
+        var grade: Grade = .comune
 
         var item: ShopItem {
             ShopItem(id: id, kind: .reactions, title: title,
-                     detail: "reaction pack \(id.rawValue)", price: price, grade: .comune)
+                     detail: "reaction pack \(id.rawValue)", price: price, grade: grade)
         }
+
+        /// Earned rather than bought, which the shop says instead of a price.
+        var isEarned: Bool { price == .zero }
     }
 
     /// The lines are shown in full by the shop, so `detail` says who talks like that
@@ -379,7 +405,14 @@ enum Cosmetics {
         ReactionPack(id: "reactions.nonna", title: "Nonna",
                      detail: "Whoever it was that taught you",
                      reactions: [.careful, .taught, .patience, .told], price: 150),
+        maschere,
     ]
+
+    /// Masks, and never sold: the Carnevale album hands it over, and the zero price is what
+    /// lets the ledger record it as owned. Graded like the other things only an album gives.
+    static let maschere = ReactionPack(
+        id: "reactions.maschere", title: "Maschere", detail: "Said from behind a mask",
+        reactions: [.masked, .carnival, .unmasked, .confetti], price: .zero, grade: .prezioso)
 
     static func felt(of id: ShopItem.ID) -> TableFelt? {
         TableFelt.allCases.first { Self.id(for: $0) == id }
@@ -397,6 +430,7 @@ enum Cosmetics {
         case .cardTheme: "Card art"
         case .cardSkin: "Card colours"
         case .cardBack: "Card backs"
+        case .cardEdge: "Card edges"
         case .felt: "Table colour"
         case .tapis: "Table cloth"
         case .mark: "Seat badge"
@@ -416,8 +450,9 @@ enum Cosmetics {
         case .cardTheme: "How the figures and pips on every card are drawn."
         case .cardSkin: "The inks the deck is printed in. Works with any card art."
         case .cardBack: "The pattern on the back of every card."
+        case .cardEdge: "What the edge of every card is finished in. Works with any deck."
         case .felt: "The colour of the felt under the cards."
-        case .tapis: "The pattern and border woven across the felt."
+        case .tapis: "The pattern woven across the felt."
         case .mark: "The emblem on your seat. Everyone at the table sees it."
         case .cornice: "A ring around your badge. Everyone sees it."
         case .reactions: "Extra things to say at the table, four to a set."

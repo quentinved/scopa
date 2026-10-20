@@ -292,7 +292,7 @@ struct DailyWheelSheet: View {
                         if isWatching { ProgressView().tint(Palette.goldLight) }
                     }
                     .padding(14)
-                    .glassPanel(radius: GlassRadius.control, interactive: true)
+                    .glassPanel(radius: GlassRadius.control)
                 }
                 .buttonStyle(.plain)
                 .disabled(isWatching)
@@ -444,9 +444,21 @@ private extension Text {
     }
 }
 
-/// The lobby's way in: the wheel in a glass coin, with a dot while today's turn is waiting.
-struct WheelChip: View {
-    let isWaiting: Bool
+/// The wheel's coin beside the wordmark, with a dot while today's free turn is waiting.
+///
+/// A coin there once had no word on it, so only the players who had already tapped it knew
+/// it was a wheel. It carries its name now, the way the coin across from it does.
+struct WheelCoin: View {
+    /// What the wheel has left to give today.
+    enum Turn: Equatable {
+        case free
+        /// The free turn is spent and one more can be had for a video.
+        case video
+        case spent
+    }
+
+    /// Nil until the ledger has been read.
+    let turn: Turn?
     let action: () -> Void
 
     @Environment(\.lift) private var lift
@@ -455,17 +467,15 @@ struct WheelChip: View {
     @State private var nudged = false
 
     var body: some View {
-        Button(action: action) {
-            WheelGlyph(size: 24 * lift)
+        NamedCoin(title: "Wheel") {
+            WheelGlyph(size: 30 * lift)
                 .rotationEffect(.degrees(nudged ? 72 : 0))
-                .frame(width: 38 * lift, height: 38 * lift)
-                .glass(.riviera(interactive: true), in: .circle)
-                .contentShape(.circle)
-                .overlay(alignment: .topTrailing) { if isWaiting { dot } }
+        } action: {
+            action()
         }
-        .buttonStyle(.plain)
+        .overlay(alignment: .top) { if turn == .free { dot } }
         .accessibilityLabel(Text("The wheel"))
-        .task(id: isWaiting) { await nudge() }
+        .task(id: turn) { await nudge() }
     }
 
     private var dot: some View {
@@ -473,12 +483,14 @@ struct WheelChip: View {
             .fill(Palette.terracotta)
             .overlay { Circle().strokeBorder(Palette.cream.opacity(0.9), lineWidth: 1.2) }
             .frame(width: 11 * lift, height: 11 * lift)
-            .offset(x: 1 * lift, y: -1 * lift)
+            // On the coin's shoulder, wherever the name under it sets the width.
+            .offset(x: 14 * lift, y: -1 * lift)
             .transition(.scale(scale: 0.4).combined(with: .opacity))
+            .allowsHitTesting(false)
     }
 
     private func nudge() async {
-        guard isWaiting, !reduceMotion, !nudged else { return }
+        guard turn == .free, !reduceMotion, !nudged else { return }
         try? await Task.sleep(for: .seconds(1.2))
         withAnimation(.spring(duration: 1.1, bounce: 0.25)) { nudged = true }
     }

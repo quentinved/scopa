@@ -50,7 +50,7 @@ struct SheetChoiceLabel: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 13)
         .glassPanel(radius: GlassRadius.control,
-                    tint: isSelected ? Palette.terracotta.opacity(0.75) : nil, interactive: true)
+                    tint: isSelected ? Palette.terracotta.opacity(0.75) : nil)
     }
 }
 
@@ -97,7 +97,9 @@ struct OnlineProgressLine: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Palette.onTableSoft)
             }
-            if let search, !search.isOver { SearchCountdown(search: search) }
+            if let search, !search.isOver {
+                SearchCountdown(startedAt: search.startedAt, length: search.length, note: note(search.searching))
+            }
             if let search, search.offersHouse {
                 HouseOffer(store: store, isOver: search.isOver)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -108,6 +110,15 @@ struct OnlineProgressLine: View {
         .animation(.easeInOut(duration: 0.3), value: search)
     }
 
+    /// Who else is in the ranked queue, when the queue could be asked.
+    private func note(_ searching: Int?) -> LocalizedStringKey {
+        switch searching {
+        case nil: "If nobody turns up, the house can take the chair."
+        case 0?: "Nobody else is searching yet. Anyone who taps Ranked now is paired with you."
+        default: "Another player is searching. Pairing you now."
+        }
+    }
+
     private var label: LocalizedStringKey {
         switch status {
         case .signingIn: return "Signing in to Game Center"
@@ -115,63 +126,6 @@ struct OnlineProgressLine: View {
         case .searching: return search?.isOver == true ? "Nobody found this time" : waiting
         case .seating: return "Taking your seats"
         }
-    }
-}
-
-/// The line under a ranked search: gold that runs out over exactly the seconds the search
-/// has, and one line saying who is there if nobody comes.
-///
-/// Drawn from the clock rather than animated from a stored fraction, so a sheet redrawn
-/// mid-search picks the line up where it actually is instead of starting it over.
-private struct SearchCountdown: View {
-    let search: TableStore.RankedSearch
-
-    /// The cloth under it, so the glass is tinted with the table's own shadow.
-    @Environment(\.tableFelt) private var felt
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            // Thirty a second, not every frame the display can draw: a line this short moves
-            // a pixel or two between ticks, and the panel sits over a lobby of glass that has
-            // to be recomposited for each one.
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
-                track(left: timeLeft(at: timeline.date))
-            }
-            // The line is the sentence drawn; VoiceOver reads the sentence.
-            .accessibilityHidden(true)
-            Text(note)
-                .font(.system(size: 11))
-                .foregroundStyle(Palette.onTableSoft)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    /// Who else is in the ranked queue, when the queue could be asked.
-    private var note: LocalizedStringKey {
-        switch search.searching {
-        case nil: "If nobody turns up, the house can take the chair."
-        case 0?: "Nobody else is searching yet. Anyone who taps Ranked now is paired with you."
-        default: "Another player is searching. Pairing you now."
-        }
-    }
-
-    /// How much of the search is still to come, 1 at the start and 0 at the end.
-    private func timeLeft(at now: Date) -> Double {
-        guard search.length > 0 else { return 0 }
-        let gone = now.timeIntervalSince(search.startedAt) / search.length
-        return min(max(1 - gone, 0), 1)
-    }
-
-    private func track(left: Double) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule().fill(felt.shade(0.6))
-                Capsule()
-                    .fill(Palette.goldSheen)
-                    .frame(width: max(geometry.size.width * left, 0))
-            }
-        }
-        .frame(height: 6)
     }
 }
 
@@ -315,7 +269,7 @@ struct SheetScaffold<Content: View, Bottom: View>: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Palette.onTable)
                 .frame(width: 34, height: 34)
-                .glass(.riviera(interactive: true), in: .circle)
+                .glass(.riviera(), in: .circle)
                 .overlay { Circle().strokeBorder(Palette.gold.opacity(0.30), lineWidth: 1) }
                 .contentShape(.circle)
         }

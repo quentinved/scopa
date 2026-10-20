@@ -194,7 +194,7 @@ private struct PointPicker: View {
                 .foregroundStyle(picked ? Palette.cream : Palette.onTable)
                 .frame(maxWidth: .infinity, minHeight: 38)
                 .padding(.horizontal, 6)
-                .glassCapsule(tint: picked ? Palette.seat(side).opacity(0.9) : nil, interactive: true)
+                .glassCapsule(tint: picked ? Palette.seat(side).opacity(0.9) : nil)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: picked)

@@ -10,13 +10,15 @@ struct HouseOffer: View {
     let store: TableStore
     /// The search has run its length. Its own header says so, so the card does not.
     let isOver: Bool
+    /// Whether to offer waiting on. A duo's search keeps going under the card, so it does not.
+    var asksToWait = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Rectangle()
                 .fill(Palette.gold.opacity(0.25))
                 .frame(height: 1)
-            if !isOver {
+            if !isOver, asksToWait {
                 Text("Nobody is free to play just now")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Palette.onTable)
@@ -25,10 +27,12 @@ struct HouseOffer: View {
             Button("Play the house") { store.playTheHouse() }
                 .buttonStyle(FilledButtonStyle(minHeight: 48))
                 .padding(.top, 2)
-            Button("Keep looking") { store.keepLooking() }
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Palette.onTableSoft)
-                .frame(maxWidth: .infinity, minHeight: 32)
+            if asksToWait {
+                Button("Keep looking") { store.keepLooking() }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .frame(maxWidth: .infinity, minHeight: 32)
+            }
         }
     }
 

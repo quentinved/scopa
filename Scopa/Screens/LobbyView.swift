@@ -1,5 +1,6 @@
 import SwiftUI
 import ScopaCore
+import ScopaRelay
 import ScopaRewards
 
 /// The front door: who you are, what is on today, and the ways to sit down.
@@ -18,8 +19,10 @@ struct LobbyView: View {
     @State private var showsOnline = false
     @State private var showsWager = false
     @State private var showsShop = false
-    /// The no-ads purchase, opened from its corner button.
+    /// The no-ads purchase, opened from its coin beside the wordmark.
     @State private var showsAdFree = DebugLaunch.showsAdFree
+    /// What an owner opens from the same coin: the gold page saying it is theirs.
+    @State private var showsPatron = false
     @State private var showsRules = false
     @State private var showsLadder = false
     @State private var showsWeekly = false
@@ -44,6 +47,12 @@ struct LobbyView: View {
     /// The day's wheel, and whether its sheet is up. See `DailyWheel`.
     @State private var wheel = DailyWheel()
     @State private var showsWheel = false
+    /// The card saying the App Store has a newer Scopa. See `StoreVersion`.
+    @State private var showsUpdate = false
+    /// The header's share of a portrait column, and the two heights it is worked out from.
+    @State private var room = MastheadRoom()
+    @State private var viewport: CGFloat = 0
+    @State private var columnHeight: CGFloat = 0
 
     @Environment(\.verticalSizeClass) private var heightClass
     @Environment(\.horizontalSizeClass) private var widthClass
@@ -54,23 +63,35 @@ struct LobbyView: View {
     private var lift: CGFloat { Stage.lift(widthClass, heightClass) }
 
     var body: some View {
-        lobbySheets(layout)
+        // Set under the sheets rather than over them, so only the lobby behind holds still.
+        lobbySheets(layout.environment(\.isUnderSheet, isUnderSheet))
             .onAppear(perform: handleAppear)
             .onChange(of: store.route) { _, route in closePlaySheets(for: route) }
+            // Somebody found: the moment that says so is drawn over the lobby, not under a sheet.
+            .onChange(of: store.matchFound != nil) { _, found in if found { closeSearchSheets() } }
             // The day's result is news once: leaving the lobby spends it.
             .onDisappear { store.clearFreshDaily() }
             .releaseMoment(store: store, purse: purse, isClear: isClearForNews) { shelf in
                 if shelf == .shop { showsShop = true } else { showsAlbum = true }
             }
+            // After the arrival moment, which it reads, and never over the rating ask.
+            .storeUpdate(isPresented: $showsUpdate, isClear: isClearForNews && !asksReview)
+    }
+
+    /// A sheet hides the lobby, so its turning rims can stop until it comes down.
+    private var isUnderSheet: Bool {
+        [isEditingSettings, showsFriends, showsOnline, showsWager, showsShop, showsAdFree, showsRules,
+         showsLadder, showsWeekly, showsAlbum, showsCampaign, asksName, asksCoach, showsWheel, showsPatron].contains(true)
     }
 
     /// Nothing else on screen asking to be looked at, so a gift or a version's news can
     /// have its turn: the first launch's walkthrough is done, and no card or sheet is up.
     private var isClearForNews: Bool {
         let sheets = [isEditingSettings, showsFriends, showsOnline, showsWager, showsShop, showsRules,
-                      showsLadder, showsWeekly, showsAlbum, asksName, asksCoach, startsCoached, showsWheel]
+                      showsLadder, showsWeekly, showsAlbum, asksName, asksCoach, startsCoached, showsWheel,
+                      showsUpdate]
         return store.hasSeenRules && finishedSeason == nil && store.finishedChallenge == nil
-            && !sheets.contains(true)
+            && !sheets.contains(true) && store.onlineStatus == nil
     }
 
     private var layout: some View {
@@ -156,6 +177,7 @@ struct LobbyView: View {
                 AdFreeSheet(pass: ads.pass)
                     .coversBanner(carries: false)
             }
+            .fullScreenCover(isPresented: $showsPatron) { PatronSheet() }
             .sheet(isPresented: $showsLadder) {
                 LeaderboardView(store: store)
                     .coversBanner()
@@ -192,7 +214,9 @@ struct LobbyView: View {
                 CoachChoiceSheet(dealsNext: startsCoached) { store.assist = $0 }
                     .coversBanner(carries: false)
             }
-            .sheet(isPresented: $showsOnline, onDismiss: { if store.route == .lobby { store.cancelOnline() } }) {
+            .sheet(isPresented: $showsOnline, onDismiss: {
+                if store.route == .lobby, store.matchFound == nil { store.cancelOnline() }
+            }) {
                 OnlineSheet(store: store)
                     .coversBanner()
             }
@@ -278,9 +302,16 @@ struct LobbyView: View {
     private func closePlaySheets(for route: TableStore.Route) {
         guard route != .lobby else { return }
         showsOnline = false
+        showsLadder = false
         showsWager = false
         showsFriends = false
         showsCampaign = false
+    }
+
+    /// The sheets a search runs in, put away as soon as it finds somebody. The seating goes on.
+    private func closeSearchSheets() {
+        showsOnline = false
+        showsWager = false
     }
 
     // MARK: Layouts
@@ -294,36 +325,40 @@ struct LobbyView: View {
                 .frame(maxWidth: Stage.column(widthClass, heightClass))
             ScrollView {
                 column
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                        columnHeight = $0
+                        settleMasthead()
+                    }
             }
             .scrollBounceBehavior(.always)
             .scrollIndicators(.hidden)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                viewport = $0
+                settleMasthead()
+            }
         }
     }
 
     private var column: some View {
         VStack(spacing: 0 * lift) {
-            // The fan leans up out of the masthead's frame, so the top padding is its.
-            masthead
-                // The wheel and the no-ads button sit in the masthead's corner on a phone:
-                // the top row has no room left for them without cutting the name short.
-                .overlay(alignment: .topTrailing) {
-                    VStack(spacing: 12 * lift) {
-                        wheelChip
-                        noAdsButton
-                    }
-                }
-                .padding(.top, 28 * lift * crestScale)
-            goals.padding(.top, 14 * lift)
+            masthead.padding(.top, room.top(lift))
+            goals.padding(.top, room.after(lift))
             doors.padding(.top, 10 * lift)
             ladderPeek.padding(.top, 10 * lift)
-            // Room to push the column past the banner strip.
-            Spacer(minLength: 20 * lift)
         }
         .padding(.horizontal, 20 * lift)
-        .padding(.bottom, 12 * lift)
+        .padding(.bottom, 10 * lift)
         // An iPad gets the column at its own size, see `Stage.lift(_:_:)`.
         .frame(maxWidth: Stage.column(widthClass, heightClass))
         .frame(maxWidth: .infinity)
+    }
+
+    /// Gives the header whatever the column leaves of the screen, within its two sizes. The
+    /// first answer lands as it is; later ones, a saved game's door coming or going, ease.
+    private func settleMasthead() {
+        var next = room
+        guard next.settle(column: columnHeight, viewport: viewport, lift: lift) else { return }
+        withAnimation(room.isSettled ? .snappy : nil) { room = next }
     }
 
     /// Landscape: the masthead keeps the left half and the doors take the right.
@@ -350,30 +385,42 @@ struct LobbyView: View {
 
     // MARK: The corners
 
+    /// Who you are on the left, what you hold on the right. The wheel and the no-ads
+    /// purchase sit down beside the wordmark, where each has room for its name.
     private var topRow: some View {
         HStack(spacing: 10 * lift) {
             profileChip
             Spacer(minLength: 8 * lift)
-            if stage.isWide { wheelChip }
             purseChip
-            if stage.isWide { noAdsButton }
-            RulesButton { showsRules = true }
         }
         .padding(.top, 8 * lift)
     }
 
-    /// The way to the no-ads purchase, until it is owned.
+    /// The way to the no-ads purchase, until it is owned. It sits beside the wordmark rather
+    /// than with the doors: the first place the eye lands, and it costs the column no height.
+    /// Once owned, the patron's crest takes the same place, never a price.
     @ViewBuilder private var noAdsButton: some View {
-        if ads.adsAreOn && !ads.pass.isOwned {
+        if ads.pass.isOwned {
+            PatronCoin { showsPatron = true }
+        } else if ads.adsAreOn {
             NoAdsButton { showsAdFree = true }
+        } else {
+            // Holds the place, so the lockup stays centred once the ads are gone.
+            Color.clear.frame(width: 1, height: 1)
         }
     }
 
     /// The day's wheel, with a dot while today's free turn is waiting.
-    private var wheelChip: some View {
-        WheelChip(isWaiting: purse.isReady && wheel.isAvailable(on: store.today, paid: purse.purse.keys)) {
-            showsWheel = true
-        }
+    private var wheelCoin: some View {
+        WheelCoin(turn: wheelTurn) { showsWheel = true }
+    }
+
+    /// Nil until the ledger has been read, so the coin promises nothing it has to take back.
+    private var wheelTurn: WheelCoin.Turn? {
+        guard purse.isReady else { return nil }
+        let paid = purse.purse.keys
+        if wheel.isAvailable(on: store.today, paid: paid) { return .free }
+        return ads.adsAreOn && wheel.isVideoAvailable(on: store.today, paid: paid) ? .video : .spent
     }
 
     private var profileChip: some View {
@@ -388,10 +435,13 @@ struct LobbyView: View {
                           mark: store.seatMark,
                           honoured: store.challenges.wearsHonour, cornice: store.cornice,
                           livery: store.livery)
+                    // The badge is a fixed size, so a long name gives way and the laurel never does.
+                    .layoutPriority(1)
                 Text(verbatim: store.playerName)
                     .font(.system(size: 15 * lift, weight: .semibold))
                     .foregroundStyle(Palette.onTable)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 12 * lift, weight: .semibold))
                     .foregroundStyle(Palette.onTableSoft)
@@ -399,7 +449,7 @@ struct LobbyView: View {
             .padding(.leading, 7 * lift)
             .padding(.trailing, 13 * lift)
             .padding(.vertical, 6 * lift)
-            .glassCapsule(interactive: true)
+            .glassCapsule()
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Settings")
@@ -418,14 +468,27 @@ struct LobbyView: View {
                     // A five figure balance was wrapping inside the capsule.
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
-                Image(systemName: "bag.fill")
-                    .font(.system(size: 12 * lift, weight: .semibold))
-                    .foregroundStyle(Palette.onTableSoft)
-                    .overlay(alignment: .topTrailing) { shopPackDot }
+                Rectangle()
+                    .fill(Palette.onTableSoft.opacity(0.35))
+                    .frame(width: 1, height: 16 * lift)
+                // The bag alone read as a purse, so the chip says where it goes.
+                HStack(spacing: 5 * lift) {
+                    Image(systemName: "bag.fill")
+                        .font(.system(size: 12 * lift, weight: .semibold))
+                        .foregroundStyle(Palette.goldLight)
+                        .overlay(alignment: .topTrailing) { shopPackDot }
+                    Text("Shop")
+                        .textCase(.uppercase)
+                        .font(.system(size: 12 * lift, weight: .semibold))
+                        .tracking(1.1)
+                        .foregroundStyle(Palette.onTable)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
             }
             .padding(.horizontal, 13 * lift)
             .padding(.vertical, 9 * lift)
-            .glassCapsule(interactive: true)
+            .glassCapsule()
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Shop")
@@ -454,54 +517,38 @@ struct LobbyView: View {
 
     // MARK: The masthead
 
-    /// The broom, the fan and the wordmark drawn smaller on a short phone, an SE, so the
-    /// doors still clear the bottom of the screen with nothing scrolled.
-    private var crestScale: CGFloat {
-        !stage.isWide && screenSize.height > 0 && screenSize.height < 700 ? 0.6 : 1
-    }
-
-    /// The broom on its glass coin, with a fan of the deck in use behind it.
+    /// The crest and the wordmark, with the wheel on one side and the no-ads purchase on the
+    /// other, each under its own name. The rules are in Settings, and behind the table's "?".
     private var masthead: some View {
-        let crest = lift * crestScale
-        return VStack(spacing: stage.pick(tall: 10, wide: 8) * lift) {
-            ZStack {
-                MastheadFan(width: stage.pick(tall: 46, wide: 38) * crest)
-                    .offset(y: stage.pick(tall: -24, wide: -20) * crest)
-                BroomMark(size: stage.pick(tall: 38, wide: 34) * crest, tint: Palette.goldLight)
-                    .padding(stage.pick(tall: 16, wide: 14) * crest)
-                    .glass(.riviera(), in: .circle)
-                    .offset(y: stage.pick(tall: 16, wide: 12) * crest)
+        VStack(spacing: stage.isWide ? 8 * lift : room.under(lift)) {
+            HStack(spacing: stage.isWide ? 6 * lift : room.coinGap(lift)) {
+                wheelCoin.frame(maxWidth: .infinity)
+                BrandLockup(stacked: stage.isWide, growth: stage.isWide ? 0 : room.growth)
+                noAdsButton.frame(maxWidth: .infinity)
             }
-            .frame(height: stage.pick(tall: 94, wide: 92) * crest)
-            Text(Brand.title)
-                .font(.display(stage.pick(tall: 50, wide: 50) * crest))
-                .foregroundStyle(Palette.onTable)
-                .padding(.top, stage.pick(tall: 4, wide: 2) * lift)
+            // A grown lockup leaves the coins less of the row, so they move out into the margin.
+            .padding(.horizontal, stage.isWide ? 0 : -room.bleed(lift))
             // The album rides under the wordmark: it is where you stand rather than a way to
             // play, and a pill here costs the column one line instead of a slab of its own.
-            // The league's plate that sat over it is the ranked door now.
             albumStrip
         }
     }
 
     // MARK: The goals
 
-    /// The day's deal and the week's challenge. They share a row except on the two days
-    /// the deal has more to say: the first ever, and the walk back from a deal just played.
+    /// Today in one row: the day's deal and the week's tasks. The deal takes a row of its
+    /// own on the two days it has more to say, the first ever and the walk back from a deal
+    /// just played, and the week has the row under it.
     private var goals: some View {
         VStack(spacing: 10 * lift) {
-            if dealTakesTheRow {
-                todaysDeal
+            if dealTakesTheRow { todaysDeal }
+            HStack(alignment: .top, spacing: 8 * lift) {
+                if !dealTakesTheRow { todaysDeal }
                 weeklyCard
-            } else {
-                HStack(alignment: .top, spacing: 10 * lift) {
-                    todaysDeal
-                    weeklyCard
-                }
-                .fixedSize(horizontal: false, vertical: true)
             }
+            .fixedSize(horizontal: false, vertical: true)
             if reminders.offerIsDue(store.dailyBook) {
-                ReminderOffer(reminders: reminders, book: store.dailyBook)
+                ReminderOffer(reminders: reminders)
                     .padding(.horizontal, 14 * lift)
                     .padding(.vertical, 10 * lift)
                     .glassPanel(radius: GlassRadius.control)
@@ -524,42 +571,36 @@ struct LobbyView: View {
     }
 
     private var weeklyCard: some View {
-        WeeklyCard(book: store.challenges, narrow: !dealTakesTheRow, name: store.playerName,
-                   mark: store.seatMark, cornice: store.cornice) { showsWeekly = true }
+        WeeklyCard(book: store.challenges, name: store.playerName, mark: store.seatMark,
+                   cornice: store.cornice) { showsWeekly = true }
     }
 
     // MARK: The doors
 
-    /// Ranked across the width, the campaign under it, and a row of the small doors.
+    /// Three ways to play, each across the width: the league, the road, and people you know.
     ///
-    /// The quick game had the width once, as the door most people want most evenings. It
-    /// still deals in one tap from half a row; the league and the campaign take the width
-    /// because they are the doors with somewhere to go — a grade to climb, a road to walk —
-    /// and the reasons to come back after the bots are beaten. A saved game no longer takes
-    /// a row of its own either: it is the quick door's face until it is played out or
+    /// The quick game had a door of its own, and with the league, the campaign and friends
+    /// beside it that was four answers to "what now?" before a card was dealt. It deals from
+    /// the foot of the campaign now, against the same bots, so a player alone is sent down
+    /// the road. A game saved on this phone goes over the three until it is played out or
     /// thrown away.
-    /// Where the road has reached, once a stage is won; until then the door sells the trip.
-    private var campaignProgress: LocalizedStringKey? {
-        let book = store.campaignBook
-        guard book.totalStars > 0 else { return nil }
-        let stage = book.current
-        return "Stage \(stage.number) · \(stage.region.title)"
-    }
-
     private var doors: some View {
         VStack(spacing: 10 * lift) {
+            comebackDoor
             RankedHero(rank: store.rank) { showsOnline = true }
-            CampaignDoor(progress: campaignProgress) { showsCampaign = true }
-            HStack(spacing: 10 * lift) {
-                quickDoor
-                if Self.offersWagers { denariDoor }
-                friendsDoor
+            CampaignDoor(book: store.campaignBook) { showsCampaign = true }
+            FriendsDoor {
+                friendsPath = []
+                showsFriends = true
             }
-            .fixedSize(horizontal: false, vertical: true)
+            if Self.offersWagers { denariDoor.fixedSize(horizontal: false, vertical: true) }
         }
         // Only on the way open: read as one flag, the close of a sheet would tap too.
         .sound(trigger: showsWager || showsFriends || showsOnline || showsCampaign) { _, open in open ? .tap : nil }
         .animation(.spring(duration: 0.35, bounce: 0.15), value: store.savedGame == nil)
+        .animation(.spring(duration: 0.35, bounce: 0.15), value: store.connection.ticket)
+        // A seat the room has since closed is not offered.
+        .task { await store.connection.confirmTicket(with: Ladder.baseURL.map(Relay.init(baseURL:))) }
         .confirmation(isPresented: $confirmsForget) {
             Confirmation(Text("Forget this game?"),
                          message: Text("Your stake of \(store.savedGame?.stake?.amount.coins ?? 0) denari is on that table."),
@@ -574,6 +615,8 @@ struct LobbyView: View {
     /// reviews that only from an organisation account, which this app is not published
     /// under (rejected under 2.3.6, September 2026). The tables stay in the code; turning
     /// them back on also means answering `gamblingSimulated` in Tools/StoreMetadata again.
+    /// And since denari are sold for money (`DenariBag`), a stake would be a real-money
+    /// bet: never turn this on while they are.
     static let offersWagers = false
 
     private var denariDoor: some View {
@@ -584,26 +627,29 @@ struct LobbyView: View {
         }
     }
 
-    /// A fresh game against the bots, at whichever table the pills are set to, or the game
-    /// saved on this phone while there is one. Nothing stands between the door and the cards.
-    private var quickDoor: some View {
-        QuickDoor(table: $store.quickTable, saved: store.savedGame) {
-            store.playQuickGame()
-        } resume: {
+    /// The game saved on this phone. Nothing stands between the row and the cards.
+    private func resumeDoor(_ saved: SavedGame) -> some View {
+        ResumeDoor(saved: saved) {
             store.resumeSavedGame()
         } forget: {
-            if store.savedGame?.stake != nil { confirmsForget = true } else { forgetSavedGame() }
+            if saved.stake != nil { confirmsForget = true } else { forgetSavedGame() }
         }
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    private var friendsDoor: some View {
-        ModeDoor(title: "With friends", detail: "This phone, a code, or Game Center") {
-            Image(systemName: "person.2.fill")
-                .font(.system(size: 24 * lift, weight: .semibold))
-                .foregroundStyle(Palette.goldLight)
-        } action: {
-            friendsPath = []
-            showsFriends = true
+    /// A game to go back to, one at a time: two such rows would push the ladder under the
+    /// banner. A seat at a room game goes first, since that table plays on without you and
+    /// the saved one waits; it is only a guest's seat, as the game lives on the host's phone.
+    @ViewBuilder private var comebackDoor: some View {
+        if store.onlineStatus == nil, let ticket = store.connection.ticket {
+            RejoinDoor(hostName: ticket.hostName) {
+                store.rejoin(ticket)
+            } forget: {
+                store.connection.forgetTicket()
+            }
+            .transition(.move(edge: .top).combined(with: .opacity))
+        } else if let saved = store.savedGame, !DebugLaunch.hidesResume {
+            resumeDoor(saved)
         }
     }
 
@@ -617,9 +663,9 @@ struct LobbyView: View {
         AlbumDoor(book: store.albumBook) { showsAlbum = true }
     }
 
-    /// The top of today's board, in the strip that used to be a button promising it.
+    /// Today's board as one line: who leads, and the whole board a tap away.
     private var ladderPeek: some View {
-        LadderPeek(store: store, count: stage.pick(tall: 5, wide: 3)) { showsLadder = true }
+        LadderPeek(store: store, oneLine: true) { showsLadder = true }
     }
 
     // MARK: Actions

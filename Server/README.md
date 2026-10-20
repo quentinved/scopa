@@ -34,7 +34,7 @@ What decides the price is not whether the house is at the table, since it always
 whether two phones can hold each other to the result. A real player on each side is settled by
 both reports and paid the full ladder rates. Everything else — a table you were left alone at,
 and a duo, whose two friends share a side and can be beaten only by the house — is a house
-game: 25 a win, 5 a loss, and ten a day counted at all. House games never build a win streak
+game: 25 a win, 5 a loss, and fifteen a day counted at all. House games never build a win streak
 or break one; a streak is something taken off people.
 `migrations/002-house-games.sql` adds the table that counts them.
 
@@ -45,6 +45,10 @@ is capped at 40. On top of that a run pays 2 for every win in a row past the fir
 10, and one loss to a real player ends it. `ratings.streak` holds it, and
 `migrations/004-streaks.sql` adds the column. A season's reset gives it back with the
 divisions.
+
+A loss that ends a run of two or more leaves it to keep until the player's next game: the app
+offers an ad, and `/v1/ranked/keep-run` puts the run back while the loss stands. A run is kept
+once; broken again, it is gone. `migrations/014-keep-run.sql` adds the columns.
 
 ## Seasons
 
@@ -126,6 +130,9 @@ wrangler dev        # runs the Worker on localhost with a local D1
 - `POST /v1/ranked/house` — a ranked game against the house, which only one phone can ever
   report. Taken on trust: +25 a win, −5 a loss, and only the first ten a day counted at all,
   so the day is what limits it rather than the price.
+- `POST /v1/ranked/keep-run` — `{gameID, identity}`: the run that game broke, put back after
+  an ad. Taken on trust like the house; a second call changes nothing. Answers with the rank,
+  whose `keepableRun` (`{gameID, run}` or null) is what the app may offer.
 - `POST /v1/ranked/claim` — a finished season marked as paid, signed like the rest. The
   denari live on the phone; this is the tick that stops a second phone paying them again.
 - `GET /v1/health`

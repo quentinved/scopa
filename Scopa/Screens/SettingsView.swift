@@ -43,6 +43,7 @@ struct SettingsSheet: View {
                     tableGroup
                     soundGroup
                     lookGroup
+                    if LadderIcon.isSupported { iconGroup.id("icons") }
                     gameCenterGroup
                     if ads.adsAreOn || ads.pass.isOwned { AdFreeGroup(pass: ads.pass) }
                     helpGroup
@@ -52,6 +53,7 @@ struct SettingsSheet: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
             }
+            .scrollsToIconsForDebugging()
             .softScrollEdge(.top)
             .scrollDismissesKeyboard(.interactively)
             .background(TableGround())
@@ -117,11 +119,11 @@ struct SettingsSheet: View {
     }
 
     private var reminderGroup: some View {
-        SettingsGroup(caption: "The wheel",
+        SettingsGroup(caption: "Reminders",
                       footnote: reminders.isBlocked
                           ? "Notifications are off for Scopa in the iPhone's Settings."
-                          : "One notification a day when the wheel's free turn is back, and none once you have taken it.") {
-            ReminderRow(reminders: reminders, book: store.dailyBook)
+                          : "At most one a day, around the hour you usually play, and only when something is waiting: the wheel, today's deal, the week's tasks.") {
+            ReminderRow(reminders: reminders)
         }
     }
 
@@ -154,6 +156,12 @@ struct SettingsSheet: View {
             SettingsToggle(title: "Show the last move",
                            line: "A tag in the top corner of the cloth recaps each move",
                            isOn: $store.showsLastMove)
+            if Scatouch.shared.isUnlocked {
+                Rule()
+                SettingsToggle(title: "Scatouch",
+                               line: "At a quick game every card is face up, the deck is yours to pick from and the bots' moves can be yours to make. Those games pay nothing",
+                               isOn: Bindable(Scatouch.shared).isOn)
+            }
             Rule()
             BotPicker(level: $store.botLevel)
             Rule()
@@ -175,6 +183,13 @@ struct SettingsSheet: View {
                 LookRow(theme: store.cardTheme, felt: store.tableFelt)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private var iconGroup: some View {
+        SettingsGroup(caption: "App icon",
+                      footnote: "The patron's icon comes with the no-ads purchase, and the Visconti with a full album X. From Silver up, every league you reach in ranked strikes the icon in its metal. Tap one to put it on your home screen.") {
+            IconPicker(book: store.albumBook)
         }
     }
 
@@ -270,8 +285,10 @@ struct SettingsSheet: View {
     private var name: some View {
         HStack(spacing: 14) {
             SeatBadge(name: draft.isEmpty ? store.playerName : draft, tint: Palette.seat(0), size: badgeSize,
-                      mark: store.seatMark, cornice: store.cornice, livery: store.livery)
+                      mark: store.seatMark, honoured: isHonoured, cornice: store.cornice, livery: store.livery)
                 .frame(width: badgeSlot, height: badgeSlot)
+                // The name gives way first: it truncates, the laurel never does.
+                .layoutPriority(1)
                 .animation(.snappy, value: draft)
             VStack(alignment: .leading, spacing: 2) {
                 TextField("", text: $draft,
@@ -306,14 +323,17 @@ struct SettingsSheet: View {
         .onTapGesture { isTypingName = true }
     }
 
+    /// This week's laurel, worn here as it is on the lobby's pill and at the table.
+    private var isHonoured: Bool { store.challenges.wearsHonour }
+
     /// Struck to fit, as the lobby's pill is: metal and a bought ring at full reach ran
     /// off the panel's corner and over the name. The slot is cut for all of it.
     private var badgeSize: CGFloat {
-        SeatBadge.fitted(58, mark: store.seatMark, cornice: store.cornice)
+        SeatBadge.fitted(58, mark: store.seatMark, honoured: isHonoured, cornice: store.cornice)
     }
 
     private var badgeSlot: CGFloat {
-        badgeSize * SeatBadge.reach(mark: store.seatMark, cornice: store.cornice)
+        badgeSize * SeatBadge.reach(mark: store.seatMark, honoured: isHonoured, cornice: store.cornice)
     }
 
     /// The slow number: how much has been played, ever.
@@ -506,15 +526,14 @@ private struct AudioRows: View {
     }
 }
 
-/// The switch for the wheel's reminder. Turning it on asks iOS for permission.
+/// The switch for the reminders. Turning it on asks iOS for permission.
 private struct ReminderRow: View {
     let reminders: Reminders
-    let book: DailyDealBook
 
     var body: some View {
         Toggle(isOn: Binding(
             get: { reminders.isOn },
-            set: { on in Task { if on { await reminders.turnOn(book) } else { reminders.turnOff() } } }
+            set: { on in Task { if on { await reminders.turnOn() } else { reminders.turnOff() } } }
         )) {
             HStack(spacing: 12) {
                 SymbolCoin(symbol: "bell.badge.fill", tint: Palette.gold, size: 32)

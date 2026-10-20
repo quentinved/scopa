@@ -14,16 +14,18 @@ import SwiftUI
 enum Tapis: String, CaseIterable, Codable, Sendable, Identifiable {
     /// Bare cloth, and free.
     case liscio
-    /// A playing field ruled in gold, notched at the corners. Was `bordo`.
+    /// Panels ruled in gold and notched at the corners, a jewel where four meet. Was `bordo`.
     case campo = "bordo"
-    /// Linen with a turned hem, a running stitch and a hemstitched ladder. Was `intreccio`.
+    /// Linen, powdered with cross-stitched diamonds. Was `intreccio`.
     case lino = "intreccio"
     /// Glazed tiles with a ribbon wandering through them. Was `damasco`.
     case maiolica = "damasco"
-    /// Deco fans at the corners and sides, over a field of scales. Was `merletto`.
+    /// Fish scales, with a deco fan open on them here and there. Was `merletto`.
     case ventaglio = "merletto"
-    /// Velvet, piped in twisted gold cord, with a rose couched in the middle. Was `broccato`.
+    /// Crushed velvet, powdered with roses couched in gold. Was `broccato`.
     case velluto = "broccato"
+    /// Sorrento parquet: cubes inlaid in three woods. Never sold; the Intarsio album pays it.
+    case cubi
 
     static let `default` = Tapis.liscio
 
@@ -44,18 +46,20 @@ enum Tapis: String, CaseIterable, Codable, Sendable, Identifiable {
         case .maiolica: "Maiolica"
         case .ventaglio: "Ventaglio"
         case .velluto: "Velluto"
+        case .cubi: "Cubi"
         }
     }
 
     /// Written into the ledger with a purchase, so it stays in one language.
     var detail: String {
         switch self {
-        case .liscio: "Bare cloth, no border"
-        case .campo: "A playing field ruled in gold, notched at the corners"
-        case .lino: "Linen, hemmed and hemstitched"
+        case .liscio: "Bare cloth, nothing on it"
+        case .campo: "Gold-ruled panels laid on the diagonal"
+        case .lino: "Linen, powdered with cross-stitched diamonds"
         case .maiolica: "Glazed tiles with a ribbon running through them"
-        case .ventaglio: "Deco fans round the edge, over a field of scales"
-        case .velluto: "Velvet piped in gold cord, a rose couched in the middle"
+        case .ventaglio: "Deco scales, with a fan open here and there"
+        case .velluto: "Velvet, powdered with roses couched in gold"
+        case .cubi: "Cubes inlaid in three woods, laid all over"
         }
     }
 
@@ -64,10 +68,11 @@ enum Tapis: String, CaseIterable, Codable, Sendable, Identifiable {
         switch self {
         case .liscio: "Plain felt. Let the cards do the talking"
         case .campo: "Ruled in gold, like a proper pitch"
-        case .lino: "Linen, hemmed by a very patient aunt"
+        case .lino: "Linen, cross-stitched by a very patient aunt"
         case .maiolica: "Tiles pinched from a seaside hotel"
         case .ventaglio: "Deco fans. A spritz is recommended"
-        case .velluto: "Velvet and gold cord. Little finger up"
+        case .velluto: "Velvet and gold roses. Little finger up"
+        case .cubi: "Inlaid cubes. Don't try to climb them"
         }
     }
 }
@@ -79,13 +84,19 @@ extension EnvironmentValues {
 
 /// The cloth itself, drawn over a felt.
 ///
+/// Every cloth is cut from the bolt: its repeat all over, with no hem, no border and
+/// nothing set in the middle, on the table as everywhere else. A border sewn round the
+/// screen read as a box drawn round the cards, and under a scrolling sheet as a box
+/// under the shop. A repeat reads as cloth at any size and any crop, the way the tiles
+/// always did.
+///
 /// One `Canvas` rather than a stack of shapes: a field of tiles is a few thousand strokes.
 /// A `Canvas` draws once and holds its picture, and where the ground is rasterised it is
 /// baked into that texture with the rest of it. Each cloth is drawn in its own file.
 struct TapisWeave: View {
     let tapis: Tapis
-    /// How far the ground runs past the screen on each side. A border is sewn round the
-    /// visible edge, not round the bleed, which is off the glass.
+    /// How far the ground runs past the screen on each side. The repeat is centred on the
+    /// visible screen, not on the bleed, which is off the glass.
     var bleed: CGFloat = 0
     /// Everything is drawn at this scale, so the same cloth can be a swatch. At 1 the
     /// figures are sized for a phone held at arm's length.
@@ -99,11 +110,12 @@ struct TapisWeave: View {
             let visible = whole.insetBy(dx: bleed, dy: bleed)
             switch tapis {
             case .liscio: break
-            case .campo: campo(&context, whole: whole, in: visible)
+            case .campo: campo(&context, whole: whole, visible: visible)
             case .lino: lino(&context, whole: whole, visible: visible)
             case .maiolica: maiolica(&context, whole: whole, visible: visible)
             case .ventaglio: ventaglio(&context, whole: whole, visible: visible)
             case .velluto: velluto(&context, whole: whole, visible: visible)
+            case .cubi: cubi(&context, whole: whole, visible: visible)
             }
         }
         .allowsHitTesting(false)
@@ -113,9 +125,6 @@ struct TapisWeave: View {
 // MARK: Light and line
 
 extension TapisWeave {
-    /// The table is lit from its top-left corner; this is the way towards the lamp.
-    static let lamp = CGPoint(x: -0.6, y: -0.8)
-
     /// A line width at this scale, never finer than the screen can draw cleanly.
     func hair(_ width: CGFloat) -> CGFloat { max(width * scale, finest * min(width, 1.2)) }
 
@@ -160,11 +169,6 @@ extension TapisWeave {
 // MARK: Geometry
 
 extension TapisWeave {
-    func roundedPath(_ rect: CGRect, radius: CGFloat) -> Path {
-        Path(roundedRect: rect, cornerRadius: max(0, min(radius, min(rect.width, rect.height) / 2)),
-             style: .circular)
-    }
-
     func offset(_ point: CGPoint, by direction: CGPoint, _ distance: CGFloat) -> CGPoint {
         CGPoint(x: point.x + direction.x * distance, y: point.y + direction.y * distance)
     }
@@ -172,14 +176,13 @@ extension TapisWeave {
     /// The direction an angle, in radians, points in on screen.
     func unit(_ angle: Double) -> CGPoint { CGPoint(x: cos(angle), y: sin(angle)) }
 
-    /// A lozenge standing on its point, `long` from tip to tip along `axis`.
-    func lozenge(at centre: CGPoint, long: CGFloat, wide: CGFloat, axis: CGPoint = CGPoint(x: 1, y: 0)) -> Path {
-        let across = CGPoint(x: -axis.y, y: axis.x)
+    /// A lozenge standing on its point, `long` from tip to tip across the screen.
+    func lozenge(at centre: CGPoint, long: CGFloat, wide: CGFloat) -> Path {
         var path = Path()
-        path.move(to: offset(centre, by: axis, long / 2))
-        path.addLine(to: offset(centre, by: across, wide / 2))
-        path.addLine(to: offset(centre, by: axis, -long / 2))
-        path.addLine(to: offset(centre, by: across, -wide / 2))
+        path.move(to: CGPoint(x: centre.x + long / 2, y: centre.y))
+        path.addLine(to: CGPoint(x: centre.x, y: centre.y + wide / 2))
+        path.addLine(to: CGPoint(x: centre.x - long / 2, y: centre.y))
+        path.addLine(to: CGPoint(x: centre.x, y: centre.y - wide / 2))
         path.closeSubpath()
         return path
     }
@@ -200,6 +203,23 @@ extension TapisWeave {
     func disc(at centre: CGPoint, radius: CGFloat) -> Path {
         Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius,
                                width: radius * 2, height: radius * 2))
+    }
+
+    /// Where a scattered motif falls: a column every `across`, a motif every `down` in it,
+    /// each column dropped half a step from the last and one motif on the middle of the
+    /// screen — the half drop a printed cloth is laid out in, so nothing lines up in stripes.
+    func halfDrop(in whole: CGRect, centredOn visible: CGRect, across: CGFloat, down: CGFloat) -> [CGPoint] {
+        let columns = Int(((visible.midX - whole.minX) / across).rounded(.up)) + 1
+        let rows = Int(((visible.midY - whole.minY) / down).rounded(.up)) + 1
+        var points: [CGPoint] = []
+        for column in -columns...columns {
+            let x = visible.midX + CGFloat(column) * across
+            let drop = column.isMultiple(of: 2) ? 0 : down / 2
+            for row in -rows...rows {
+                points.append(CGPoint(x: x, y: visible.midY + drop + CGFloat(row) * down))
+            }
+        }
+        return points
     }
 }
 

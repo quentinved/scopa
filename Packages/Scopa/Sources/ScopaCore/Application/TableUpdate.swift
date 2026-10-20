@@ -9,6 +9,12 @@ public enum TableUpdate: Hashable, Sendable {
     case reacted(player: PlayerID, reaction: Reaction)
     /// The finished game, written down. Arrives after the events that ended it.
     case record(GameRecord)
+    /// A player whose device had gone has taken their seat back.
+    case playerReturned(PlayerID)
+    /// The host walked out on purpose: the table is over, not waiting.
+    case tableClosed
+    /// A guest walked out on purpose. Heard on the host only.
+    case forfeited(PlayerID)
 }
 
 enum UpdateStream {

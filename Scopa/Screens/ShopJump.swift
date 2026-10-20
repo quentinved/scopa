@@ -7,6 +7,12 @@ enum ShopJump: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
+    /// The section a `-shelf` name lies in. A shelf inside a section is only there to scroll
+    /// to once the lazy page has built its section.
+    static func holding(_ shelf: String) -> ShopJump? {
+        ShopJump(rawValue: shelf) ?? ["tapis": .table, "cardEdge": .cards][shelf]
+    }
+
     var title: LocalizedStringKey {
         switch self {
         case .packs: "Packs"
@@ -29,13 +35,11 @@ struct ShopJumpBar: View {
     var body: some View {
         ScrollViewReader { reader in
             ScrollView(.horizontal, showsIndicators: false) {
-                GlassGroup(spacing: 6) {
-                    HStack(spacing: 6) {
-                        ForEach(ShopJump.allCases) { section in
-                            Button { jump(section) } label: { chip(section) }
-                                .buttonStyle(.plain)
-                                .id(section)
-                        }
+                HStack(spacing: 6) {
+                    ForEach(ShopJump.allCases) { section in
+                        Button { jump(section) } label: { chip(section) }
+                            .buttonStyle(.plain)
+                            .id(section)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -56,7 +60,7 @@ struct ShopJumpBar: View {
             .foregroundStyle(lit ? Palette.cream : Palette.onTable)
             .padding(.horizontal, 14)
             .frame(minHeight: 34)
-            .glassCapsule(tint: lit ? Palette.terracotta.opacity(0.8) : nil, interactive: true)
+            .glassCapsule(tint: lit ? Palette.terracotta.opacity(0.8) : nil)
     }
 }
 
@@ -77,9 +81,13 @@ extension View {
 
     /// Reports whether this section's top has gone up under the bar. A flag rather than the
     /// offset, so the page re-renders when a section is crossed and not on every frame.
+    ///
+    /// Named here too, on the outside: the lazy page finds a chip's section by this name
+    /// before the section has been built.
     func passesUnderShopBar(_ section: ShopJump, into passed: Binding<Set<ShopJump>>) -> some View {
         onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).minY < 120 } action: { under in
             if under { passed.wrappedValue.insert(section) } else { passed.wrappedValue.remove(section) }
         }
+        .id(section.rawValue)
     }
 }

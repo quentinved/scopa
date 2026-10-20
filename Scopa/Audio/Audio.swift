@@ -1,5 +1,7 @@
 import AVFoundation
 import Observation
+import os
+import UIKit
 
 /// The only thing in the app that makes a noise.
 ///
@@ -13,7 +15,10 @@ import Observation
 /// The session is `.playback` with `.mixWithOthers`: the game is still heard with the
 /// ring switch off, the way a music app is, and other apps' audio keeps playing under it.
 /// `.ambient` would be the politer default, but a card game whose table has gone quiet
-/// reads as broken rather than as considerate.
+/// reads as broken rather than as considerate. `AudioSession` holds the shapes.
+///
+/// Music the player has on of their own always wins over the game's loop, which waits for
+/// it to stop; the sound effects play over it.
 @MainActor
 @Observable
 final class Audio {
@@ -72,7 +77,15 @@ final class Audio {
     @ObservationIgnored private var wanted: Track?
     @ObservationIgnored private var sounding: Track?
     @ObservationIgnored private var running = false
+    /// Whether the session is still claimed. A nap only pauses the engine, so waking from
+    /// one skips the slow part.
+    @ObservationIgnored private var claimed = false
     @ObservationIgnored private var away = false
+    /// An ad is playing with its sound on, so the game keeps quiet. See `adSpeaks`.
+    @ObservationIgnored private var adIsSpeaking = false
+    /// The player has audio of their own on. Read again whenever the music is reconsidered,
+    /// and told by the hint in between.
+    @ObservationIgnored private var playerHasMusic = false
     @ObservationIgnored private var fading: Task<Void, Never>?
     @ObservationIgnored private var ducking: Task<Void, Never>?
     /// Puts the engine down once the table has been quiet a while. See `napWhenQuiet`.
@@ -88,6 +101,8 @@ final class Audio {
         tableSong = Self.storedSong(in: defaults)
         build()
         watchForInterruptions()
+        watchOtherAudio()
+        watchTheEngine()
     }
 
     /// Reads both switches again, after `AccountSync` has merged them with the player's
@@ -142,10 +157,11 @@ final class Audio {
     private func wake() async {
         guard !running, !away else { return }
         if waking == nil {
-            let desk = Desk(engine: engine)
+            let desk = Desk(engine: engine, claims: !claimed, shape: adIsSpeaking ? .ad : .game)
             waking = Task { [weak self] in
                 let started = await Task.detached(priority: .userInitiated) { desk.start() }.value
                 guard let self else { return }
+                if started { claimed = true }
                 // Backgrounded while the hardware was coming up: leave it asleep.
                 running = started && !away
                 if running == false, started { desk.engine.pause() }
@@ -164,13 +180,22 @@ final class Audio {
     /// this class's isolation and the detached task becomes a cross-actor hop.
     nonisolated private struct Desk: @unchecked Sendable {
         let engine: AVAudioEngine
+        /// False when waking from a nap, with the session still claimed.
+        let claims: Bool
+        let shape: AudioSession.Shape
 
+        /// A claim that fails stays silent: the engine started on an unshaped session would
+        /// claim it as solo ambient and stop the player's music.
         func start() -> Bool {
-            let session = AVAudioSession.sharedInstance()
-            try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-            try? session.setActive(true)
+            if claims, !AudioSession.claim(shape, why: "the engine waking") { return false }
             engine.prepare()
-            return (try? engine.start()) != nil
+            do {
+                try engine.start()
+                return true
+            } catch {
+                Log.audio.error("Engine did not start: \(String(describing: error), privacy: .public)")
+                return false
+            }
         }
     }
 
@@ -199,13 +224,14 @@ final class Audio {
         voice.volume = sound.level * gain
         voice.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
         if !voice.isPlaying { voice.play() }
-        if let duck = sound.duck { step(back: duck) }
+        // Sixty volume steps for a bus nobody is hearing are sixty main-thread wake-ups.
+        if let duck = sound.duck, sounding != nil { step(back: duck) }
         napWhenQuiet()
     }
 
     /// Long enough for the longest sound, the victory at three and a half seconds, to ring
-    /// out with room to spare.
-    private static let quietSpell: Duration = .seconds(10)
+    /// out with room to spare. Waking from a nap keeps the session, so it costs little.
+    private static let quietSpell: Duration = .seconds(6)
 
     /// Pauses the engine after a spell with no music and no sound. A running engine keeps
     /// the audio hardware and its render thread awake while every voice is silent, which
@@ -272,17 +298,25 @@ final class Audio {
         refresh()
     }
 
-    /// What the decks should be playing: a song being tried, else the screen's loop if music is on.
+    /// What the decks should be playing: nothing under an ad that speaks, else a song being
+    /// tried, else the screen's loop if music is on and the player has none of their own on.
+    /// Only the sound effects go over the player's music; a song tried on purpose in the shop
+    /// is the exception.
     private var target: Track? {
-        auditioning ?? (isMusicOn ? wanted : nil)
+        guard !adIsSpeaking else { return nil }
+        if let auditioning { return auditioning }
+        return isMusicOn && !playerHasMusic ? wanted : nil
     }
 
     private func refresh() {
+        playerHasMusic = AudioSession.playerHasMusic
+        settle()
+    }
+
+    /// `refresh` without asking the session again, for when the hint has just said.
+    private func settle() {
         guard let track = target, !away else { return silenceMusic() }
         guard sounding != track else { return }
-        // Another app is already playing, so only the sound effects go over it. A song tried
-        // on purpose in the shop is the exception.
-        guard auditioning != nil || !AVAudioSession.sharedInstance().isOtherAudioPlaying else { return }
         // Claimed here rather than in `begin`, which first awaits a twenty-second file.
         // Two screens asking inside that wait would otherwise start the loop twice.
         sounding = track
@@ -386,12 +420,64 @@ final class Audio {
         sounding = nil
         if running { engine.pause() }
         running = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        claimed = false
+        AudioSession.release(why: "the app going away or an interruption")
     }
 
-    /// The app came back to the foreground.
+    /// The app came back to the foreground. The shape is set again before a banner's video
+    /// or a sound can claim the session, in case anything changed it while the app was away,
+    /// and whether the player put music on meanwhile is asked again before any loop starts.
     func resume() {
         away = false
+        if !adIsSpeaking { AudioSession.shape(.game, why: "the app coming back") }
+        refresh()
+    }
+
+    /// An ad has started or stopped making sound. The game's music steps aside, as the ads
+    /// SDK asks, and the session turns ambient so a phone on silent keeps the ad quiet. Both
+    /// shapes mix, so the player's own music plays on under the ad rather than stopping.
+    ///
+    /// Shaped, not claimed: the ad's video claims the session itself as it starts, in this shape.
+    func adSpeaks(_ speaking: Bool) {
+        guard adIsSpeaking != speaking else { return }
+        adIsSpeaking = speaking
+        AudioSession.shape(speaking ? .ad : .game, why: speaking ? "an ad with sound" : "the ad gone quiet")
+        refresh()
+    }
+
+    /// The player started or stopped music of their own with the game in front. The loop gives
+    /// way to it and comes back after. Sent only while the session is claimed.
+    private func watchOtherAudio() {
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.silenceSecondaryAudioHintNotification, object: nil, queue: .main
+        ) { note in
+            let raw = note.userInfo?[AVAudioSessionSilenceSecondaryAudioHintTypeKey] as? UInt
+            MainActor.assumeIsolated {
+                let begins = raw == AVAudioSession.SilenceSecondaryAudioHintType.begin.rawValue
+                Log.audio.info("The player's own audio \(begins ? "started" : "stopped", privacy: .public)")
+                Audio.shared.playerHasMusic = begins
+                Audio.shared.settle()
+            }
+        }
+    }
+
+    /// The engine stops itself when the output changes under it: AirPods joining, or the
+    /// category changing for an ad. A voice played on a stopped engine throws, so it is marked
+    /// asleep for the next sound to wake, and the loop stopped with it is asked for again.
+    private func watchTheEngine() {
+        NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { Audio.shared.engineStopped() }
+        }
+    }
+
+    private func engineStopped() {
+        guard running, !engine.isRunning else { return }
+        Log.audio.info("The engine stopped for a change of output; the next sound wakes it")
+        running = false
+        for deck in decks { deck.stop(); deck.volume = 0 }
+        sounding = nil
         refresh()
     }
 
@@ -402,10 +488,11 @@ final class Audio {
             let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
             MainActor.assumeIsolated {
                 // A phone call takes the session and hands it back. Without the second
-                // half the music never returns.
+                // half the music never returns. Handed back while the app is not in front,
+                // the music waits for the scene to come back rather than starting unheard.
                 if raw == AVAudioSession.InterruptionType.began.rawValue {
                     Audio.shared.pause()
-                } else {
+                } else if UIApplication.shared.applicationState == .active {
                     Audio.shared.resume()
                 }
             }

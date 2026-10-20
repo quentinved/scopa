@@ -132,11 +132,11 @@ final class ChallengeBook {
 
     /// Whether there is a badge to wear right now. A badge is worn only through the week it was
     /// won in, so each new week it has to be earned again.
-    var wearsHonour: Bool { finishedWeek == week }
+    var wearsHonour: Bool { finishedWeek == week || DebugLaunch.wearsHonour }
 
     /// What goes on the wire so other phones at the table draw the badge too. Nil when there is
     /// nothing to show, which is also what an older build sends.
-    var honourOnWire: String? { wearsHonour ? finishedWeek : nil }
+    var honourOnWire: String? { wearsHonour ? week : nil }
 
     /// Whether a badge sent by another phone is one this week honours: it must name this week,
     /// so a laurel from last week, sent by an older build, is not drawn.

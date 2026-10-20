@@ -8,6 +8,21 @@ final class FrameBox {
     var frames: [Card: CGRect] = [:]
 }
 
+/// One deal of the cards, told from the next by its round and the stock it left behind.
+/// A hand dealt again mid-round is a later deal of the same round, with less stock left.
+struct DealMark: Equatable {
+    let round: Int
+    let stock: Int
+
+    init(_ view: PlayerView) {
+        round = view.roundNumber
+        stock = view.stockCount
+    }
+
+    /// Dealt again since `earlier`, in the same round.
+    func follows(_ earlier: DealMark) -> Bool { round == earlier.round && stock < earlier.stock }
+}
+
 /// The cards in your hand, and the touch that picks one up or throws it onto the table.
 ///
 /// The drag's own state lives here so a card following the finger re-evaluates this row

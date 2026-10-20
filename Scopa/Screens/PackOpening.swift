@@ -46,6 +46,8 @@ struct PackOpening: View {
     /// waits as long as its fanfare says, or until a tap hurries it.
     @State private var faceUp = false
     @State private var turning: Task<Void, Never>?
+    /// Drops a tap that lands while something is still going over. See `RevealTaps`.
+    @State private var taps = RevealTaps()
     /// Counted up to fire the room's own flash and shake, which belong to the screen and
     /// not to the card.
     @State private var flares = 0
@@ -59,18 +61,34 @@ struct PackOpening: View {
     /// the album has already been written; this is the running order of a reveal, and a
     /// reveal that puts the settebello first and two numerals after it is a reveal that
     /// ends on two numerals.
-    private var running: [Album.Found] {
-        opening.found.enumerated()
-            .sorted { lhs, rhs in
-                if lhs.element.card.rarity != rhs.element.card.rarity {
-                    return lhs.element.card.rarity < rhs.element.card.rarity
-                }
-                // New before spare at the same rarity, and otherwise the drawn order, so
-                // the sort is total and two runs of the same pack read identically.
-                if lhs.element.isNew != rhs.element.isNew { return !lhs.element.isNew }
-                return lhs.offset < rhs.offset
-            }
-            .map(\.element)
+    private var running: [Album.Found] { order.map { opening.found[$0] } }
+
+    /// Where each card of `running` sat in the pack as drawn. A foil goes by its own
+    /// fanfare, so a pack with one still ends on it.
+    private var order: [Int] {
+        opening.found.indices.sorted { lhs, rhs in
+            let (left, right) = (opening.found[lhs], opening.found[rhs])
+            let (shine, other) = (drawnFanfare(lhs), drawnFanfare(rhs))
+            if shine != other { return shine < other }
+            if left.card.rarity != right.card.rarity { return left.card.rarity < right.card.rarity }
+            // New before spare at the same rarity, and otherwise the drawn order, so
+            // the sort is total and two runs of the same pack read identically.
+            if left.isNew != right.isNew { return !left.isNew }
+            return lhs < rhs
+        }
+    }
+
+    private func drawnFanfare(_ index: Int) -> Fanfare {
+        Fanfare(opening.found[index].card.rarity, foil: opening.gilt.foil(at: index) != nil)
+    }
+
+    /// The foil album this pack's foils went into, which is what they are finished in.
+    private var foilAlbum: FoilAlbum { opening.gilt.album }
+
+    /// What the card at this place in the running order did in Oro, if it came out foil.
+    private func foil(at place: Int) -> Album.Found? {
+        let order = order
+        return order.indices.contains(place) ? opening.gilt.foil(at: order[place]) : nil
     }
 
     /// One thing to turn over: a card, something off the shelves, or — once everything
@@ -161,7 +179,7 @@ struct PackOpening: View {
     private var sealedPack: some View {
         VStack(spacing: 22) {
             Spacer(minLength: 0)
-            AmbientClock { time in breathe(sealedHalves, at: time) }
+            AmbientClock(period: 3.8) { time in breathe(sealedHalves, at: time) }
             .animation(.spring(duration: 0.55, bounce: 0.35), value: pull)
             .animation(.easeIn(duration: 0.45), value: act)
             .gesture(tear)
@@ -172,7 +190,7 @@ struct PackOpening: View {
                 Text("Pull the top off")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Palette.onTableSoft)
-                AmbientClock { time in
+                AmbientClock(period: 3.8) { time in
                     Image(systemName: "chevron.up")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(Palette.onTableSoft)
@@ -307,11 +325,14 @@ struct PackOpening: View {
     /// under it.
     private func foundCard(_ found: Album.Found, place: Int) -> some View {
         let rarity = found.card.rarity
+        let gold = foil(at: place)
         return VStack(spacing: 18) {
-            RevealStage(fanfare: Fanfare(rarity), tint: Rarities.tint(rarity), faceUp: faceUp,
-                        isNew: found.isNew, rays: Rarities.rays(rarity), width: 168,
+            // A foil is gold from the first glow, and its moment is the foil: no rays.
+            RevealStage(fanfare: Fanfare(rarity, foil: gold != nil),
+                        tint: gold == nil ? Rarities.tint(rarity) : foilAlbum.tint, faceUp: faceUp,
+                        isNew: found.isNew, rays: gold == nil ? Rarities.rays(rarity) : 0, width: 168,
                         radius: 168 * 0.09) {
-                cardFace(found)
+                cardFace(found, gold: gold)
             } back: {
                 CardBack(width: 168)
                     .shadow(color: felt.shade(0.5), radius: 22, y: 12)
@@ -321,20 +342,27 @@ struct PackOpening: View {
             VStack(spacing: 10) {
                 RarityTag(rarity, locale: locale, size: 12, filled: rarity > .plain)
                 foundTag(found)
+                if let gold { OroFoundLine(found: gold, album: foilAlbum) }
             }
             .opacity(faceUp ? 1 : 0)
             .offset(y: faceUp ? 0 : 10)
         }
     }
 
-    private func cardFace(_ found: Album.Found) -> some View {
+    private func cardFace(_ found: Album.Found, gold: Album.Found?) -> some View {
         CardView(card: found.card, width: 168)
+            .foil(gold != nil, in: foilAlbum)
             .shadow(color: felt.shade(0.5), radius: 22, y: 12)
+            .overlay(alignment: .topLeading) {
+                if gold != nil, faceUp { OroStamp(afterNew: found.isNew, album: foilAlbum).offset(x: -20, y: -14) }
+            }
             .overlay {
                 if found.card == .settebello {
+                    // In the light of its foil, so a pearl settebello is not ringed in gold.
+                    let ring = gold == nil ? Palette.goldLight : foilAlbum.tint
                     RoundedRectangle(cornerRadius: 168 * 0.09)
-                        .strokeBorder(Palette.goldLight, lineWidth: 2.5)
-                        .shadow(color: Palette.goldLight.opacity(0.9), radius: 10)
+                        .strokeBorder(ring, lineWidth: 2.5)
+                        .shadow(color: ring.opacity(0.9), radius: 10)
                 }
             }
             .overlay(alignment: .topTrailing) {
@@ -457,7 +485,8 @@ struct PackOpening: View {
             }
             .scrollIndicators(.hidden)
             }
-            Button { dismiss() } label: {
+            // A double tap that ended the reveal does not also close it.
+            Button { if taps.isOpen { dismiss() } } label: {
                 Text("Done")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
@@ -481,7 +510,7 @@ struct PackOpening: View {
         if opening.tier.isCosmeticOnly {
             return opening.bestWon == nil ? "Nothing new this time" : "That is yours"
         }
-        return opening.isAllSpares && opening.won.isEmpty
+        return opening.isAllSpares && opening.won.isEmpty && !opening.gilt.hasNew
             ? "Nothing new this time"
             : "That is in the album"
     }
@@ -490,15 +519,22 @@ struct PackOpening: View {
     private var haul: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
-                ForEach(Array(running.enumerated()), id: \.offset) { _, found in
+                ForEach(Array(running.enumerated()), id: \.offset) { place, found in
                     VStack(spacing: 5) {
                         CardView(card: found.card, width: 52)
+                            .foil(foil(at: place) != nil, in: foilAlbum)
                             // Centred on the top edge rather than hung off a corner:
                             // "NOUVEAU" is as wide as the card and covered the next one.
                             .overlay(alignment: .top) {
                                 if found.isNew { NewTag(size: 7).offset(y: -7) }
                             }
+                            // ORO on the foot, as NEW is on the head: a foil in the haul
+                            // has no stamp coming down on it any more.
+                            .overlay(alignment: .bottom) {
+                                if foil(at: place) != nil { OroTag(size: 7, album: foilAlbum).offset(y: 6) }
+                            }
                         RarityTag(found.card.rarity, locale: locale, size: 8)
+                            .padding(.top, foil(at: place) != nil ? 4 : 0)
                     }
                 }
             }
@@ -536,6 +572,7 @@ struct PackOpening: View {
                 line(String(localized: "The whole deck", locale: locale),
                      value: Album.deckBonus, tint: Palette.goldLight, note: prizeNote)
             }
+            OroTally(gilt: opening.gilt)
             if opening.denari.isCredit {
                 line(String(localized: "Into the purse", locale: locale), value: opening.denari,
                      tint: Palette.onTable)
@@ -567,13 +604,21 @@ struct PackOpening: View {
         }
     }
 
-    /// What finishing this volume handed over besides the denari.
-    private var prizeNote: String {
-        switch opening.volume {
+    private var prizeNote: String { Self.prizeNote(for: opening.volume, locale: locale) }
+
+    /// What finishing a volume handed over besides the denari.
+    static func prizeNote(for volume: Volume, locale: Locale) -> String {
+        switch volume {
         case .riviera: String(localized: "The Settebello mark, for your seat", locale: locale)
         case .napoli: String(localized: "The Golfo card back, and this deck to play with", locale: locale)
         case .pergamena: String(localized: "The Sigillo flourish, and this deck to play with", locale: locale)
         case .notturna: String(localized: "Civetta joins your table, and this deck to play with", locale: locale)
+        case .maiolica: String(localized: "The Faenza mazurka for your games, and this deck to play with", locale: locale)
+        case .mosaico: String(localized: "The Tessere frame for your badge, and this deck to play with", locale: locale)
+        case .carnevale: String(localized: "The Maschere phrases for the table, and this deck to play with", locale: locale)
+        case .intarsio: String(localized: "The Cubi cloth for your table, and this deck to play with", locale: locale)
+        case .merletto: String(localized: "The Trina lace for your badge, and this deck to play with", locale: locale)
+        case .tarocchi: String(localized: "The Visconti app icon, and this deck to play with", locale: locale)
         }
     }
 
@@ -601,12 +646,16 @@ struct PackOpening: View {
         }
     }
 
-    /// A tap anywhere: opens the pack, turns the next thing over, or ends it.
+    /// A tap anywhere: opens the pack, turns the next thing over, or ends it. Only a thing
+    /// already face up and landed is tapped past; one face down or still going over is
+    /// turned, or left to finish turning.
     private func advance() {
         switch act {
         case .sealed:
             open()
         case .tearing:
+            break
+        case .turning where !taps.isOpen:
             break
         case .turning(let place) where !faceUp:
             turnOver(place)
@@ -620,6 +669,7 @@ struct PackOpening: View {
     }
 
     private func finish() {
+        taps.moved()
         withAnimation(.spring(duration: 0.45, bounce: 0.2)) { act = .counted }
         if !opening.suits.isEmpty || opening.deck || opening.bestWon != nil {
             Audio.shared.play(.victory)
@@ -630,6 +680,7 @@ struct PackOpening: View {
     private func show(_ place: Int) {
         turning?.cancel()
         faceUp = false
+        taps.moved()
         withAnimation(.spring(duration: 0.42, bounce: 0.22)) { act = .turning(place: place) }
         Audio.shared.play(.pick)
         let fanfare = fanfare(at: place)
@@ -653,6 +704,7 @@ struct PackOpening: View {
         withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.3)) {
             faceUp = true
         }
+        taps.turned(reduceMotion: reduceMotion)
         say(at: place)
         let fanfare = fanfare(at: place)
         guard fanfare >= .grand else { return }
@@ -681,7 +733,7 @@ struct PackOpening: View {
 
     private func fanfare(at place: Int) -> Fanfare {
         switch step(at: place) {
-        case .card(let found): Fanfare(found.card.rarity)
+        case .card(let found): Fanfare(found.card.rarity, foil: foil(at: place) != nil)
         case .won(let won): won.item.map { Fanfare($0.grade) } ?? .quiet
         case .finale: .crowning
         }
@@ -689,6 +741,7 @@ struct PackOpening: View {
 
     private func tint(at place: Int) -> Color {
         switch step(at: place) {
+        case .card where foil(at: place) != nil: foilAlbum.tint
         // A numeral's own colour is the table's soft text, which reads as "not yet".
         case .card(let found):
             found.card.rarity == .plain ? Palette.goldLight : Rarities.tint(found.card.rarity)
@@ -852,7 +905,7 @@ struct NewTag: View {
 /// NEW put down on something the moment it turns over and turns out to be missing until
 /// now. It drops from above the card, lands with a thump and the till, and throws off a
 /// ring where it hit: the one beat of an opening about what you did not have.
-private struct NewStamp: View {
+struct NewStamp: View {
     /// What it sounds like as it lands.
     var sound: Sound
 

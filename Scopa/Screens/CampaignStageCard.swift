@@ -58,7 +58,7 @@ struct CampaignStageCard: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Palette.onTable)
                 .frame(width: 28, height: 28)
-                .glass(.riviera(interactive: true), in: .circle)
+                .glass(.riviera(), in: .circle)
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
@@ -100,9 +100,12 @@ struct CampaignStageCard: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 4)
-                    Button("How it works") { explain([rule]) }
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(Palette.terracotta)
+                    VStack(alignment: .trailing, spacing: 8) {
+                        Button("How it works") { explain([rule]) }
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(Palette.terracotta)
+                        TryRuleButton(rule: rule)
+                    }
                 }
             }
         }

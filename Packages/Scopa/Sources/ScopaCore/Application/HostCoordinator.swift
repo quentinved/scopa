@@ -19,11 +19,15 @@ public actor HostCoordinator {
     private var absent: Set<PlayerID> = []
     /// Seats the machine plays on purpose. Filled from the lobby, played by the host.
     private var bots: Set<PlayerID> = []
-    private let bot: Bot
+    /// Replaced only before the deal, when a ranked table names the house's division.
+    private var bot: Bot
     /// How long a bot waits before playing, so the table can watch its move land.
     private let pace: Duration
-    /// See `holdBots(for:)`.
-    private var botsHeldUntil: ContinuousClock.Instant?
+    /// The last move broadcast also dealt every hand again. Every screen lets that move land
+    /// before it shows the new hand and its banner, so the bot leading the hand waits for both.
+    private var handFollowsAMove = false
+    /// See `holdBots(for:)`. A sleep the bots wait out, cancelled by a release.
+    private var hold: Task<Void, Never>?
 
     public init(
         transport: any GameTransport,
@@ -36,7 +40,7 @@ public actor HostCoordinator {
         self.bot = Bot(strength: strength)
         self.transport = transport
         self.advertising = advertising
-        self.lobby = Lobby(host: transport.localPlayer, teams: teams)
+        self.lobby = Lobby(host: transport.localPlayer, teams: teams, takesForfeits: true)
         self.pace = pace
         self.rng = rng
         (updates, continuation) = UpdateStream.make()
@@ -58,6 +62,7 @@ public actor HostCoordinator {
     public func stop() {
         pump?.cancel()
         pump = nil
+        hold?.cancel()
         advertising?.stopAdvertising()
         continuation.finish()
     }
@@ -66,17 +71,21 @@ public actor HostCoordinator {
     /// such as what a ranked game pays. A deadline rather than a flag, so a release that never
     /// comes cannot stall the table for good.
     public func holdBots(for duration: Duration) {
-        botsHeldUntil = .now + duration
+        hold?.cancel()
+        hold = Task { try? await Task.sleep(for: duration) }
     }
 
     public func releaseBots() {
-        botsHeldUntil = nil
+        hold?.cancel()
+        hold = nil
     }
 
-    /// Checked often rather than slept out, so a release lets the bot go straight away.
+    /// Slept out rather than polled: a release cancels the sleep, so the bot still goes
+    /// straight away. A hold made longer while waiting is waited out too.
     private func waitOutHold() async {
-        while pump != nil, let until = botsHeldUntil, until > .now {
-            try? await Task.sleep(for: .milliseconds(100))
+        while pump != nil, let current = hold {
+            await current.value
+            if hold == current { hold = nil }
         }
     }
 
@@ -143,6 +152,29 @@ public actor HostCoordinator {
         lobby.players = [host, rest[0], partner, rest[1]]
         await publishLobby()
     }
+
+    /// Sits `id` across from the host, which is what makes them partners at a table in teams.
+    /// Whoever sat across takes the chair `id` leaves, so nobody else moves. Before the deal.
+    public func teamUp(with id: PlayerID) async {
+        guard session == nil, lobby.players.count > 2,
+              let from = lobby.players.firstIndex(where: { $0.id == id }), from != 0, from != 2
+        else { return }
+        lobby.players.swapAt(from, 2)
+        await publishLobby()
+    }
+
+    /// Names the division the house plays at a ranked table, and has the bots play at it. One
+    /// call does both, so the league every phone shows over a house chair cannot drift from how
+    /// hard that chair plays. Before the deal only.
+    public func setHouseStep(_ step: Int) async {
+        guard session == nil else { return }
+        lobby.houseStep = step
+        bot = Bot(strength: .house(atStep: step))
+        await publishLobby()
+    }
+
+    /// How hard the bots at this table think.
+    public var botStrength: BotStrength { bot.strength }
 
     public func setTeams(_ teams: Bool) async {
         guard session == nil else { return }
@@ -224,11 +256,12 @@ public actor HostCoordinator {
         guard let session else { throw HostError.noGame }
         guard case .finished = await session.state.phase else { throw HostError.gameAlreadyRunning }
         self.session = nil
-        // Before the deal, so a guest reads the new name off the lobby with the new hand.
-        if let gameID {
-            lobby.gameID = gameID
-            await publishLobby()
-        }
+        // Before the deal, so a guest reads the new name off the lobby with the new hand. A
+        // game called off was the last one; the new one counts.
+        let calledOff = lobby.leftEarly != nil
+        lobby.leftEarly = nil
+        if let gameID { lobby.gameID = gameID }
+        if gameID != nil || calledOff { await publishLobby() }
         try await startGame()
     }
 
@@ -273,7 +306,11 @@ public actor HostCoordinator {
         case .leave(let id): await remove(id)
         case .play(let move): await play(move, from: envelope.from)
         case .react(let reaction): await relay(reaction, from: envelope.from)
-        case .lobby, .joinRefused, .view, .events, .rejected, .playerLeft, .reacted, .record:
+        // The phone leaves right after saying so, and its seat is covered when the line goes.
+        case .forfeit where session != nil && lobby.players.contains(where: { $0.id == envelope.from }):
+            continuation.yield(.forfeited(envelope.from))
+        case .lobby, .joinRefused, .view, .events, .rejected, .playerLeft, .reacted, .record,
+             .playerReturned, .tableClosed, .packedRecord, .forfeit:
             return
         }
     }
@@ -283,8 +320,16 @@ public actor HostCoordinator {
         // the table had noticed them go. A connection that drops and returns inside a turn
         // never looked absent from here.
         if session != nil, lobby.players.contains(where: { $0.id == player.id }) {
-            absent.remove(player.id)
+            let wasAway = absent.remove(player.id) != nil
             await welcomeBack(player.id)
+            if wasAway { await announceReturn(of: player.id) }
+            return
+        }
+        // The same before the deal: a join sent again because the answer to the first was slow,
+        // or because the line blipped, is somebody already sitting down. Refused, it sent them
+        // back to the lobby from a chair the table still kept for them.
+        if session == nil, lobby.players.contains(where: { $0.id == player.id }) {
+            try? await transport.send(.lobby(lobby), to: .player(player.id))
             return
         }
         makeRoomForAPerson(over: player)
@@ -347,7 +392,7 @@ public actor HostCoordinator {
             // A bot seat takes its time so its move can be watched. An empty seat does
             // not: the table has already stalled once waiting on it.
             if bots.contains(player.id) {
-                try? await Task.sleep(for: pace)
+                try? await Task.sleep(for: handFollowsAMove ? pace + pace * 4 / 5 : pace)
                 await waitOutHold()
                 guard await session.state == current else { return }
             }
@@ -364,9 +409,45 @@ public actor HostCoordinator {
         try? await transport.send(.view(view), to: .player(id))
     }
 
+    /// Everyone is told, this phone included, so the bot face comes off the chair.
+    private func announceReturn(of id: PlayerID) async {
+        continuation.yield(.playerReturned(id))
+        try? await transport.send(.playerReturned(id), to: .all)
+    }
+
+    // MARK: Connection
+
+    /// Sends every guest the table again, after this phone's own connection came back.
+    /// Whatever went out while the line was down went nowhere, and a guest still showing the
+    /// turn before it would wait on a move the host thinks it has already made.
+    public func catchUp() async {
+        try? await transport.send(.lobby(lobby), to: .all)
+        guard let session else { return }
+        for (id, view) in await session.views() where id != localPlayer.id && !bots.contains(id) {
+            try? await transport.send(.view(view), to: .player(id))
+        }
+    }
+
+    /// Calls a ranked game off because `player` left it in its first minutes, and tells every
+    /// phone, so none of them reports it. The first to go is the one named, and a phone sitting
+    /// back down hears it with the lobby. Not advertised: the table is mid-game.
+    public func callOff(leftBy player: PlayerID) async {
+        guard session != nil, lobby.leftEarly == nil else { return }
+        lobby.leftEarly = player
+        continuation.yield(.lobby(lobby))
+        try? await transport.send(.lobby(lobby), to: .all)
+    }
+
+    /// Tells every guest the table is being put away, before the line goes. Their phones can
+    /// then leave at once instead of waiting for a host whose signal they think has dropped.
+    public func closeTable() async {
+        try? await transport.send(.tableClosed, to: .all)
+    }
+
     /// Sends each player their own view, and the events to everyone.
     private func broadcast(events: [GameEvent]) async {
         guard let session else { return }
+        handFollowsAMove = events.contains(.dealt) && events.contains { if case .played = $0 { true } else { false } }
         let views = await session.views()
         for (id, view) in views where id != localPlayer.id {
             try? await transport.send(.view(view), to: .player(id))
@@ -380,7 +461,7 @@ public actor HostCoordinator {
         // record to read back, after the events that ended it.
         guard events.contains(where: { if case .gameEnded = $0 { true } else { false } }) else { return }
         let record = await session.record
-        try? await transport.send(.record(record), to: .all)
+        try? await transport.send(Wire.message(for: record, from: localPlayer.id), to: .all)
         continuation.yield(.record(record))
     }
 }

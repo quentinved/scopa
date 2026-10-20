@@ -181,6 +181,12 @@ extension CardStyle {
         case .classica: "Kings in full robes, and they know it"
         case .antica: "Carved in wood, like great-grandpa's deck"
         case .litografia: "Full colour, still warm from the press"
+        case .maiolica: "Hand-painted tiles. Not dishwasher safe"
+        case .mosaico: "Two thousand tiny stones. Don't drop it"
+        case .carnevale: "The court wears masks. Bluff accordingly"
+        case .intarsio: "Inlaid by hand in Sorrento. Coasters, please"
+        case .merletto: "Burano lace, stitch by stitch. Clean hands only"
+        case .tarocchi: "Gilded like a duke's tarot. Fortunes not included"
         }
     }
 }
@@ -194,6 +200,10 @@ extension CardSkin {
         case .bergamasca: "Bright cobalt. Not one for whispering"
         case .pergamena: "Old paper, brown ink. Found in the attic"
         case .notturna: "Gold on black, for the midnight rematch"
+        case .veneziana: "Lagoon teal and crimson. Gondola extra"
+        case .sorrentina: "Walnut and lemonwood. Polished on Sundays"
+        case .buranella: "Burano colours. Visible through fog"
+        case .milanese: "Ultramarine and gold. Very Milan, very dear"
         }
     }
 }

@@ -71,6 +71,20 @@ public struct MoveReview: Hashable, Sendable, Identifiable {
 /// Every move of a game, judged from the seat that made it.
 public struct GameReview: Hashable, Sendable {
     public let moves: [MoveReview]
+    /// How many of the record's moves this has read, judged or skipped. Where a review of
+    /// the same game a round later picks up.
+    let read: Int
+    /// The seats judged, nil for all of them.
+    let seats: Set<Int>?
+    /// The game's first deck, which tells this game from the next one at the same table.
+    let deal: [Card]?
+
+    init(moves: [MoveReview], read: Int, seats: Set<Int>? = nil, deal: [Card]? = nil) {
+        self.moves = moves
+        self.read = read
+        self.seats = seats
+        self.deal = deal
+    }
 
     /// One seat's game, summed up.
     public struct Summary: Hashable, Sendable {
@@ -90,6 +104,13 @@ public struct GameReview: Hashable, Sendable {
 
     public func moves(forSeat seat: Int) -> [MoveReview] {
         moves.filter { $0.seat == seat }
+    }
+
+    /// Whether this is the review of an earlier point in the same game, from the same seats.
+    /// A campaign retry deals the same deck, so the moves are compared as well.
+    func leadsInto(_ steps: [(state: GameState, move: Move)], seats: Set<Int>?, deal: [Card]?) -> Bool {
+        self.seats == seats && self.deal == deal && read <= steps.count
+            && moves.allSatisfy { steps[$0.id].move == $0.move }
     }
 
     /// One seat's game summed up, or one round of it when `round` is given.
@@ -135,14 +156,28 @@ public enum Reviewer {
     /// two moves stops being something anybody could reasonably have been expected to see.
     static let forgiven = 0.5
 
-    public static func review(_ record: GameRecord) -> GameReview {
+    /// Judges the moves of `seats`, or of every seat when nil. Given the review of an earlier
+    /// round of the same game, keeps what it judged and reads on from there: reviewed after
+    /// every round, a game of six rounds reads six rounds rather than twenty-one. A cancelled
+    /// task gets back the part read so far.
+    public static func review(_ record: GameRecord, seats: Set<Int>? = nil,
+                              after earlier: GameReview? = nil) -> GameReview {
         let bot = Bot()
         let steps = record.replay().steps
-        let reviews = steps.enumerated().map { index, step -> MoveReview in
-            let view = step.state.view(forSeat: step.move.seat)
-            return judge(step.move, in: view, ordinal: index, round: step.state.roundNumber, bot: bot)
+        let deal = record.rounds.first?.deck
+        let kept = earlier.flatMap { $0.leadsInto(steps, seats: seats, deal: deal) ? $0 : nil }
+        var moves = kept?.moves ?? []
+        var read = kept?.read ?? 0
+        while read < steps.count, !Task.isCancelled {
+            let step = steps[read]
+            if seats?.contains(step.move.seat) ?? true {
+                let view = step.state.view(forSeat: step.move.seat)
+                let judged = judge(step.move, in: view, ordinal: read, round: step.state.roundNumber, bot: bot)
+                moves.append(second(look: judged, signature: record.signature))
+            }
+            read += 1
         }
-        return GameReview(moves: reviews.map { second(look: $0, signature: record.signature) })
+        return GameReview(moves: moves, read: read, seats: seats, deal: deal)
     }
 
     /// Every telling-off, put to the hard bot before it is shown to anybody.

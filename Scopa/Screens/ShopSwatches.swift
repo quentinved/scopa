@@ -15,6 +15,8 @@ struct Swatch<Preview: View>: View {
     /// How this one is had when it cannot be bought, such as "7-day streak". A key rather
     /// than a string: the wording inflects on the number, which only `Text` resolves.
     var earnedBy: LocalizedStringKey? = nil
+    /// Worn for a game after a video, not owned. See `TryOn`.
+    var trying = false
     @ViewBuilder var preview: Preview
 
     /// How rare the thing is, which is a different question from what it costs and is why
@@ -50,7 +52,7 @@ struct Swatch<Preview: View>: View {
         .frame(width: 128)
         .padding(.vertical, 14)
         .padding(.horizontal, 8)
-        .glass(equipped ? .riviera(tint: Palette.terracotta.opacity(0.75), interactive: true) : .identity,
+        .glass(equipped ? .riviera(tint: Palette.terracotta.opacity(0.75)) : .identity,
                in: .rect(cornerRadius: GlassRadius.control))
         // The dearer the grade, the more the tile is worth looking at: a common thing keeps
         // the plain hairline every tile has always had, and only the rest are dressed.
@@ -92,6 +94,10 @@ struct Swatch<Preview: View>: View {
             Label("In use", systemImage: "checkmark.circle.fill")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Palette.cream)
+        } else if trying {
+            Label("Trying", systemImage: "sparkles")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Palette.goldLight)
         } else if owned {
             Label("Owned", systemImage: "checkmark")
                 .font(.system(size: 11, weight: .semibold))
@@ -145,8 +151,8 @@ struct FeltSwatch: View {
 }
 
 /// The table in miniature, upright like the phone it is played on: the felt in use, the
-/// cloth drawn the whole way round it, the opponent's cards at the top, two on the table
-/// and a hand at the foot. A border cannot be judged from a corner of it.
+/// cloth over it, the opponent's cards at the top, two on the table and a hand at the
+/// foot, so a cloth is judged with cards on it.
 struct TapisSwatch: View {
     let tapis: Tapis
     let felt: TableFelt
@@ -254,16 +260,19 @@ struct Gilding: View {
     }
 }
 
-/// A flourish playing on a scrap of the cloth, over and over.
+/// A flourish playing on a scrap of the cloth, over and over while it is on screen.
 ///
 /// A still picture of confetti is a picture of dots, so the tile runs the real thing on a
 /// loop at a fraction of its size. Restarted by a `.id` that changes on a timer, which is
-/// the same trick `Gilding` uses to replay itself and needs no state per mote.
+/// the same trick `Gilding` uses to replay itself and needs no state per mote. Scrolled out
+/// of sight it stops: each frame of it redrew the whole shop.
 struct FlourishSwatch: View {
     let flourish: Flourish
     let felt: TableFelt
 
+    /// Zero until the tile is first seen, so nothing plays while the shop opens.
     @State private var run = 0
+    @State private var isOnScreen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -275,23 +284,27 @@ struct FlourishSwatch: View {
             .overlay {
                 // Laid out on a table twice the tile's size and scaled down onto it, so the
                 // cannons sit in the tile's own corners and the fireworks open inside it.
-                FlourishView(flourish: flourish, origin: .center)
-                    .frame(width: 168, height: 116)
-                    .id(run)
-                    .scaleEffect(0.5)
-                    // A thumbnail at half size: thirty frames a second reads the same.
-                    .environment(\.flourishFrameGap, 1.0 / 30.0)
+                if run > 0 {
+                    FlourishView(flourish: flourish, origin: .center)
+                        .frame(width: 168, height: 116)
+                        .id(run)
+                        .scaleEffect(0.5)
+                        // A thumbnail at half size: thirty frames a second reads the same.
+                        .environment(\.flourishFrameGap, 1.0 / 30.0)
+                }
             }
             .overlay(alignment: .bottomLeading) {
                 CardBack(width: 22).rotationEffect(.degrees(-8)).offset(x: 6, y: -5)
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
-            .task {
-                guard !reduceMotion, flourish != .stendardo else { return }
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(FlourishView.length + 0.5))
-                    guard !Task.isCancelled else { return }
+            .reportsOnScreen(into: $isOnScreen)
+            // Played from the start each time the tile comes into view, a couple of times
+            // and then held: five tiles looping kept the shop redrawing for as long as it was open.
+            .task(id: isOnScreen) {
+                guard isOnScreen, !reduceMotion, flourish != .stendardo else { return }
+                for _ in 0..<2 where !Task.isCancelled {
                     run += 1
+                    try? await Task.sleep(for: .seconds(FlourishView.length + 0.5))
                 }
             }
     }

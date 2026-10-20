@@ -8,7 +8,7 @@ MainActor.assumeIsolated {
     let arguments = CommandLine.arguments
     guard (3...5).contains(arguments.count), let side = Double(arguments[1]) else {
         FileHandle.standardError.write(
-            Data("usage: render-icon <size> <output.png> [light|dark|tinted] [classic|silver|gold|platinum|diamond|maestro]\n".utf8))
+            Data("usage: render-icon <size> <output.png> [light|dark|tinted] [classic|silver|gold|platinum|diamond|maestro|patron|visconti]\n".utf8))
         exit(2)
     }
     let output = URL(fileURLWithPath: arguments[2])

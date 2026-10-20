@@ -37,6 +37,11 @@ test("a reward carries only what the app knows how to hand over", () => {
   assert.equal(rewardOf(row({ packs: Array(MAX_PACKS + 3).fill("bottega").join(",") })).packs.length, MAX_PACKS);
 });
 
+test("the album decks can be handed over like any deck on the shelves", () => {
+  assert.deepEqual(rewardOf(row({ packs: null, items: "deck.maiolica,deck.mosaico,skin.piacentina" })).items,
+    ["deck.maiolica", "deck.mosaico", "skin.piacentina"]);
+});
+
 test("a coupon is over after its last instant, or when taken off by hand", () => {
   assert.equal(isOver(row(), NOW), false);
   assert.equal(isOver(row({ expires_at: "2026-10-01T12:00:00Z" }), NOW), false);

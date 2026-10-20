@@ -20,7 +20,9 @@ extension Audio {
         }
 
         if move.tookSettebello {
-            play(.settebello, gain: mine ? 1 : 0.85, after: .milliseconds(mine ? 100 : 150))
+            // Behind a sweep the bells wait for the plate over the band, after the cheer.
+            let delay: Duration = move.sweeps ? .seconds(ScopaBanner.prizeTime) : .milliseconds(mine ? 100 : 150)
+            play(.settebello, gain: mine ? 1 : 0.85, after: delay)
         }
     }
 }

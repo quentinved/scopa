@@ -11,8 +11,11 @@ import ScopaCore
 public final class GameCenterSession: NSObject, GameTransport, @unchecked Sendable {
     public let localPlayer: Player
     public let incoming: AsyncStream<Envelope>
-    /// Anything that went wrong with the match after it was made: a drop, a failure to send.
+    /// Anything that went wrong with the match after it was made that is worth a notice.
     public let problems: AsyncStream<String>
+    /// One value when Apple gives up on the match. Nothing can be sent or heard after it,
+    /// and a match is never mended, so the table says so rather than sitting there dead.
+    public let failed: AsyncStream<Void>
 
     /// Apple's match under the table. The host reaches for it to invite one more friend
     /// into a table that already exists; nothing else needs it, everything else the table
@@ -20,19 +23,23 @@ public final class GameCenterSession: NSObject, GameTransport, @unchecked Sendab
     public let match: GKMatch
     private let incomingContinuation: AsyncStream<Envelope>.Continuation
     private let problemsContinuation: AsyncStream<String>.Continuation
+    private let failedContinuation: AsyncStream<Void>.Continuation
     private let lock = NSLock()
     /// The other people in the match, by the id they will sign their envelopes with.
     private var remote: [PlayerID: GKPlayer] = [:]
-    /// Who deals, when the table already knows. An invited table does: the friend who sent
-    /// the invitation hosts it, and every phone is told so rather than working it out.
-    private let declaredHost: PlayerID?
+    /// Who deals, decided once as the table is sat at. See `hostID`.
+    private let electedHost: PlayerID
 
+    /// `host` names who deals where the table knows: an invitation names its sender. Anywhere
+    /// else it is left out and worked out here, once, from a match that is already full.
     public init(match: GKMatch, localPlayer: Player, host: PlayerID? = nil) {
         self.match = match
         self.localPlayer = localPlayer
-        self.declaredHost = host
+        self.electedHost = TableHost.elect(declared: host, local: localPlayer.id,
+                                           others: match.players.map(GameCenter.id(of:)))
         (incoming, incomingContinuation) = AsyncStream.makeStream(of: Envelope.self, bufferingPolicy: .unbounded)
         (problems, problemsContinuation) = AsyncStream.makeStream(of: String.self, bufferingPolicy: .bufferingNewest(1))
+        (failed, failedContinuation) = AsyncStream.makeStream(of: Void.self, bufferingPolicy: .bufferingNewest(1))
         super.init()
         for player in match.players { remote[GameCenter.id(of: player)] = player }
         match.delegate = self
@@ -43,6 +50,7 @@ public final class GameCenterSession: NSObject, GameTransport, @unchecked Sendab
         match.disconnect()
         incomingContinuation.finish()
         problemsContinuation.finish()
+        failedContinuation.finish()
     }
 
     /// Everyone at the table, this device included.
@@ -64,10 +72,11 @@ public final class GameCenterSession: NSObject, GameTransport, @unchecked Sendab
     /// connecting, so two phones reading the smallest id at that moment can each see a
     /// different table and both decide they are the host, or that neither is, and then sit
     /// waiting for a join that is never coming.
-    public var hostID: PlayerID {
-        if let declaredHost { return declaredHost }
-        return players.map(\.id).min { $0.rawValue < $1.rawValue } ?? localPlayer.id
-    }
+    ///
+    /// Decided once. It used to be read afresh from whoever was still connected, so a host
+    /// whose phone dropped handed the title to the next smallest id: the guests' joins went
+    /// to another guest, and a host Apple brought back was no longer the one they asked.
+    public var hostID: PlayerID { electedHost }
 
     public var isHost: Bool { hostID == localPlayer.id }
 
@@ -134,7 +143,7 @@ extension GameCenterSession: GKMatchDelegate {
     }
 
     public func match(_ match: GKMatch, didFailWithError error: Error?) {
-        problemsContinuation.yield("The connection to the table was lost")
+        failedContinuation.yield(())
     }
 
     /// Asked when somebody drops: keeping the match going is always right, the host plays

@@ -66,6 +66,10 @@ export function streakAfter(won: boolean, streak: number): number {
   return won ? Math.max(streak, 0) + 1 : 0;
 }
 
+/// The shortest run a loss leaves to be kept for an ad, once per run. Anything shorter is
+/// one win to win back.
+export const KEEPABLE_RUN = 2;
+
 export function apply(delta: number, rating: number, floor: number): { rating: number; floor: number } {
   const next = Math.min(Math.max(rating + delta, floor), TOP);
   return { rating: next, floor: Math.max(floor, floorOf(standing(next).league)) };
@@ -79,8 +83,8 @@ export function apply(delta: number, rating: number, floor: number): { rating: n
 /// See Ranking.swift.
 export const HOUSE_WIN = 25;
 export const HOUSE_LOSS = -5;
-/// House games past this many a day pay nothing, which caps the house at +320 a day, run included.
-export const HOUSE_GAMES_PER_DAY = 10;
+/// House games past this many a day pay nothing, which caps the house at +495 a day, run included.
+export const HOUSE_GAMES_PER_DAY = 15;
 
 /// `streak` is the run standing before this game, as for `change`.
 export function houseChange(won: boolean, streak = 0): number {

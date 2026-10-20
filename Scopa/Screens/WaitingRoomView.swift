@@ -9,6 +9,8 @@ struct WaitingRoomView: View {
 
     private var lobby: Lobby? { store.lobby }
     private var players: [Player] { lobby?.players ?? [] }
+    /// A ranked duo plays the ladder's rules, so its leader has nothing to set.
+    private var setsRules: Bool { store.isHost && !store.isRankedDuo }
 
     @Environment(\.verticalSizeClass) private var heightClass
     @Environment(\.screenSize) private var screenSize
@@ -30,7 +32,7 @@ struct WaitingRoomView: View {
                     header
                     invitation
                     seats.padding(.top, 24)
-                    if store.isHost { settings.padding(.top, 24) }
+                    if setsRules { settings.padding(.top, 24) }
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 28)
@@ -53,13 +55,15 @@ struct WaitingRoomView: View {
             invitation
             HStack(alignment: .top, spacing: 24) {
                 ScrollView {
-                    seats.padding(.vertical, 4)
+                    // Room for what hangs off the chairs' edges, the cross on a bot and the
+                    // partner tag, which the scroll view would otherwise cut through.
+                    seats.padding(9)
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .scrollIndicators(.hidden)
                 VStack(spacing: 0) {
                     ScrollView {
-                        if store.isHost { settings.padding(.vertical, 4) }
+                        if setsRules { settings.padding(.vertical, 4) }
                     }
                     .scrollBounceBehavior(.basedOnSize)
                     .softScrollEdge(.bottom)
@@ -88,7 +92,7 @@ struct WaitingRoomView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(width: 40, height: 40)
-                    .glass(.riviera(interactive: true), in: .circle)
+                    .glass(.riviera(), in: .circle)
                     .contentShape(.circle)
             }
             .foregroundStyle(Palette.onTable)
@@ -131,7 +135,7 @@ struct WaitingRoomView: View {
                 Text("Your table is open nearby")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Palette.onTable)
-                Text("Nothing arrives on this phone: friends sit down from theirs, in With friends → Join a friend's table → Nearby. Both phones need the same Wi-Fi.")
+                Text("Nothing arrives on this phone: friends sit down from theirs, in Friends & bots → Join a friend's table → Nearby. Both phones need the same Wi-Fi.")
                     .font(.system(size: 13))
                     .foregroundStyle(Palette.onTableSoft)
                     .fixedSize(horizontal: false, vertical: true)
@@ -164,13 +168,14 @@ struct WaitingRoomView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 11)
-                .glass(.riviera(interactive: true), in: .capsule)
+                .glass(.riviera(), in: .capsule)
         }
         .foregroundStyle(Palette.onTable)
     }
 
-    /// Four places around a broom, filling clockwise as people join. Landscape drops the
-    /// broom in the middle and squares the four up: the same seats, half the height.
+    /// Four places around a broom, sat as the table will sit them: yours at the bottom, and
+    /// the others round from it in the order they play. Landscape drops the broom and closes
+    /// the diamond up: the same seats, half the height.
     private var seats: some View {
         seatGrid.animation(.spring(duration: 0.35, bounce: 0.2), value: players)
     }
@@ -179,16 +184,23 @@ struct WaitingRoomView: View {
         if stage.isWide { squaredSeats } else { diamondSeats }
     }
 
+    /// The chair `step` places round the table from this phone's: 0 is yours, 1 plays after
+    /// you and sits on your right, 2 is across, 3 plays before you on your left. The same
+    /// way round as the cloth (see `TableScreen.seating`), so in teams the chair across is
+    /// your partner's here too.
+    ///
+    /// Drawn by chair number instead, the room went top, left, right, bottom, and sat each
+    /// pair of partners side by side.
+    private func chair(_ step: Int) -> Int { (store.homeSeat + step) % 4 }
+
     private var squaredSeats: some View {
-        Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-            GridRow {
-                seat(0, height: 96)
-                seat(1, height: 96)
+        HStack(spacing: 12) {
+            seat(chair(3), height: 96)
+            VStack(spacing: 12) {
+                seat(chair(2), height: 96)
+                seat(chair(0), height: 96)
             }
-            GridRow {
-                seat(2, height: 96)
-                seat(3, height: 96)
-            }
+            seat(chair(1), height: 96)
         }
     }
 
@@ -196,19 +208,19 @@ struct WaitingRoomView: View {
         Grid(horizontalSpacing: 12, verticalSpacing: 12) {
             GridRow {
                 Color.clear.frame(width: 88, height: 1)
-                seat(0)
+                seat(chair(2))
                 Color.clear.frame(width: 88, height: 1)
             }
             GridRow {
-                seat(1)
+                seat(chair(3))
                 BroomMark(size: 38, tint: Palette.goldLight)
                     .frame(width: 84, height: 84)
                     .glass(.riviera(), in: .circle)
-                seat(2)
+                seat(chair(1))
             }
             GridRow {
                 Color.clear.frame(width: 88, height: 1)
-                seat(3)
+                seat(chair(0))
                 Color.clear.frame(width: 88, height: 1)
             }
         }
@@ -220,10 +232,20 @@ struct WaitingRoomView: View {
         let player = players[safe: index]
         let bot = player.flatMap { $0.isBot && store.isSettingTheTable ? $0.id : nil }
         let free = player == nil
+        let teams = lobby?.teams == true
+        let partner = teams && index != store.homeSeat && index % 2 == store.homeSeat % 2
+        // Anybody beside the host can be moved across, which is choosing who they play with.
+        var teamUp: (() -> Void)?
+        if let player, teams, !partner, index != store.homeSeat, store.isSettingTheTable {
+            teamUp = { store.teamUp(with: player.id) }
+        }
         return SeatCard(
             player: player,
             index: index,
-            teams: lobby?.teams == true,
+            teams: teams,
+            home: store.homeSeat,
+            partner: partner,
+            honoured: store.isHonoured(seat: index),
             height: height,
             seatBot: free && store.canSeatBots ? { store.addBot() } : nil,
             inviteFriend: free && store.canInviteFriends ? { store.inviteFriendToTable() } : nil,
@@ -231,7 +253,8 @@ struct WaitingRoomView: View {
             // offered to a Game Center friend by name with the code inside the invitation.
             shareCode: free && store.canInviteToRoom ? store.room : nil,
             inviteByName: free && store.canInviteToRoom ? { store.inviteFriendToRoom() } : nil,
-            sendBotAway: bot.map { id in { store.removeBot(id) } }
+            sendBotAway: bot.map { id in { store.removeBot(id) } },
+            teamUp: teamUp
         )
     }
 
@@ -239,6 +262,11 @@ struct WaitingRoomView: View {
     private var settings: some View {
         VStack(spacing: 14) {
             teamsTabs
+            if lobby?.teams == true && players.count == 4 && store.isSettingTheTable {
+                Text("Tap a player to make them your partner.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.onTableSoft)
+            }
             clockTabs
             primieraTabs
             tieTabs
@@ -333,7 +361,16 @@ struct WaitingRoomView: View {
 
     private var footer: some View {
         VStack(spacing: 12) {
-            if store.isHost {
+            if let search = store.duoSearch {
+                DuoSearchPanel(store: store, search: search)
+            } else if store.isRankedDuo {
+                HStack(spacing: 10) {
+                    ProgressView().tint(Palette.onTable)
+                    Text("Taking your seats")
+                }
+                .font(.system(size: 15))
+                .foregroundStyle(Palette.onTableSoft)
+            } else if store.isHost {
                 // Nobody who accepted is left standing: the button waits for the last of
                 // them to take a chair, however the rest of the table is made up.
                 let ready = lobby?.canStart == true && !store.isWaitingForInvited
@@ -356,6 +393,12 @@ private struct SeatCard: View {
     let index: Int
     /// Whether the chairs are paired off, which is what decides their colour.
     var teams = false
+    /// The chair this phone sits in, which the colours are counted from, as at the table.
+    var home = 0
+    /// The chair across from this phone's, at a table in teams.
+    var partner = false
+    /// Wearing this week's laurel, by what their phone sent.
+    var honoured = false
     var height: CGFloat = 118
     /// Given when this chair is the host's to fill with a bot, and to empty again.
     var seatBot: (() -> Void)?
@@ -368,6 +411,8 @@ private struct SeatCard: View {
     /// asked by name than sent a code.
     var inviteByName: (() -> Void)?
     var sendBotAway: (() -> Void)?
+    /// Given on a chair beside the host's at a table in teams: moves its player across.
+    var teamUp: (() -> Void)?
 
     /// Whether this empty chair has anything to offer beyond the bot.
     private var asksWho: Bool { inviteFriend != nil || shareCode != nil || inviteByName != nil }
@@ -393,8 +438,8 @@ private struct SeatCard: View {
     private func takenChair(_ player: Player) -> some View {
         VStack(spacing: 8) {
             PlayerBadge(name: player.name, isBot: player.isBot,
-                        tint: Palette.seat(index, teams: teams), size: 40,
-                        mark: SeatMark(player), cornice: Cornice(player),
+                        tint: Palette.seat(index, teams: teams, home: home), size: 40,
+                        mark: SeatMark(player), honoured: honoured, cornice: Cornice(player),
                         livery: SeatLivery(player))
             Text(player.name)
                 .font(.system(size: 14, weight: .semibold))
@@ -404,6 +449,20 @@ private struct SeatCard: View {
         }
         .frame(width: 88, height: height)
         .glassPanel(radius: GlassRadius.control)
+        .modifier(TeamUpTap(action: teamUp))
+        // Hung on the bottom edge rather than under the name, where a landscape chair has
+        // no height for it, and clear of the cross on the top corner.
+        .overlay(alignment: .bottom) {
+            if partner {
+                PartnerTag(tint: Palette.seat(index, teams: teams, home: home))
+                    .offset(y: 7)
+                    .transition(.scale.combined(with: .opacity))
+            } else if let teamUp {
+                TeamUpTag(action: teamUp)
+                    .offset(y: 7)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
         .overlay(alignment: .topTrailing) {
             if let sendBotAway { RemoveBotButton(action: sendBotAway) }
         }
@@ -464,6 +523,54 @@ private struct SeatCard: View {
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(Palette.goldLight.opacity(0.55), style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
         }
+    }
+}
+
+/// A whole chair as the way to team up with whoever sits in it. Applied under the chair's
+/// own buttons, so the cross on a bot still sends it away.
+private struct TeamUpTap: ViewModifier {
+    let action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let action {
+            content
+                .contentShape(.rect(cornerRadius: GlassRadius.control))
+                .onTapGesture(perform: action)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint(Text("Team up"))
+        } else {
+            content
+        }
+    }
+}
+
+/// Where the partner's chair says PARTNER, the two beside the host offer to be it.
+private struct TeamUpTag: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 3) {
+                Image(systemName: "plus").font(.system(size: 7, weight: .heavy))
+                Text("TEAM UP")
+            }
+            .font(.system(size: 9, weight: .bold))
+            .tracking(0.8)
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(Palette.goldLight)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Palette.ink.opacity(0.7), in: RoundedRectangle(cornerRadius: 4))
+            .overlay {
+                RoundedRectangle(cornerRadius: 4).strokeBorder(Palette.goldLight.opacity(0.7), lineWidth: 1)
+            }
+            .padding(6)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(-6)
+        .accessibilityLabel(Text("Team up"))
     }
 }
 
@@ -547,7 +654,7 @@ private struct ModeTab: View {
                 .font(.system(size: 15, weight: selected ? .semibold : .medium))
                 .foregroundStyle(selected ? Palette.cream : Palette.onTableSoft)
                 .frame(maxWidth: .infinity, minHeight: 40)
-                .glass(selected ? .riviera(tint: Palette.terracotta.opacity(0.8), interactive: true) : .identity,
+                .glass(selected ? .riviera(tint: Palette.terracotta.opacity(0.8)) : .identity,
                              in: .rect(cornerRadius: GlassRadius.chip))
                 .contentShape(.rect(cornerRadius: GlassRadius.chip))
         }

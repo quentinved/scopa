@@ -23,14 +23,19 @@ struct AlbumView: View {
     /// The volume on the page. Nil follows the one being collected, so the pack that
     /// finishes a volume turns the page to the next.
     @State private var shown: Volume?
+    /// A foil album is on the page rather than a volume: Oro, or Perla after it.
+    @State private var foil = DebugLaunch.shownFoilAlbum
     /// The card lifted off the page to be looked at, if any.
     @State private var zoomed: Card?
+    /// A trade is being made or shown, so the road waits to pay until it is gone.
+    @State private var trading = false
     /// Where the slots and the lifted card find each other.
     @Namespace private var page
 
     private var book: AlbumBook { store.albumBook }
     private var volume: Volume { shown ?? book.openVolume }
-    private var album: Album { book.album(volume) }
+    /// Less whatever has been given away, which is the ledger's to say.
+    private var album: Album { book.shown(volume) }
     /// Every volume before this one is full.
     private var isOpen: Bool { volume.isOpen(given: book.album(_:)) }
     /// This is the volume packs go into, so it is the page that opens and sells them.
@@ -46,26 +51,19 @@ struct AlbumView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                VolumeShelf(book: book, shown: volume) { turned in
+                AlbumShelf(book: book, shown: volume, foil: $foil) { turned in
                     shown = turned == book.openVolume ? nil : turned
                 }
-                // The pack is wrapped in the backs of the deck it holds.
-                if isCollecting { waiting.environment(\.cardTheme, volume.theme) }
-                if isOpen { found }
-                prizes
-                if isCollecting { shelf }
-                if isOpen {
-                    ForEach(Suit.allCases, id: \.self) { suit in
-                        suitSection(suit)
-                    }
-                    // Printed in the volume's own deck, whatever the table is dressed in.
-                    .environment(\.cardTheme, volume.theme)
+                switch foil {
+                case .oro: OroPage(book: book, purse: purse)
+                case .perla: PerlaPage(book: book, purse: purse)
+                case nil: volumePage
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
         }
-        .defaultScrollAnchor(DebugLaunch.showsAlbumEnd ? .bottom : .top)
+        .defaultScrollAnchor(DebugLaunch.showsAlbumEnd ? .bottom : DebugLaunch.showsAlbumMiddle ? UnitPoint(x: 0.5, y: 0.4) : .top)
         .softScrollEdge(.top)
         .background(TableGround())
         .overlay { zoom }
@@ -81,6 +79,7 @@ struct AlbumView: View {
         .task {
             book.markSeen()
             if let card = DebugLaunch.albumZoom { zoomed = card }
+            if let tier = DebugLaunch.packPreview { till.previewing = tier }
             for finished in book.finishedVolumes { await purse.award(finished) }
             if DebugLaunch.opensPack {
                 if let tier = DebugLaunch.packTier {
@@ -91,6 +90,26 @@ struct AlbumView: View {
             }
         }
         .packTill(till, book: book, purse: purse, name: store.playerName)
+        // The foil albums' suits and edges, paid as foils come in, here or on the other phone.
+        .task(id: [book.oro.found, book.perla.found]) { await OroPayout.settle(book: book, purse: purse) }
+    }
+
+    /// One volume: its packs, how far along, what it pays, and its forty places.
+    @ViewBuilder private var volumePage: some View {
+        // The pack is wrapped in the backs of the deck it holds.
+        if isCollecting { waiting.environment(\.cardTheme, volume.theme) }
+        if isOpen { found }
+        if isCollecting { AlbumRoadPanel(book: book, purse: purse, holding: till.opening != nil || trading) }
+        if isCollecting { ScambioPanel(book: book, purse: purse, name: store.playerName, isTrading: $trading) }
+        prizes
+        if isCollecting { shelf }
+        if isOpen {
+            ForEach(Suit.allCases, id: \.self) { suit in
+                suitSection(suit)
+            }
+            // Printed in the volume's own deck, whatever the table is dressed in.
+            .environment(\.cardTheme, volume.theme)
+        }
     }
 
     // MARK: What is waiting
@@ -128,13 +147,25 @@ struct AlbumView: View {
                 }
             }
             .frame(height: 6)
-            // One line per rarity, which is where the album says what it is short of. The
-            // settebello reads as 0/1 or 1/1 and nothing else in the game does.
-            HStack(spacing: 6) {
-                ForEach(Rarity.allCases, id: \.self) { rarity in
-                    rarityCount(rarity)
+            // One column per rarity, a card of it on top, which is where the album says what
+            // it is short of. Tapped, it shows every card by rarity and the odds of each.
+            Button { till.previewing = book.next(on: .album) ?? .mazzetto } label: {
+                VStack(spacing: 12) {
+                    HStack(spacing: 6) {
+                        ForEach(Rarity.allCases, id: \.self) { rarity in
+                            rarityCount(rarity)
+                        }
+                    }
+                    HStack(spacing: 4) {
+                        Text("Which cards are rare?")
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Palette.goldLight)
                 }
+                .contentShape(.rect)
             }
+            .buttonStyle(.plain)
             Text("A card already in the album is paid for in denari instead, so no pack is ever wasted.")
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.onTableSoft)
@@ -148,7 +179,11 @@ struct AlbumView: View {
     private func rarityCount(_ rarity: Rarity) -> some View {
         let all = Deck.standard.filter { $0.rarity == rarity }
         let have = all.count { album.has($0) }
-        return VStack(spacing: 4) {
+        return VStack(spacing: 5) {
+            CardView(card: Rarities.sample(rarity), width: 26)
+                .grayscale(have > 0 ? 0 : 1)
+                .opacity(have > 0 ? 1 : 0.45)
+                .environment(\.cardTheme, volume.theme)
             RarityTag(rarity, locale: locale, size: 8.5)
             Text(verbatim: "\(have)/\(all.count)")
                 .font(.system(size: 12, weight: .bold))
@@ -164,7 +199,7 @@ struct AlbumView: View {
         if volume == .riviera {
             AlbumPrizes(album: album, name: store.playerName, livery: store.livery)
         } else {
-            VolumePrize(volume: volume, album: album, isOpen: isOpen)
+            VolumePrize(volume: volume, album: album, isOpen: isOpen, name: store.playerName)
         }
     }
 
@@ -173,7 +208,7 @@ struct AlbumView: View {
     /// The packs made of cards, bought rather than played for, dearest last. The shop
     /// keeps the other shelf: the packs made of what is on its own shelves.
     private var shelf: some View {
-        PackShelf(shelf: .album, title: "Packs", purse: purse, till: till)
+        PackShelf(shelf: .album, title: "Packs", purse: purse, till: till, volume: book.openVolume)
     }
 
     // MARK: Opening
@@ -275,7 +310,7 @@ struct AlbumView: View {
 
     @ViewBuilder private var zoom: some View {
         if let zoomed {
-            AlbumCardZoom(card: zoomed, volume: volume, album: album, page: page) {
+            AlbumCardZoom(card: zoomed, volume: volume, album: album, collecting: isCollecting, page: page) {
                 self.zoomed = nil
             }
             .environment(\.cardTheme, volume.theme)

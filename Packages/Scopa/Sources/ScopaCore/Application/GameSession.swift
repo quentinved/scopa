@@ -31,14 +31,27 @@ public actor GameSession {
     public func startRound() -> [GameEvent] {
         switch state.phase {
         case .awaitingDeal, .roundOver:
-            let deck = Rules.shuffledDeck(for: state.configuration, using: &rng)
-            let (next, events) = Rules.deal(deck, into: state)
-            state = next
-            record.rounds.append(.init(deck: deck))
-            return events
+            return deal(Rules.shuffledDeck(for: state.configuration, using: &rng))
         case .playing, .finished:
             return []
         }
+    }
+
+    /// Deals the next round from a deck already in order, for a practice table laid out to
+    /// teach. See `Deck.stacked`. No-op whenever `startRound()` would be one.
+    @discardableResult
+    public func startRound(deck: [Card]) -> [GameEvent] {
+        switch state.phase {
+        case .awaitingDeal, .roundOver: deal(deck)
+        case .playing, .finished: []
+        }
+    }
+
+    private func deal(_ deck: [Card]) -> [GameEvent] {
+        let (next, events) = Rules.deal(deck, into: state)
+        state = next
+        record.rounds.append(.init(deck: deck))
+        return events
     }
 
     /// Validates and applies a move, then deals or ends the round when needed.
@@ -48,6 +61,12 @@ public actor GameSession {
         // Only a move the rules took is written down, so the record replays clean.
         record.rounds[record.rounds.count - 1].moves.append(move)
         return events
+    }
+
+    /// Trades a card in hand for one in the stock. See `GameState.swapping`. Local only.
+    public func swap(_ held: Card, inHandOf seat: Int, for wanted: Card) throws(SwapError) {
+        state = try state.swapping(held, inHandOf: seat, for: wanted)
+        record.swapInLastDeck(held, wanted)
     }
 
     public func play(_ card: Card, capturing captures: [Card] = [], by player: PlayerID) throws(MoveError) -> [GameEvent] {

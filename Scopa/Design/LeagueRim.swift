@@ -60,8 +60,8 @@ struct LeagueRim<S: InsettableShape>: View {
     /// the frame so a corner is never left uncovered wherever the cone happens to point.
     ///
     /// Turned by `AmbientClock` rather than `repeatForever`: the lobby's ranked door wears
-    /// this for as long as the lobby is up, and at the display's full rate it was the one
-    /// thing keeping an idle lobby compositing.
+    /// this, and at the display's full rate it was the one thing keeping an idle lobby
+    /// compositing. The clock turns it for a spell whenever the lobby comes back into view.
     private var sweep: some View {
         AmbientClock { time in
             AngularGradient(colors: [metal.dark, metal.base, metal.light, metal.base,

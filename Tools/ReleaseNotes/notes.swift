@@ -9,6 +9,112 @@ import Foundation
 // Never mention the passphrases, and leave the rating prompt out.
 
 let releaseNotes: [String: [String: String]] = [
+    "1.4": [
+        "en-US": """
+        Thank you for playing Scopa Bella! A real duo in ranked, six new albums, and steadier games with friends.
+
+        • Ranked duo now looks for another pair to play. Five seconds in, the house offers to play you instead.
+        • Lost the connection mid-game? Reconnect puts you back in your seat, and Rejoin waits in the lobby if the app was closed.
+        • Inviting a friend from your Game Center list works again.
+        • Playing in teams with friends? Tap a player to make them your partner.
+        • A Match found moment before every ranked game. The house counts 15 games a day, plays stronger as your league climbs, and shows the same league to both players of a duo.
+        • The house plays a little gentler from Gold to Diamond, and goes easier after a few losses in a row.
+        • Albums V to X: Maiolica, the forty cards as painted majolica, with a new song, the Faenza mazurka, for whoever fills it. Mosaico, set in Ravenna tesserae, with a gold Tessere frame for your badge. Carnevale, a Venetian carnival print, with phrases to say from behind a mask. Intarsio, inlaid in Sorrento wood, with the Cubi table cloth. Merletto, worked in Burano lace, with Trina lace for your badge. And Tarocchi, a gilded Visconti tarot, with an app icon in gold leaf. The later albums hide their good cards better and better, so each takes longer to fill.
+        • Tap a pack in the album to see what is inside: every card it can hold, rarest first, with the real odds of each.
+        • Oro: the rarer the card, the rarer its gold, the settebello hardest of all. The last card you are missing always comes out gold, and gold cards stand out on every deck.
+        • Perla, after Oro: fill Oro and the forty cards come round once more in mother-of-pearl. A Velluto pack for each suit, and Madreperla, a pearl finish for every card you play, for the whole of it.
+        • Trades cost more, and the settebello now only comes out of a pack.
+        • Finish today's deal and a card goes into your album, with better odds when you win. Every seventh day in a row brings a whole pack.
+        • Going ad free now pays 10,000 denari and a Reliquia pack. Every owner also gets 2,000 more as a thank-you, a crest by the purse, a shop under the stars and an app icon of their own. Already bought it? It is all waiting.
+        • Bags of denari hold far more: 2,500, 12,000 and 30,000, for the same price.
+        • Double winnings has its own ticket in the shop, and you can start a run right from the end of a game.
+        • Shorter campaign games, 5 to 8 points, and a Try it button for every new rule.
+        • A clearer lobby with a bigger logo, and a podium on today's ladder while it waits for its first player.
+        • Your own music keeps playing when you open the game.
+        • Gentle reminders when the wheel, the week or the season is waiting for you.
+        • The app tells you when a new version is out, and your app icon can be changed from Settings.
+        • Fixes: bought no ads and still saw ads? That is fixed. "Your turn" now waits until your cards are in your hand, the last card of a hand or a round is always shown, a tap during a card reveal shows the card instead of skipping it, the cloth sits better behind the shop and menus, a scopa that takes the settebello shows both, your Scopa! flourish shows on friends' phones, and no button hides under the banner.
+        """,
+
+        "en-GB": """
+        Thank you for playing Scopa Bella! A real duo in ranked, six new albums, and steadier games with friends.
+
+        • Ranked duo now looks for another pair to play. Five seconds in, the house offers to play you instead.
+        • Lost the connection mid-game? Reconnect puts you back in your seat, and Rejoin waits in the lobby if the app was closed.
+        • Inviting a friend from your Game Center list works again.
+        • Playing in teams with friends? Tap a player to make them your partner.
+        • A Match found moment before every ranked game. The house counts 15 games a day, plays stronger as your league climbs, and shows the same league to both players of a duo.
+        • The house plays a little gentler from Gold to Diamond, and goes easier after a few losses in a row.
+        • Albums V to X: Maiolica, the forty cards as painted majolica, with a new song, the Faenza mazurka, for whoever fills it. Mosaico, set in Ravenna tesserae, with a gold Tessere frame for your badge. Carnevale, a Venetian carnival print, with phrases to say from behind a mask. Intarsio, inlaid in Sorrento wood, with the Cubi table cloth. Merletto, worked in Burano lace, with Trina lace for your badge. And Tarocchi, a gilded Visconti tarot, with an app icon in gold leaf. The later albums hide their good cards better and better, so each takes longer to fill.
+        • Tap a pack in the album to see what is inside: every card it can hold, rarest first, with the real odds of each.
+        • Oro: the rarer the card, the rarer its gold, the settebello hardest of all. The last card you are missing always comes out gold, and gold cards stand out on every deck.
+        • Perla, after Oro: fill Oro and the forty cards come round once more in mother-of-pearl. A Velluto pack for each suit, and Madreperla, a pearl finish for every card you play, for the whole of it.
+        • Trades cost more, and the settebello now only comes out of a pack.
+        • Finish today's deal and a card goes into your album, with better odds when you win. Every seventh day in a row brings a whole pack.
+        • Going ad free now pays 10,000 denari and a Reliquia pack. Every owner also gets 2,000 more as a thank-you, a crest by the purse, a shop under the stars and an app icon of their own. Already bought it? It is all waiting.
+        • Bags of denari hold far more: 2,500, 12,000 and 30,000, for the same price.
+        • Double winnings has its own ticket in the shop, and you can start a run right from the end of a game.
+        • Shorter campaign games, 5 to 8 points, and a Try it button for every new rule.
+        • A clearer lobby with a bigger logo, and a podium on today's ladder while it waits for its first player.
+        • Your own music keeps playing when you open the game.
+        • Gentle reminders when the wheel, the week or the season is waiting for you.
+        • The app tells you when a new version is out, and your app icon can be changed from Settings.
+        • Fixes: bought no ads and still saw ads? That is fixed. "Your turn" now waits until your cards are in your hand, the last card of a hand or a round is always shown, a tap during a card reveal shows the card instead of skipping it, the cloth sits better behind the shop and menus, a scopa that takes the settebello shows both, your Scopa! flourish shows on friends' phones, and no button hides under the banner.
+        """,
+
+        "fr-FR": """
+        Merci de jouer à Scopa Bella ! Un vrai duo en classé, six nouveaux albums, et des parties entre amis plus solides.
+
+        • Le duo classé cherche maintenant une autre paire à affronter. Au bout de cinq secondes, la maison vous propose de jouer contre elle.
+        • La connexion lâche en pleine partie ? Se reconnecter vous remet à votre place, et Revenir vous attend à l'accueil si l'app a été fermée.
+        • Inviter un ami depuis votre liste Game Center fonctionne à nouveau.
+        • Vous jouez en équipes avec des amis ? Touchez un joueur pour en faire votre partenaire.
+        • Un moment Adversaires trouvés avant chaque partie classée. La maison compte 15 parties par jour, joue plus fort à mesure que votre ligue monte, et montre la même ligue aux deux joueurs d'un duo.
+        • La maison joue un peu plus doucement de l'Or au Diamant, et vous ménage après quelques défaites d'affilée.
+        • Albums V à X : Maiolica, les quarante cartes en majolique peinte, avec une nouvelle chanson, la mazurka Faenza, pour qui le complète. Mosaico, en tesselles de Ravenne, avec un cadre d'or Tessere pour votre badge. Carnevale, une estampe du carnaval de Venise, avec des répliques à lancer derrière un masque. Intarsio, en marqueterie de Sorrente, avec le tapis Cubi. Merletto, en dentelle de Burano, avec la dentelle Trina pour votre badge. Et Tarocchi, un tarot Visconti doré, avec une icône à la feuille d'or. Chaque nouvel album cache un peu mieux ses belles cartes que le précédent : il est plus long à compléter.
+        • Touchez un paquet dans l'album pour voir ce qu'il contient : toutes les cartes possibles, des plus rares aux plus courantes, avec la vraie chance de chacune.
+        • Oro : plus la carte est rare, plus son or l'est, le settebello étant le plus difficile de tous. La dernière carte qui vous manque sort toujours dorée, et les cartes dorées se voient sur tous les jeux.
+        • Perla, après Oro : complétez Oro et les quarante cartes reviennent en nacre. Un paquet Velluto pour chaque couleur, et Madreperla, une finition nacrée pour toutes vos cartes, pour l'album entier.
+        • Les échanges coûtent plus cher, et le settebello ne sort plus que d'un paquet.
+        • Finissez la donne du jour et une carte rejoint votre album, avec plus de chances quand vous gagnez. Chaque septième jour d'affilée apporte un paquet entier.
+        • Passer sans pub rapporte maintenant 10 000 deniers et un paquet Reliquia. Et chaque propriétaire reçoit 2 000 deniers de plus pour le remercier, un blason près de sa bourse, une boutique sous les étoiles et une icône rien qu'à lui. Déjà acheté ? Tout vous attend.
+        • Les bourses de deniers sont bien plus remplies : 2 500, 12 000 et 30 000, au même prix.
+        • Les gains doublés ont leur propre ticket dans la boutique, et vous pouvez lancer une série dès la fin d'une partie.
+        • Des parties de campagne plus courtes, de 5 à 8 points, et un bouton Essayer pour chaque nouvelle règle.
+        • Un accueil plus clair avec un logo plus grand, et un podium sur le classement du jour en attendant son premier joueur.
+        • Votre propre musique continue quand vous ouvrez le jeu.
+        • De petits rappels quand la roue, la semaine ou la saison vous attendent.
+        • L'app vous prévient quand une nouvelle version sort, et l'icône se change depuis les Réglages.
+        • Corrections : vous aviez l'achat sans pub et voyiez encore des pubs ? C'est réparé. « À vous » attend maintenant que vos cartes soient en main, la dernière carte d'une main ou d'une manche est toujours montrée, toucher une carte pendant sa révélation la montre au lieu de la passer, le tapis s'accorde mieux derrière la boutique et les menus, une scopa qui prend le settebello montre les deux, votre animation de Scopa ! s'affiche chez vos amis, et plus aucun bouton ne se cache sous la bannière.
+        """,
+
+        "it": """
+        Grazie di giocare a Scopa Bella! Un vero duo in classificata, sei nuovi album, e partite con gli amici più solide.
+
+        • Il duo in classificata ora cerca un'altra coppia da sfidare. Dopo cinque secondi la casa ti propone di giocare contro di lei.
+        • La connessione salta a metà partita? Riconnettiti ti rimette al tuo posto, e Rientra ti aspetta nella schermata iniziale se l'app è stata chiusa.
+        • Invitare un amico dalla tua lista Game Center funziona di nuovo.
+        • Giochi a squadre con gli amici? Tocca un giocatore per farlo tuo compagno.
+        • Il momento Avversari trovati prima di ogni partita in classificata. La casa conta 15 partite al giorno, gioca più forte man mano che la tua lega sale, e mostra la stessa lega a tutti e due i giocatori di un duo.
+        • La casa gioca un po' più morbida dall'Oro al Diamante, e ti va più leggera dopo qualche sconfitta di fila.
+        • Album dal V al X: Maiolica, le quaranta carte in maiolica dipinta, con una canzone nuova, la mazurka Faenza, per chi lo completa. Mosaico, in tessere di Ravenna, con una cornice d'oro Tessere per il tuo stemma. Carnevale, una stampa del carnevale di Venezia, con frasi da dire da dietro la maschera. Intarsio, in legno intarsiato di Sorrento, con il tappeto Cubi. Merletto, punto per punto come a Burano, con il merletto Trina per il tuo stemma. E Tarocchi, un mazzo dei Visconti tutto d'oro, con un'icona in foglia d'oro. Ogni album nuovo nasconde le carte buone un po' meglio del precedente, quindi ci vuole sempre più tempo a completarlo.
+        • Tocca un pacchetto nell'album per vedere cosa c'è dentro: tutte le carte possibili, dalle più rare, con la vera probabilità di ognuna.
+        • Oro: più la carta è rara, più è raro il suo oro, e il settebello è il più difficile di tutti. L'ultima carta che ti manca esce sempre dorata, e le carte dorate si vedono su ogni mazzo.
+        • Perla, dopo Oro: completa Oro e le quaranta carte tornano in madreperla. Un pacchetto Velluto per ogni seme, e Madreperla, una finitura perlata per tutte le tue carte, per l'album intero.
+        • Gli scambi costano di più, e il settebello esce solo dai pacchetti.
+        • Finisci la smazzata del giorno e una carta entra nel tuo album, con più possibilità quando vinci. Ogni settimo giorno di fila arriva un pacchetto intero.
+        • Togliere la pubblicità ora ti regala 10.000 denari e un pacchetto Reliquia. E chi ce l'ha riceve 2.000 denari in più per ringraziamento, un medaglione accanto al borsellino, un negozio sotto le stelle e un'icona tutta sua. L'avevi già comprato? Ti aspetta tutto.
+        • I sacchetti di denari sono molto più pieni: 2.500, 12.000 e 30.000, allo stesso prezzo.
+        • Le vincite doppie hanno un biglietto tutto loro nel negozio, e puoi iniziare una serie subito alla fine di una partita.
+        • Partite della campagna più corte, da 5 a 8 punti, e un pulsante Prova per ogni regola nuova.
+        • Una schermata iniziale più chiara con un logo più grande, e un podio sulla classifica del giorno mentre aspetta il primo giocatore.
+        • La tua musica continua a suonare quando apri il gioco.
+        • Piccoli promemoria quando la ruota, la settimana o la stagione ti aspettano.
+        • L'app ti avvisa quando esce una nuova versione, e l'icona si cambia dalle Impostazioni.
+        • Correzioni: avevi tolto la pubblicità e la vedevi ancora? È sistemato. «Tocca a te» ora aspetta che le carte siano in mano, l'ultima carta di una mano o di un giro si vede sempre, un tocco durante la rivelazione di una carta la mostra invece di saltarla, il tappeto sta meglio dietro il negozio e i menu, una scopa che prende il settebello li mostra entrambi, la tua animazione di Scopa! compare sui telefoni degli amici, e nessun pulsante si nasconde più sotto il banner.
+        """,
+    ],
+
     "1.3.1": [
         "en-US": """
         Thank you for playing Scopa Bella! The rules are easier to learn now.

@@ -8,7 +8,23 @@ import { DatabaseSync } from "node:sqlite";
 export function memoryD1(...files: string[]): D1Database {
   const db = new DatabaseSync(":memory:");
   for (const file of files) db.exec(readFileSync(new URL(`../${file}`, import.meta.url), "utf8"));
-  return { prepare: (sql: string) => statement(db, sql, []) } as unknown as D1Database;
+  return { prepare: (sql: string) => statement(db, sql, []), batch: (all: Statement[]) => batch(db, all) } as unknown as D1Database;
+}
+
+type Statement = { run: () => Promise<unknown> };
+
+/// One transaction, as D1's is: a statement that fails takes the others back with it.
+async function batch(db: DatabaseSync, statements: Statement[]) {
+  db.exec("BEGIN");
+  try {
+    const results = [];
+    for (const each of statements) results.push(await each.run());
+    db.exec("COMMIT");
+    return results;
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function statement(db: DatabaseSync, sql: string, values: unknown[]) {

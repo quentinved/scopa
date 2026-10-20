@@ -12,13 +12,14 @@ import UIKit
 @Observable
 final class GoogleAds: AdsGateway {
     private(set) var bannerHeight: CGFloat = 0
-    private(set) var isRewardedReady = false
+    /// The offers with an opt-in ad loaded and waiting.
+    private(set) var readyRewarded: Set<RewardedSlot> = []
 
     @ObservationIgnored private var hasBegun = false
     @ObservationIgnored private var interstitial: InterstitialAd?
-    @ObservationIgnored private var rewarded: RewardedAd?
+    @ObservationIgnored private var rewarded: [RewardedSlot: Held] = [:]
     @ObservationIgnored private var isLoadingInterstitial = false
-    @ObservationIgnored private var isLoadingRewarded = false
+    @ObservationIgnored private var loadingRewarded: Set<RewardedSlot> = []
     /// The ad holds its delegate weakly, so the presentation has to be retained here until
     /// the player dismisses it.
     @ObservationIgnored private var presentation: FullScreen?
@@ -30,7 +31,7 @@ final class GoogleAds: AdsGateway {
     func begin() {
         guard !hasBegun else { return }
         hasBegun = true
-        Log.ads.info("SDK up; asking for banner \(AdUnits.banner, privacy: .public), interstitial \(AdUnits.interstitial, privacy: .public), rewarded \(AdUnits.rewarded, privacy: .public)")
+        Log.ads.info("SDK up; asking for banner \(AdUnits.banner, privacy: .public), interstitial \(AdUnits.interstitial, privacy: .public), rewarded \(AdUnits.rewarded(.denari), privacy: .public)")
         // Nothing full screen is warmed at launch: a session that never reaches a game the
         // pacing would interrupt asked for an ad it could not show. The table warms it.
     }
@@ -108,10 +109,12 @@ final class GoogleAds: AdsGateway {
 
     @discardableResult
     func showInterstitial() async -> Bool {
+        let wasLoading = isLoadingInterstitial
         preloadInterstitial()
+        // One already on its way usually lands in a second, so it is given a moment. Never
+        // longer: the game is over and the player is leaving the table.
+        if wasLoading { await waitForInterstitial(upTo: .milliseconds(1500)) }
         guard let ad = interstitial else {
-            // Never stall the player waiting for a load: the game is over and they are
-            // leaving the table.
             Log.ads.info("The pacing allowed an interstitial but none was loaded")
             return false
         }
@@ -127,6 +130,13 @@ final class GoogleAds: AdsGateway {
         let shown = await present(ad, from: host)
         preloadInterstitial()
         return shown
+    }
+
+    private func waitForInterstitial(upTo limit: Duration) async {
+        let deadline = ContinuousClock.now + limit
+        while interstitial == nil, isLoadingInterstitial, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
     }
 
     private func present(_ ad: InterstitialAd, from host: UIViewController?) async -> Bool {
@@ -147,38 +157,42 @@ final class GoogleAds: AdsGateway {
 
     // MARK: The one they choose
 
-    /// When the waiting opt-in ad arrived. One held past the hour fails to present, and the
-    /// player's tap on "double" would do nothing at all.
-    @ObservationIgnored private var rewardedLoadedAt: Date?
+    /// An opt-in ad waiting to be shown, and when it arrived. One held past the hour fails
+    /// to present, and the player's tap on "double" would do nothing at all.
+    private struct Held {
+        let ad: RewardedAd
+        let loadedAt: Date
+    }
 
-    func preloadRewarded() {
-        if rewarded != nil, Self.isStale(rewardedLoadedAt) {
-            Log.ads.info("Rewarded ad older than its shelf life; fetching a fresh one")
-            rewarded = nil
-            isRewardedReady = false
+    func isRewardedReady(_ slot: RewardedSlot) -> Bool { readyRewarded.contains(slot) }
+
+    func preloadRewarded(_ slot: RewardedSlot) {
+        if let held = rewarded[slot], Self.isStale(held.loadedAt) {
+            Log.ads.info("Rewarded ad for \(slot.rawValue, privacy: .public) older than its shelf life; fetching a fresh one")
+            rewarded[slot] = nil
+            readyRewarded.remove(slot)
         }
-        guard hasBegun, rewarded == nil, !isLoadingRewarded else { return }
-        isLoadingRewarded = true
+        guard hasBegun, rewarded[slot] == nil, !loadingRewarded.contains(slot) else { return }
+        loadingRewarded.insert(slot)
+        let unit = AdUnits.rewarded(slot)
         Task { [weak self] in
             var ad: RewardedAd?
             do {
-                ad = try await RewardedAd.load(with: AdUnits.rewarded, request: Request())
-                Log.ads.info("Rewarded ad ready")
+                ad = try await RewardedAd.load(with: unit, request: Request())
+                Log.ads.info("Rewarded ad for \(slot.rawValue, privacy: .public) ready")
             } catch {
-                Log.ads.error("Rewarded ad did not load: \(AdTrouble.words(for: error), privacy: .public)")
+                Log.ads.error("Rewarded ad for \(slot.rawValue, privacy: .public) did not load: \(AdTrouble.words(for: error), privacy: .public)")
             }
             guard let self else { return }
-            isLoadingRewarded = false
-            rewarded = ad
-            rewardedLoadedAt = ad == nil ? nil : .now
-            isRewardedReady = ad != nil
+            loadingRewarded.remove(slot)
+            rewarded[slot] = ad.map { Held(ad: $0, loadedAt: .now) }
+            if ad == nil { readyRewarded.remove(slot) } else { readyRewarded.insert(slot) }
         }
     }
 
-    func showRewarded() async -> Bool {
-        guard let ad = rewarded else { return false }
-        rewarded = nil
-        isRewardedReady = false
+    func showRewarded(_ slot: RewardedSlot) async -> Bool {
+        guard let ad = rewarded.removeValue(forKey: slot)?.ad else { return false }
+        readyRewarded.remove(slot)
         // The reward lands in a callback of its own, before the ad is dismissed.
         let earned = Earned()
         await withCheckedContinuation { resume in
@@ -188,7 +202,8 @@ final class GoogleAds: AdsGateway {
             ad.present(from: nil) { earned.value = true }
         }
         presentation = nil
-        preloadRewarded()
+        // Only the denari are asked for again and again; the other offers come once a game.
+        if slot == .denari { preloadRewarded(slot) }
         return earned.value
     }
 }
@@ -226,6 +241,8 @@ private final class FullScreen: NSObject, FullScreenContentDelegate {
     private func end() {
         guard let finish else { return }
         self.finish = nil
+        // In case the SDK never said the sound stopped: the game's music would wait forever.
+        Audio.shared.adSpeaks(false)
         finish(didShow)
     }
 

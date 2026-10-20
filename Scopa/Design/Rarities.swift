@@ -63,6 +63,47 @@ enum Rarities {
         }
     }
 
+    /// What a rarity is, in a sentence somebody new to scopa can use: which cards, and why
+    /// anybody wants them.
+    static func story(_ rarity: Rarity) -> LocalizedStringKey {
+        switch rarity {
+        case .plain: "Ace to six. Most of every pack."
+        case .court: "Fante, Cavallo and Re, in every suit."
+        case .prime: "The other three sevens. Primiera is won on them."
+        case .settebello: "The seven of coins. A point all on its own, and the card everyone is after."
+        }
+    }
+
+    /// Which cards a rarity is, in a few words, for a row with room for no more.
+    static func short(_ rarity: Rarity) -> LocalizedStringKey {
+        switch rarity {
+        case .plain: "Ace to six"
+        case .court: "Fante, Cavallo and Re"
+        case .prime: "The other three sevens"
+        case .settebello: "The seven of coins"
+        }
+    }
+
+    /// A few cards of a rarity, one of each kind it holds, for a row that shows them in hand.
+    static func hand(_ rarity: Rarity) -> [Card] {
+        switch rarity {
+        case .plain: [Card(.ace, of: .cups), Card(.four, of: .clubs), Card(.three, of: .swords)]
+        case .court: [Card(.knave, of: .coins), Card(.knight, of: .clubs), Card(.king, of: .cups)]
+        case .prime: [Card(.seven, of: .swords), Card(.seven, of: .clubs), Card(.seven, of: .cups)]
+        case .settebello: [.settebello]
+        }
+    }
+
+    /// The card that stands for a rarity where there is room for only one.
+    static func sample(_ rarity: Rarity) -> Card {
+        switch rarity {
+        case .plain: Card(.three, of: .swords)
+        case .court: Card(.king, of: .cups)
+        case .prime: Card(.seven, of: .cups)
+        case .settebello: .settebello
+        }
+    }
+
     // MARK: Shop grades
 
     /// The grade in the player's language: the Italian names read as decoration, not as an
@@ -162,6 +203,8 @@ struct RarityBurst: View {
     var count: Int
     var tint: Color
     var size: CGFloat
+    /// Whether the wheel turns. Off for a pack lying in a list, which should be still.
+    var turns = true
 
     @State private var bloom: CGFloat = 0.4
 
@@ -173,8 +216,12 @@ struct RarityBurst: View {
                 // Baked once and turned as a picture, on the slow ambient clock rather than
                 // a `repeatForever` at the display's full rate. Every ray ends inside the
                 // inscribed circle, so the square texture never clips one as it turns.
-                AmbientClock { time in
-                    rays.rotationEffect(.degrees(time.cycle(of: 26) * 360))
+                if turns {
+                    AmbientClock { time in
+                        rays.rotationEffect(.degrees(time.cycle(of: 26) * 360))
+                    }
+                } else {
+                    rays
                 }
             }
             .frame(width: size, height: size)

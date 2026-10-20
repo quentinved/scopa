@@ -25,7 +25,7 @@ struct PromoCodeRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .glassPanel(radius: GlassRadius.control, interactive: true)
+            .glassPanel(radius: GlassRadius.control)
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $isOpen) { PromoCodePanel(purse: purse, book: book).coversBanner() }
@@ -53,11 +53,19 @@ struct PromoCodePanel: View {
     @State private var isSending = false
     @State private var refusal: LocalizedStringKey?
     @State private var receipt: PromoCode.Receipt?
+    /// The god mode's phrase was typed, and this is whether it is now on.
+    @State private var scatouchOn: Bool?
     @FocusState private var isTyping: Bool
 
     var body: some View {
         Group {
-            if let receipt { thanks(receipt) } else { asking }
+            if let receipt {
+                thanks(receipt)
+            } else if let scatouchOn {
+                ScatouchAnswer(isOn: scatouchOn) { dismiss() }
+            } else {
+                asking
+            }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -66,6 +74,7 @@ struct PromoCodePanel: View {
         .presentationDragIndicator(.visible)
         .animation(.spring(duration: 0.45, bounce: 0.2), value: receipt)
         .sensoryFeedback(.success, trigger: receipt)
+        .sensoryFeedback(.success, trigger: scatouchOn)
         .sound(.purchase, trigger: receipt)
         .onAppear(perform: pretendForScreenshot)
     }
@@ -151,13 +160,18 @@ struct PromoCodePanel: View {
             case .refused(let reason):
                 Audio.shared.play(.refused)
                 withAnimation(.snappy(duration: 0.2)) { refusal = reason }
+            case .scatouch(let on):
+                isTyping = false
+                withAnimation(.spring(duration: 0.45, bounce: 0.2)) { scatouchOn = on }
             }
         }
     }
 
-    /// `-promoCode paid` shows what a generous coupon looks like, without paying it.
+    /// `-promoCode paid` shows what a generous coupon looks like, without paying it, and
+    /// `-promoCode scatouch` the god mode's answer, without turning it on.
     private func pretendForScreenshot() {
         #if DEBUG
+        if DebugLaunch.promoCode == "scatouch" { scatouchOn = true }
         guard DebugLaunch.promoCode == "paid" else { return }
         let felt = Cosmetics.item(for: TableFelt.notte).map { [$0] } ?? []
         receipt = PromoCode.Receipt(denari: 500, tiers: [.velluto, .reliquia], items: felt)

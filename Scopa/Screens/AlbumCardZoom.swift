@@ -18,11 +18,14 @@ enum AlbumSpot: Hashable {
 /// itself, because a numeral is not an event here any more than it was in the pack.
 ///
 /// A card not found yet opens too, as the ghost the page shows: knowing what the gap is
-/// waiting for is half the reason to keep opening packs.
+/// waiting for is half the reason to keep opening packs. Under it go its odds in each pack,
+/// when packs are what fill this volume.
 struct AlbumCardZoom: View {
     let card: Card
     let volume: Volume
     let album: Album
+    /// Packs go into this volume, so a gap in it can be found in one.
+    var collecting = true
     let page: Namespace.ID
     /// Called once the card is back in its slot.
     let onClose: () -> Void
@@ -44,26 +47,49 @@ struct AlbumCardZoom: View {
 
     private var rarity: Rarity { card.rarity }
     private var isFound: Bool { album.has(card) }
+    private var showsOdds: Bool { collecting && !isFound }
     /// How far a push down has got towards putting it back, 0 to 1.
     private var letGo: Double { min(max(drag.height, 0) / 320, 1) }
+
+    /// The height there is to stand in, so a short phone shrinks the card to fit the odds.
+    @State private var room: CGFloat = 800
+
+    /// The width the card stands at: the full one, unless the odds need the room under it.
+    private var stageWidth: CGFloat {
+        guard showsOdds else { return Self.width }
+        return min(Self.width, max(150, (room - 400) / 1.5))
+    }
 
     var body: some View {
         ZStack {
             shade
             // Clear of the rays, which reach a little past the card's foot.
-            VStack(spacing: 36) {
+            VStack(spacing: showsOdds ? 26 : 36) {
                 Spacer(minLength: 0)
-                stage
-                caption
+                VStack(spacing: showsOdds ? 26 : 36) {
+                    stage
+                    caption
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(name)
+                .accessibilityValue(Text(verbatim: Rarities.title(rarity, locale: locale) + ", ") + status)
+                .accessibilityAction(named: Text("Close"), close)
+                .accessibilityFocused($focused)
+                if showsOdds {
+                    CardPackOdds(card: card, volume: volume)
+                        .opacity(lifted ? 1 - letGo * 1.6 : 0)
+                        .offset(y: lifted ? 0 : 24)
+                }
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(name)
-            .accessibilityValue(Text(verbatim: Rarities.title(rarity, locale: locale) + ", ") + status)
-            .accessibilityAction(named: Text("Close"), close)
-            .accessibilityFocused($focused)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { room = $0 }
+            GiftCardOffer(card: card, volume: volume, album: album)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 18)
+                .opacity(lifted ? 1 - letGo * 1.6 : 0)
         }
         .contentShape(.rect)
         .onTapGesture(perform: close)
@@ -105,7 +131,7 @@ struct AlbumCardZoom: View {
     /// it — pinned to its slot on the page until it is lifted, and to this frame after.
     private var stage: some View {
         Color.clear
-            .frame(width: Self.width, height: Self.width * 1.5)
+            .frame(width: stageWidth, height: stageWidth * 1.5)
             .matchedGeometryEffect(id: AlbumSpot.lifted, in: page)
             .background {
                 if lifted && isFound {
@@ -208,7 +234,17 @@ struct AlbumCardZoom: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            RarityTag(rarity, locale: locale, size: 12, filled: isFound && rarity > .plain)
+            HStack(spacing: 8) {
+                RarityPips(rarity: rarity, size: 8)
+                RarityTag(rarity, locale: locale, size: 12, filled: isFound && rarity > .plain)
+            }
+            // What the word means, for whoever has never heard it.
+            Text(Rarities.story(rarity))
+                .font(.system(size: 13.5))
+                .foregroundStyle(Palette.onTableSoft)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 290)
             status
                 .textCase(.uppercase)
                 .font(.system(size: 12.5, weight: .semibold))

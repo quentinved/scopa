@@ -78,19 +78,19 @@ public enum PackTier: String, CaseIterable, Codable, Sendable, Hashable, Identif
     ///
     /// The shop packs cannot be priced that way: what is inside them is on sale a scroll
     /// away with a number on it. So they are priced off `Grade.denari(for:)`, which is
-    /// already this game's statement of what one grade is worth — a `scrigno` costs what
+    /// already this game's statement of what one grade is worth: a `scrigno` once cost what
     /// its two promised `raro` would pay, and a `forziere` a little under its three
-    /// `prezioso`. Open one and get exactly what it promised and you have broken even;
-    /// everything above the floor is the reason to open it rather than to shop. What is
-    /// given up for that is the choosing, which is the whole trade a pack ever offers.
+    /// `prezioso`. Every pack doubled in 1.4, at the owner's word, once denari came far more
+    /// freely (fuller bags, a bigger no-ads gift), so a pack is a choice again.
     public var price: Denari? {
         switch self {
         case .mazzetto: nil
-        case .bottega: 260
-        case .velluto: 620
-        case .reliquia: 1400
-        case .scrigno: 560
-        case .forziere: 1500
+        // A game pays about 20, so a Bottega is about fifteen games of play.
+        case .bottega: 300
+        case .velluto: 760
+        case .reliquia: 1700
+        case .scrigno: 1120
+        case .forziere: 3000
         }
     }
 

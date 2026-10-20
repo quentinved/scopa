@@ -9,46 +9,28 @@ enum GlassRadius {
     static let panel: CGFloat = 26
 }
 
-/// Liquid Glass arrived with iOS 26, and the app runs back to iOS 18. Everything below
-/// draws the real thing where it exists and a tinted material where it does not, so no
-/// screen has to know which it is standing on.
-enum LiquidGlass {
-    /// True on iOS 26 and later, where the system draws the glass itself.
-    static var isAvailable: Bool {
-        if #available(iOS 26, *) { return true } else { return false }
-    }
-}
-
-/// A slab of glass, described without naming `Glass`, which does not exist on iOS 18.
+/// A slab of frosted glass: the system's thinnest material under a tint.
+///
+/// Not Liquid Glass, on any iOS. On iOS 26 it was a sixth of what the table cost to draw
+/// while cards moved, and Scopa is played for hours at a stretch, so every phone gets the
+/// material iOS 18 always had.
 struct GlassStyle: Equatable {
     var tint: Color?
-    var interactive: Bool
     /// Draws nothing at all. Used where a control is glass only while it is selected.
     var isIdentity = false
 
-    static let identity = GlassStyle(tint: nil, interactive: false, isIdentity: true)
+    static let identity = GlassStyle(tint: nil, isIdentity: true)
 
-    /// `Glass.regular`, optionally tinted and made pressable.
-    ///
     /// Untinted glass over the table comes out pale and cream lettering vanishes on it, so
     /// the default takes a little of the table's own shadow.
-    static func riviera(tint: Color? = nil, interactive: Bool = false) -> GlassStyle {
-        GlassStyle(tint: tint, interactive: interactive)
+    static func riviera(tint: Color? = nil) -> GlassStyle {
+        GlassStyle(tint: tint)
     }
 
     /// The colour the slab carries, once the default shadow is filled in. Untinted glass
     /// takes the shadow of whichever cloth is on the table, so a panel over the wine felt
     /// is not shaded green.
     func fillTint(on felt: TableFelt) -> Color { tint ?? felt.shade(0.45) }
-}
-
-@available(iOS 26, *)
-extension GlassStyle {
-    func liquid(on felt: TableFelt) -> Glass {
-        if isIdentity { return .identity }
-        let glass = Glass.regular.tint(fillTint(on: felt))
-        return interactive ? glass.interactive() : glass
-    }
 }
 
 /// Draws the slab. A modifier rather than a plain `background`, because the default tint
@@ -61,9 +43,7 @@ private struct Glazing<S: Shape>: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.glassEffect(style.liquid(on: felt), in: shape)
-        } else if style.isIdentity {
+        if style.isIdentity {
             content
         } else {
             content.background {
@@ -78,30 +58,9 @@ private struct Glazing<S: Shape>: ViewModifier {
 }
 
 extension View {
-    /// Liquid Glass on iOS 26. On iOS 18, a dark material carrying the same tint.
+    /// A dark material carrying the slab's tint. See `GlassStyle`.
     func glass(_ style: GlassStyle, in shape: some Shape) -> some View {
         modifier(Glazing(style: style, shape: shape))
-    }
-
-    /// Keeps a piece of glass's identity as it moves between layouts, where the system
-    /// can morph it. Nothing to do where the system cannot.
-    @ViewBuilder
-    func glassID<ID: Hashable & Sendable>(_ id: ID, in namespace: Namespace.ID) -> some View {
-        if #available(iOS 26, *) {
-            glassEffectID(id, in: namespace)
-        } else {
-            self
-        }
-    }
-
-    /// Glass that materialises rather than fades when it appears.
-    @ViewBuilder
-    func glassMaterialize() -> some View {
-        if #available(iOS 26, *) {
-            glassEffectTransition(.materialize)
-        } else {
-            self
-        }
     }
 
     /// Content dissolving softly under whatever is pinned over that edge of a scroll view.
@@ -121,37 +80,34 @@ extension View {
     ///
     /// `hairline` is off only where something else draws the edge — a `LeagueRim`, say —
     /// since two lines a point apart read as a smudge rather than as two.
-    func glassPanel(radius: CGFloat = GlassRadius.panel, tint: Color? = nil, interactive: Bool = false,
-                    hairline: Bool = true) -> some View {
-        glass(.riviera(tint: tint, interactive: interactive), in: .rect(cornerRadius: radius))
+    func glassPanel(radius: CGFloat = GlassRadius.panel, tint: Color? = nil, hairline: Bool = true) -> some View {
+        glass(.riviera(tint: tint), in: .rect(cornerRadius: radius))
             .overlay {
-                if hairline {
-                    RoundedRectangle(cornerRadius: radius)
-                        .strokeBorder(Palette.gold.opacity(0.30), lineWidth: 1)
-                }
+                if hairline { GlassEdge(shape: RoundedRectangle(cornerRadius: radius)) }
             }
             .contentShape(.rect(cornerRadius: radius))
     }
 
     /// The same, fully rounded, for chips, pills and badges.
-    func glassCapsule(tint: Color? = nil, interactive: Bool = false) -> some View {
-        glass(.riviera(tint: tint, interactive: interactive), in: .capsule)
-            .overlay { Capsule().strokeBorder(Palette.gold.opacity(0.30), lineWidth: 1) }
+    func glassCapsule(tint: Color? = nil) -> some View {
+        glass(.riviera(tint: tint), in: .capsule)
+            .overlay { GlassEdge(shape: Capsule()) }
             .contentShape(.capsule)
     }
 }
 
-/// Neighbouring pieces of glass that may merge and morph into one another. On iOS 18 it
-/// is only the layout it wraps.
-struct GlassGroup<Content: View>: View {
-    var spacing: CGFloat? = nil
-    @ViewBuilder var content: Content
+/// The hairline round a slab: gold at a third, or laid in gold leaf on a page dressed for
+/// the patron. See `patronDress`.
+private struct GlassEdge<S: InsettableShape>: View {
+    let shape: S
+
+    @Environment(\.gilded) private var gilded
 
     var body: some View {
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: spacing) { content }
+        if gilded {
+            shape.strokeBorder(PatronLeaf.edge, lineWidth: 1)
         } else {
-            content
+            shape.strokeBorder(Palette.gold.opacity(0.30), lineWidth: 1)
         }
     }
 }
@@ -159,8 +115,8 @@ struct GlassGroup<Content: View>: View {
 /// The table ground: bottle green lit from the top left, deepening into the bottom right,
 /// with a gold burst behind the middle.
 ///
-/// The gradients also give Liquid Glass something to refract. Over flat linen it read as
-/// frosted plastic.
+/// The gradients also give the glass something to frost over. Over flat linen it read as
+/// plastic.
 struct TableGround: View {
     /// How far the ground runs past the view it backs: enough to cover any safe area, the
     /// deepest being the banner strip at under 90 points, and no more. The ground is
@@ -215,8 +171,8 @@ struct TableGround: View {
                            center: UnitPoint(x: 0.94, y: 0.98), startRadius: 0, endRadius: 720)
             RadialGradient(colors: [Palette.gold.opacity(0.13), .clear],
                            center: UnitPoint(x: 0.5, y: 0.34), startRadius: 0, endRadius: 480)
-            // Under the grain, and told about the bleed so its border lands on the edge of
-            // the screen rather than the edge of the oversized texture.
+            // Under the grain, and told about the bleed so its repeat is centred on the
+            // screen rather than on the oversized texture.
             TapisWeave(tapis: tapis, bleed: Self.bleed)
             Grain()
         }
@@ -255,17 +211,15 @@ private struct Seeded: RandomNumberGenerator {
 }
 
 private extension View {
-    /// The press response interactive glass gives on iOS 26, drawn by hand on iOS 18.
+    /// A press drawn by hand: the material has no response of its own.
     func pressed(_ isPressed: Bool) -> some View {
-        let pressed = isPressed && !LiquidGlass.isAvailable
-        return scaleEffect(pressed ? 0.97 : 1)
-            .opacity(pressed ? 0.85 : 1)
-            .animation(.easeOut(duration: 0.12), value: pressed)
+        scaleEffect(isPressed ? 0.97 : 1)
+            .opacity(isPressed ? 0.85 : 1)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
     }
 }
 
-/// The primary action, in tinted glass. `interactive` hands the press response to the
-/// system on iOS 26, so this style only adds one of its own where the system has none.
+/// The primary action, in tinted glass.
 struct FilledButtonStyle: ButtonStyle {
     var tint: Color = Palette.terracotta
     var foreground: Color = Palette.cream
@@ -276,7 +230,7 @@ struct FilledButtonStyle: ButtonStyle {
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, minHeight: minHeight)
-            .glassPanel(radius: GlassRadius.control, tint: tint, interactive: true)
+            .glassPanel(radius: GlassRadius.control, tint: tint)
             .pressed(configuration.isPressed)
     }
 }
@@ -290,7 +244,7 @@ struct OutlineButtonStyle: ButtonStyle {
             .font(.system(size: 17, weight: .semibold))
             .foregroundStyle(Palette.onTable)
             .frame(maxWidth: .infinity, minHeight: minHeight)
-            .glassPanel(radius: GlassRadius.control, interactive: true)
+            .glassPanel(radius: GlassRadius.control)
             .pressed(configuration.isPressed)
     }
 }
@@ -323,24 +277,29 @@ struct SeatBadge: View {
             .overlay { livery.edge(size: size) }
             .background { PrestigePlate(tier: mark.prestige, size: size) }
             .overlay { PrestigeRim(tier: mark.prestige, size: size) }
-            // Outside the rim, so a hundred wins and this week's laurel can be worn at once.
-            .background { if honoured { HonourWreath(size: size) } }
+            // Round the metal, so a hundred wins and this week's laurel can be worn at once.
+            // Struck at the circle's own size it sat behind the plate and the bezel, and only
+            // the tips of its leaves showed.
+            .background { if honoured { HonourWreath(size: size * mark.prestige.reach) } }
             // Outside all of it and last, so a bought ring never covers earned metal. The
             // outset has to clear whatever the badge already wears, out to 1.52 for armour.
             .background {
                 CorniceRing(cornice: cornice, size: size,
-                            outset: max(mark.prestige.reach, honoured ? 1.3 : 1))
+                            outset: Self.corniceOutset(mark: mark, honoured: honoured))
             }
     }
 
     /// How far everything the badge wears reaches past its own circle, as a multiple of
-    /// `size`: the widest of earned metal, the week's laurel and a bought ring.
+    /// `size`: the widest of earned metal with the week's laurel round it, and a bought ring.
     static func reach(mark: SeatMark = .initial, honoured: Bool = false,
                       cornice: Cornice = .none) -> CGFloat {
-        let outset = max(mark.prestige.reach, honoured ? 1.3 : 1)
-        return max(mark.prestige.reach,
-                   honoured ? HonourWreath.reach : 1,
-                   cornice == .none ? 1 : outset * cornice.spread)
+        let worn = mark.prestige.reach * (honoured ? HonourWreath.reach : 1)
+        return max(worn, cornice == .none ? 1 : corniceOutset(mark: mark, honoured: honoured) * cornice.spread)
+    }
+
+    /// Where a bought ring starts: past the metal, and past the laurel's inner leaves.
+    private static func corniceOutset(mark: SeatMark, honoured: Bool) -> CGFloat {
+        mark.prestige.reach * (honoured ? 1.3 : 1)
     }
 
     /// The circle to strike a badge of nominal `size` on, where it stands in a slot cut
@@ -416,6 +375,9 @@ struct Caption: View {
     /// A name that is the same word in every language, like a deck called Napoli.
     private var asIs: String?
 
+    /// On the patron's pages the label is leaf-coloured. Flat, like every caption.
+    @Environment(\.gilded) private var gilded
+
     init(text: LocalizedStringKey) {
         self.text = text
     }
@@ -432,7 +394,7 @@ struct Caption: View {
         .textCase(.uppercase)
         .font(.system(size: 12, weight: .semibold))
         .tracking(1.2)
-        .foregroundStyle(Palette.onTableSoft)
+        .foregroundStyle(gilded ? PatronLeaf.caption : Palette.onTableSoft)
     }
 }
 

@@ -14,14 +14,21 @@ final class ShopCounter {
     }
 
     let purse: PurseStore
+    let ads: AdsStore
     /// The last item bought, so its tile can show the gilding.
     var bought: ShopItem.ID?
     /// Kept after the dialog closes so the dismissal animation still has a title to draw.
     var pending: Pending?
     var confirmsPurchase = false
 
-    init(purse: PurseStore) {
+    init(purse: PurseStore, ads: AdsStore) {
         self.purse = purse
+        self.ads = ads
+    }
+
+    /// Whether a video can put this on for a game, beside buying it. See `TryOn`.
+    func offersTrial(_ item: ShopItem) -> Bool {
+        ads.isReady && TryOn.offers(item)
     }
 
     func affordable(_ item: ShopItem?) -> Bool {
@@ -47,11 +54,14 @@ final class ShopCounter {
     }
 
     /// A purse too light is refused on the spot, and the refusal writes the "N denari
-    /// short" line under the balance.
+    /// short" line under the balance, unless the thing can still be tried for a game.
     func ask(for item: ShopItem, then equip: @escaping () -> Void) {
         let pending = Pending(item: item, equip: equip)
         self.pending = pending
-        guard purse.canAfford(item) else { return pay(for: pending) }
+        let tries = offersTrial(item)
+        guard purse.canAfford(item) || tries else { return pay(for: pending) }
+        // Warmed while the question is read, so the video is there when it is asked for.
+        if tries { ads.prepareReward(.tryOn) }
         confirmsPurchase = true
     }
 

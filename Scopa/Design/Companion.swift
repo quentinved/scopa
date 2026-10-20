@@ -238,7 +238,10 @@ struct CompanionView: View {
             // A sweep gets the whole reaction and not just the lift.
             .onChange(of: mood) { _, now in if now == .delighted { cheered() } }
             .allowsHitTesting(interactive && companion != .nessuno)
-            .task(id: companion) {
+            // Restarted when `idles` comes back on, as the shop's preview scrolls into view,
+            // and whenever something happens to it: the turn changes hands, or a poke.
+            .task(id: Wake(companion: idles ? companion : nil, mood: mood, pokes: pokes)) {
+                settle()
                 guard idles, companion != .nessuno, !reduceMotion else { return }
                 await idle()
             }
@@ -301,29 +304,50 @@ struct CompanionView: View {
         withAnimation(.easeOut(duration: 0.25)) { poke = nil }
     }
 
-    /// Stirs now and then for as long as the animal is on screen.
+    /// What restarts the idle: each of these changing is something for the animal to notice.
+    private struct Wake: Hashable {
+        let companion: Companion?
+        let mood: Companion.Mood
+        let pokes: Int
+    }
+
+    /// Stirs a few times, then keeps still until something happens.
     ///
     /// Bounded animations rather than `repeatForever`, which holds the whole screen
-    /// compositing at full frame rate under a dozen surfaces of glass. The wait is
-    /// jittered so four animals on one table do not stir in unison.
+    /// compositing at full frame rate. And bounded in number: an animal that fidgets for as
+    /// long as a player thinks keeps the screen redrawing for nobody. The wait is jittered
+    /// so four animals on one table do not stir in unison.
     private func idle() async {
-        while !Task.isCancelled {
+        for _ in 0..<(calm ? 2 : 3) {
             try? await Task.sleep(for: .seconds(calm ? .random(in: 8...16) : .random(in: 3...7)))
             guard !Task.isCancelled else { return }
             // A poke wins: whatever it was about to do waits for the next round.
             guard poke == nil else { continue }
-            withAnimation(.easeInOut(duration: 0.45)) { stirs = true }
-            try? await Task.sleep(for: .seconds(0.45))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.7)) { stirs = false }
-            try? await Task.sleep(for: .seconds(0.7))
-            // About one stir in four ends with a second look.
-            guard !Task.isCancelled, poke == nil, Bool.random(), Bool.random() else { continue }
-            withAnimation(.spring(duration: 0.3, bounce: 0.55)) { startles = true }
-            try? await Task.sleep(for: .seconds(0.3))
-            guard !Task.isCancelled else { return }
-            withAnimation(.spring(duration: 0.45, bounce: 0.3)) { startles = false }
-            try? await Task.sleep(for: .seconds(0.45))
+            await stir()
+        }
+    }
+
+    /// One stir. About one in four ends with a second look.
+    private func stir() async {
+        withAnimation(.easeInOut(duration: 0.45)) { stirs = true }
+        try? await Task.sleep(for: .seconds(0.45))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeInOut(duration: 0.7)) { stirs = false }
+        try? await Task.sleep(for: .seconds(0.7))
+        guard !Task.isCancelled, poke == nil, Bool.random(), Bool.random() else { return }
+        withAnimation(.spring(duration: 0.3, bounce: 0.55)) { startles = true }
+        try? await Task.sleep(for: .seconds(0.3))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(duration: 0.45, bounce: 0.3)) { startles = false }
+        try? await Task.sleep(for: .seconds(0.45))
+    }
+
+    /// A stir cut off halfway by a restart is put down rather than held.
+    private func settle() {
+        guard stirs || startles else { return }
+        withAnimation(.easeInOut(duration: 0.3)) {
+            stirs = false
+            startles = false
         }
     }
 }

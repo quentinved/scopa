@@ -1,5 +1,18 @@
 import Foundation
 
+/// Where an opt-in video is offered. Each offer since the denari ones has a unit of its own,
+/// so the AdMob console says what every offer earns rather than one sum for them all.
+enum RewardedSlot: String, CaseIterable {
+    /// Denari in the shop, the wheel's extra turn and a game paid twice, on the first unit.
+    case denari
+    /// Today's card drawn at the winner's odds, after a deal lost to Hugo.
+    case dailyCard
+    /// A deck or a cloth worn for one game before it is bought.
+    case tryOn
+    /// A ranked run carried past the loss that broke it.
+    case keepRun
+}
+
 /// The AdMob identifiers. Unit ids are not secrets: they ship inside the app.
 ///
 /// A debug build asks for Google's test units, so that tapping an ad on your own phone can
@@ -12,7 +25,15 @@ enum AdUnits {
     private enum Live {
         static let banner = "ca-app-pub-6919645046065024/6385799119"
         static let interstitial = "ca-app-pub-6919645046065024/1342345674"
-        static let rewarded = "ca-app-pub-6919645046065024/1742283428"
+
+        static func rewarded(_ slot: RewardedSlot) -> String {
+            switch slot {
+            case .denari: "ca-app-pub-6919645046065024/1742283428"
+            case .dailyCard: "ca-app-pub-6919645046065024/5329328154"
+            case .tryOn: "ca-app-pub-6919645046065024/8464039215"
+            case .keepRun: "ca-app-pub-6919645046065024/5200590785"
+            }
+        }
     }
 
     #if DEBUG
@@ -26,10 +47,12 @@ enum AdUnits {
 
     static var banner: String { DebugLaunch.usesLiveAds ? Live.banner : Test.banner }
     static var interstitial: String { DebugLaunch.usesLiveAds ? Live.interstitial : Test.interstitial }
-    static var rewarded: String { DebugLaunch.usesLiveAds ? Live.rewarded : Test.rewarded }
+    static func rewarded(_ slot: RewardedSlot) -> String {
+        DebugLaunch.usesLiveAds ? Live.rewarded(slot) : Test.rewarded
+    }
     #else
     static let banner = Live.banner
     static let interstitial = Live.interstitial
-    static let rewarded = Live.rewarded
+    static func rewarded(_ slot: RewardedSlot) -> String { Live.rewarded(slot) }
     #endif
 }

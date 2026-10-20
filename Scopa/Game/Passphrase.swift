@@ -13,9 +13,15 @@ enum Passphrase {
     /// hands over everything on sale.
     private static let shopDigest = "27101c4bef3efc2ed0a712b3ed91dee07e1d4d81ee8fe2166cdc179221e05fab"
 
+    /// SHA-256 of the phrase behind `Scatouch`, folded the same way. Typed in the shop's code
+    /// field, it turns every card at a quick game face up.
+    private static let scatouchDigest = "ec53fb38683fc9439be836158245c27cd70cc13a68a2008987a5ccc640f5bcae"
+
     static func isRight(_ phrase: String) -> Bool { Self.digest(of: phrase) == digest }
 
     static func opensShop(_ phrase: String) -> Bool { Self.digest(of: phrase) == shopDigest }
+
+    static func callsScatouch(_ phrase: String) -> Bool { Self.digest(of: phrase) == scatouchDigest }
 
     /// Case, spacing and accents are all forgiven.
     private static func digest(of phrase: String) -> String {

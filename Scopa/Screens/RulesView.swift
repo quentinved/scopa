@@ -14,23 +14,28 @@ struct RulesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var chapter: Chapter?
 
+    /// No navigation stack: inside one, the sheet's banner inset never reached the footer.
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                pages
-                footer
-            }
-            .background { TableGround() }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                        .tint(Palette.goldLight)
-                }
-            }
+        VStack(spacing: 0) {
+            topBar
+            pages
+            footer
         }
+        .background { TableGround() }
         .onAppear { chapter = chapter ?? chapters.first }
         .sensoryFeedback(.selection, trigger: chapter)
         .sound(.tap, trigger: chapter)
+    }
+
+    private var topBar: some View {
+        HStack {
+            Spacer()
+            Button("Done") { dismiss() }
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Palette.goldLight)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 56)
     }
 
     // MARK: The chapters
@@ -510,7 +515,7 @@ struct RulesButton: View {
             Image(systemName: "questionmark")
                 .font(.system(size: 16, weight: .semibold))
                 .frame(width: 38, height: 38)
-                .glass(.riviera(interactive: true), in: .circle)
+                .glass(.riviera(), in: .circle)
                 .contentShape(.circle)
         }
         .foregroundStyle(Palette.onTable)

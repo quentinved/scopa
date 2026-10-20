@@ -70,9 +70,13 @@ final class AdFreePass {
         }
     }
 
+    /// Only its own: a bag of denari must stay open until `DenariSale` has paid it.
     private func followTransactions() async {
         for await update in Transaction.updates {
-            guard case .verified(let transaction) = update else { continue }
+            // Unsigned too, as `entitlement()` believes it: an approved Ask to Buy skipped here
+            // left a paying player with ads until the next launch.
+            let transaction = update.unsafePayloadValue
+            guard transaction.productID == Self.productID else { continue }
             await transaction.finish()
             await refresh()
         }
@@ -97,22 +101,55 @@ final class AdFreePass {
         }
     }
 
-    /// Reads the entitlement StoreKit holds on the device, which also works offline.
+    /// Reads what StoreKit holds on the device, which also works offline.
+    ///
+    /// Only a refund takes the pass away. StoreKit's answer can come back empty or unsigned
+    /// on a reinstall, a new phone, a phone offline or with its clock wrong, and until 1.4 an
+    /// empty answer was taken for "not bought": players who had paid got their ads back.
     private func refresh() async {
-        var owned = false
-        for await entitlement in Transaction.currentEntitlements {
-            guard case .verified(let transaction) = entitlement,
-                  transaction.productID == Self.productID,
-                  transaction.revocationDate == nil else { continue }
-            owned = true
-        }
         #if DEBUG
         if DebugLaunch.ownsAdFree { return }
         #endif
-        setOwned(owned)
+        switch await entitlement() {
+        case .owned: setOwned(true)
+        case .refunded: setOwned(false)
+        case .unknown: setOwned(isOwned || ledgerSaysOwned)
+        }
+    }
+
+    private enum Entitlement { case owned, refunded, unknown }
+
+    /// What StoreKit says of the purchase. An unsigned answer is believed: the price of being
+    /// wrong is a free table for somebody, and the price of the other mistake is ads for a
+    /// player who paid to be rid of them.
+    private func entitlement() async -> Entitlement {
+        for await result in Transaction.currentEntitlements {
+            let transaction = result.unsafePayloadValue
+            guard transaction.productID == Self.productID, transaction.revocationDate == nil else { continue }
+            if case .unverified(_, let error) = result {
+                Log.ads.error("No-ads entitlement is unsigned, kept anyway: \(error.localizedDescription, privacy: .public)")
+            }
+            return .owned
+        }
+        guard let latest = await Transaction.latest(for: Self.productID) else { return .unknown }
+        return latest.unsafePayloadValue.revocationDate == nil ? .owned : .refunded
+    }
+
+    /// The account's word for it: the pass's gift is in the ledger, which follows the player
+    /// from device to device and is only ever paid once a device saw the purchase. Enough to
+    /// keep a paying player's table quiet while StoreKit has nothing to say; a refund StoreKit
+    /// does know of still wins.
+    private var ledgerSaysOwned = false
+
+    /// Told once the purse is read, and again whenever the account brings a gift in.
+    func believeLedger(_ paid: Bool) async {
+        guard paid, !ledgerSaysOwned else { return }
+        ledgerSaysOwned = true
+        await refresh()
     }
 
     private func setOwned(_ owned: Bool) {
+        if owned != isOwned { Log.ads.info("No-ads pass is now \(owned ? "owned" : "not owned", privacy: .public)") }
         isOwned = owned
         UserDefaults.standard.set(owned, forKey: Self.ownedKey)
     }
@@ -134,8 +171,12 @@ final class AdFreePass {
                 await transaction.finish()
                 setOwned(true)
                 state = .idle
-            case .success(.unverified):
-                state = .failed
+            case .success(.unverified(let transaction, let error)):
+                // Paid for, by StoreKit's own word; the signature is not the player's problem.
+                Log.ads.error("No-ads purchase is unsigned, kept anyway: \(error.localizedDescription, privacy: .public)")
+                await transaction.finish()
+                setOwned(true)
+                state = .idle
             case .pending:
                 state = .pending
             case .userCancelled:

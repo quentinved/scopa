@@ -66,6 +66,7 @@ struct AdFreeSheet: View {
             perk("rectangle.slash.fill", Palette.terracotta, "No banner under the lobby")
             perk("play.slash.fill", Palette.terracotta, "No ad between games")
             perk("sparkles", Palette.gold, "\(Boost.passGift.coins) denari, straight into your purse")
+            perk("rectangle.stack.fill", Palette.gold, "A \(Boost.passPack.title) pack, waiting in your album")
             perk("arrow.up.right", Palette.gold, "Half as much again on every game you finish")
             perk("gift.fill", Palette.gold, "The videos that pay denari stay, for when you want them")
             perk("infinity", Palette.steel, "Pay once. Yours for good, on all your devices")
@@ -128,7 +129,7 @@ struct AdFreeSheet: View {
     private var thanks: some View {
         VStack(spacing: 14) {
             HStack(spacing: 12) {
-                BroomMark(size: 24, tint: Palette.cream)
+                PatronCrest(size: 44)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Tutto pulito!")
                         .font(.system(size: 17, weight: .semibold))
@@ -169,55 +170,81 @@ struct NoAdsGlyph: View {
     }
 }
 
-/// The round corner button beside the rules in the lobby. Gone once the pass is owned.
+/// The lobby's way to the purchase, beside the wordmark with the rules across from it.
+/// Gone once the pass is owned.
 struct NoAdsButton: View {
+    @Environment(\.lift) private var lift
     var action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            NoAdsGlyph()
-                .frame(width: 38, height: 38)
-                .glass(.riviera(interactive: true), in: .circle)
-                .contentShape(.circle)
+        NamedCoin(title: "No ads") {
+            NoAdsGlyph(size: 12.5 * lift)
+        } action: {
+            action()
         }
-        .foregroundStyle(Palette.onTable)
         .accessibilityLabel("Remove the ads")
+    }
+}
+
+/// Where the lobby's No ads coin stands for everyone else, an owner's crest under its name.
+struct PatronCoin: View {
+    @Environment(\.lift) private var lift
+    var action: () -> Void
+
+    var body: some View {
+        NamedCoin(title: "Patron") {
+            PatronCrest(size: 35 * lift, casts: false)
+        } action: {
+            action()
+        }
+        .accessibilityLabel("Patron of the house")
     }
 }
 
 /// The offer in the shop, under the video row. Real money, so it says its price in the
 /// player's currency and never in denari, though it hands some over.
+///
+/// An owner is never offered it again: the patron's card stands in its place, and opens the
+/// gold page that says it is already theirs.
+///
+/// Both pages are held by the shop rather than here: the offer goes the moment the purchase
+/// lands, and a sheet hung on it went with it before it could say thank you.
 struct AdFreeShopRow: View {
     let ads: AdsStore
-
-    @State private var showsSheet = false
+    let showOffer: () -> Void
+    let showPatron: () -> Void
 
     var body: some View {
-        if ads.adsAreOn && !ads.pass.isOwned {
-            VStack(alignment: .leading, spacing: 10) {
-                Caption(text: "Tired of ads?")
-                Button { showsSheet = true } label: {
-                    HStack(spacing: 12) {
-                        NoAdsGlyph(size: 12)
-                            .foregroundStyle(Palette.goldLight)
-                            .frame(width: 26)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Scopa without ads")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(Palette.onTable)
-                            Text("No ads, \(Boost.passGift.coins) denari, and half again every game")
-                                .font(.system(size: 13))
-                                .foregroundStyle(Palette.onTableSoft)
-                        }
-                        Spacer(minLength: 0)
-                        AdFreePriceTag(pass: ads.pass)
+        if ads.pass.isOwned {
+            PatronShopCard(open: showPatron)
+        } else if ads.adsAreOn {
+            offer
+        }
+    }
+
+    private var offer: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Caption(text: "Tired of ads?")
+            Button(action: showOffer) {
+                HStack(spacing: 12) {
+                    NoAdsGlyph(size: 12)
+                        .foregroundStyle(Palette.goldLight)
+                        .frame(width: 26)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Scopa without ads")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Palette.onTable)
+                        Text("No ads, \(Boost.passGift.coins) denari, a pack, and half again every game")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Palette.onTableSoft)
                     }
-                    .padding(14)
-                    .glassPanel(radius: GlassRadius.control, interactive: true)
+                    Spacer(minLength: 0)
+                    AdFreePriceTag(pass: ads.pass)
                 }
-                .buttonStyle(.plain)
+                .padding(14)
+                .glassPanel(radius: GlassRadius.control)
             }
-            .sheet(isPresented: $showsSheet) { AdFreeSheet(pass: ads.pass).coversBanner(carries: false) }
+            .buttonStyle(.plain)
         }
     }
 }

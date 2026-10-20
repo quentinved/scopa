@@ -9,7 +9,7 @@ struct ReleaseNoteArt: View {
     /// One drawing per kind of news. A release adds a case when nothing here fits.
     enum Kind: Hashable {
         case journey, lobby, volumes, wheel, medals, board, house, cloths, oneTap, videos, codes
-        case houseRules, songs, noAds
+        case houseRules, songs, noAds, patron
     }
 
     let kind: Kind
@@ -30,6 +30,19 @@ struct ReleaseNoteArt: View {
         case .houseRules: houseRules
         case .songs: songs
         case .noAds: NoAdsArtwork(size: 200, hasGround: false)
+        case .patron: patron
+        }
+    }
+
+    /// The patron's crest in its window of night sky, the icon it brings beside it.
+    private var patron: some View {
+        ZStack {
+            VaultRoundel(size: 170)
+            PatronCrest(size: 132)
+            PatronIconArt(size: 64)
+                .shadow(color: PatronTone.night.opacity(0.5), radius: 8, y: 4)
+                .rotationEffect(.degrees(8))
+                .offset(x: 104, y: 52)
         }
     }
 
@@ -73,11 +86,13 @@ struct ReleaseNoteArt: View {
         }
     }
 
-    /// The settebello four times, once in each volume's deck, fanned.
+    /// The settebello once in each volume's deck, fanned about the middle one. The fan
+    /// closes up as volumes are added, so it stays as wide as it was for six.
     private var volumes: some View {
-        ZStack {
+        let closer = 5 / CGFloat(max(Volume.allCases.count - 1, 1))
+        return ZStack {
             ForEach(Array(Volume.allCases.enumerated()), id: \.offset) { place, volume in
-                let lean = CGFloat(place) - 1.5
+                let lean = (CGFloat(place) - CGFloat(Volume.allCases.count - 1) / 2) * closer
                 VStack(spacing: 8) {
                     CardView(card: .settebello, width: 62)
                         .environment(\.cardTheme, volume.theme)
@@ -85,8 +100,8 @@ struct ReleaseNoteArt: View {
                         .font(.system(size: 12, weight: .heavy, design: .serif))
                         .foregroundStyle(Palette.goldLight)
                 }
-                .rotationEffect(.degrees(Double(lean) * 7))
-                .offset(x: lean * 58, y: abs(lean) * 6)
+                .rotationEffect(.degrees(Double(lean) * 6))
+                .offset(x: lean * 44, y: abs(lean) * 6)
             }
         }
     }

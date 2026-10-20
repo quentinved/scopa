@@ -3,48 +3,22 @@ import SwiftUI
 // MARK: Lino
 
 extension TapisWeave {
-    /// Linen: a plain weave of uneven threads across the whole cloth, a hem turned under
-    /// round the edge and held with a running stitch, and inside it a hemstitched ladder —
-    /// the drawn-thread border a good tablecloth is finished with.
+    /// Linen: a plain weave of uneven threads, powdered with a diamond in gold cross
+    /// stitch, set in a half drop the way a sampler's motifs are.
     func lino(_ context: inout GraphicsContext, whole: CGRect, visible: CGRect) {
         weave(&context, in: whole)
-        let hem = visible.insetBy(dx: pt(12), dy: pt(12))
-        let radius = pt(44)
-        let depth = pt(13)
-        let fold = hem.insetBy(dx: depth, dy: depth)
-        guard fold.width > 0, fold.height > 0 else { return }
-
-        // The hem is two layers of the same linen, so a shade lighter than the cloth.
-        var band = roundedPath(hem, radius: radius)
-        band.addPath(roundedPath(fold, radius: radius - depth))
-        context.fill(band, with: Self.cream(0.05), style: FillStyle(eoFill: true))
-        raise(roundedPath(fold, radius: radius - depth), in: &context, with: Self.cream(0.12), width: 0.8)
-        context.stroke(roundedPath(hem, radius: radius), with: Self.cream(0.1), lineWidth: hair(0.7))
-
-        // A pick stitch: short on top, long underneath, in a thread a shade darker than linen.
-        let seam = roundedPath(hem.insetBy(dx: depth / 2, dy: depth / 2), radius: radius - depth / 2)
-        let stitch = StrokeStyle(lineWidth: hair(1.1), lineCap: .round, dash: [pt(2.6), pt(4.2)])
-        context.stroke(seam.offsetBy(dx: pt(0.4), dy: pt(0.8)), with: .color(.black.opacity(0.28)), style: stitch)
-        context.stroke(seam, with: .color(Palette.linenDeep.opacity(0.5)), style: stitch)
-        let rung = fold.insetBy(dx: pt(7), dy: pt(7))
-        ladder(&context, along: rung, radius: radius - depth - pt(7))
-        motifs(&context, inside: rung, turn: radius - depth - pt(7), light: visible)
-    }
-
-    /// A cross-stitched motif sewn into each corner, inside the turn of the ladder, in gold.
-    private func motifs(_ context: inout GraphicsContext, inside rect: CGRect, turn: CGFloat, light: CGRect) {
         var motifs = Path()
-        for (corner, inward) in corners(of: rect) {
-            motifs.addPath(crossStitch(at: offset(corner, by: inward, turn * 0.88 + pt(6))))
+        for centre in halfDrop(in: whole, centredOn: visible, across: pt(88), down: pt(112)) {
+            motifs.addPath(crossStitch(at: centre))
         }
         let thread = StrokeStyle(lineWidth: hair(0.9), lineCap: .round)
-        context.stroke(motifs.offsetBy(dx: pt(0.4), dy: pt(0.7)), with: .color(.black.opacity(0.3)), style: thread)
-        context.stroke(motifs, with: gilt(in: light, 0.6), style: thread)
+        context.stroke(motifs.offsetBy(dx: pt(0.4), dy: pt(0.7)), with: .color(.black.opacity(0.2)), style: thread)
+        context.stroke(motifs, with: gilt(in: visible, 0.34), style: thread)
     }
 
     /// A diamond in cross stitch: its outline, a ring inside that, and a stitch at the
     /// heart, each stitch an X across one square of the weave.
-    private func crossStitch(at centre: CGPoint) -> Path {
+    func crossStitch(at centre: CGPoint) -> Path {
         let cell = pt(3.8)
         var path = Path()
         for row in -4...4 {
@@ -61,21 +35,9 @@ extension TapisWeave {
         return path
     }
 
-    /// The hemstitch: two drawn-thread lines with the threads between them gathered into
-    /// little bars. One wide dashed stroke is a row of bars, which is the whole trick.
-    private func ladder(_ context: inout GraphicsContext, along rect: CGRect, radius: CGFloat) {
-        let width = pt(4.5)
-        let middle = roundedPath(rect, radius: radius)
-        var rails = roundedPath(rect.insetBy(dx: -width / 2, dy: -width / 2), radius: radius + width / 2)
-        rails.addPath(roundedPath(rect.insetBy(dx: width / 2, dy: width / 2), radius: radius - width / 2))
-        context.stroke(rails, with: .color(.black.opacity(0.12)), lineWidth: hair(0.8))
-        context.stroke(middle, with: Self.cream(0.09),
-                       style: StrokeStyle(lineWidth: width, dash: [hair(0.7), pt(1.7)]))
-    }
-
     /// Warp and weft, every thread its own weight and a little off its neighbour's
     /// spacing, with a slub here and there where the yarn thickens.
-    private func weave(_ context: inout GraphicsContext, in rect: CGRect) {
+    func weave(_ context: inout GraphicsContext, in rect: CGRect) {
         var dice = TapisDice(state: 0x11A0_C0FF_EE15)
         let pitch = max(pt(2.8), 1.6)
         var light = Path(), dark = Path(), slubs = Path()

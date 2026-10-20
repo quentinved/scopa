@@ -30,6 +30,8 @@ struct ShopContent: View {
     let ads: AdsStore
 
     @Environment(\.locale) private var locale
+    @Environment(DenariSale.self) private var sale
+    @Environment(Toaster.self) private var toaster
     @State private var isWatching = false
     /// The last tap on the opt-in ad found no video to show.
     @State private var noVideo = false
@@ -42,12 +44,19 @@ struct ShopContent: View {
     @State private var passed: Set<ShopJump> = []
     /// Open until the first purchase: by then the shop has explained itself.
     @AppStorage("shop.guideOpen") private var guideOpen = true
+    /// The gold page an owner of the no-ads purchase gets instead of its price.
+    @State private var showsPatron = false
+    /// The no-ads purchase, for everyone else.
+    @State private var showsAdFree = false
+
+    /// Owns the no-ads purchase, so the shop is dressed for a patron. See `patronDress`.
+    private var isPatron: Bool { ads.pass.isOwned }
 
     init(store: TableStore, purse: PurseStore, ads: AdsStore) {
         self.store = store
         self.purse = purse
         self.ads = ads
-        _counter = State(initialValue: ShopCounter(purse: purse))
+        _counter = State(initialValue: ShopCounter(purse: purse, ads: ads))
     }
 
     var body: some View {
@@ -56,23 +65,71 @@ struct ShopContent: View {
                 withAnimation(.snappy) { reader.scrollTo(jump.rawValue, anchor: .top) }
             })
         }
-        .background(TableGround())
+        .patronDress(isPatron)
         .packTill(till, book: store.albumBook, purse: purse, name: store.playerName)
+        .fullScreenCover(isPresented: $showsPatron) { PatronSheet() }
+        .sheet(isPresented: $showsAdFree) { AdFreeSheet(pass: ads.pass).coversBanner(carries: false) }
+        .task { await showPatronForDebugging() }
         .task { ads.prepareReward() }
+        // Here rather than on the bags' row, which is not drawn until they are priced.
+        .task { await sale.loadProducts() }
         .task { await askForDebugging() }
+        // Here rather than on the songs, which the lazy page puts away as it scrolls on.
+        .onDisappear { Audio.shared.audition(nil) }
         .sensoryFeedback(.success, trigger: counter.bought)
         .onChange(of: counter.bought) { guideOpen = false }
         .confirmation(isPresented: $counter.confirmsPurchase) {
-            guard let pending = counter.pending else { return nil }
-            return Confirmation(Text("Buy \(pending.item.title)?"),
-                                message: Text("Leaves you \((purse.balance - pending.item.price).coins) denari."),
-                                actions: [
-                .init(title: Text("Buy for \(pending.item.price.coins) denari")) { counter.pay(for: pending) },
-                .init(title: Text("Not now"), role: .cancel),
-            ])
+            counter.pending.map(purchaseQuestion)
         }
         .navigationTitle("Shop")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// Buy it, or wear it for a game for a video first. A purse too light for it only gets
+    /// the second, which is the one place a trial can turn into a sale.
+    private func purchaseQuestion(_ pending: ShopCounter.Pending) -> Confirmation {
+        let item = pending.item
+        let affordable = purse.canAfford(item)
+        let tries = counter.offersTrial(item)
+        var actions: [Confirmation.Action] = []
+        if affordable {
+            actions.append(.init(title: Text("Buy for \(item.price.coins) denari")) { counter.pay(for: pending) })
+        }
+        if tries {
+            actions.append(.init(title: Text("Watch an ad, wear it for a game"), role: affordable ? .plain : .primary) {
+                tryOn(item)
+            })
+        }
+        actions.append(.init(title: Text("Not now"), role: .cancel))
+        guard affordable else {
+            return Confirmation(Text("\(item.title) costs \(item.price.coins) denari"),
+                                message: Text("You are \((item.price - purse.balance).coins) denari short. Take it for a spin in the meantime."),
+                                actions: actions)
+        }
+        let leaves = Text("Leaves you \((purse.balance - item.price).coins) denari.")
+        return Confirmation(Text("Buy \(item.title)?"),
+                            message: tries ? Text("\(leaves) Or try it for one game first.") : leaves,
+                            actions: actions)
+    }
+
+    /// Puts it on for the next game once the video has been watched to the end.
+    private func tryOn(_ item: ShopItem) {
+        Task {
+            switch await ads.watchRewarded(.tryOn) {
+            case .watched:
+                store.tryOn.start(item)
+                Audio.shared.play(.purchase)
+                toaster.post(Toast(symbol: "sparkles", tint: Palette.gold,
+                                   title: String(localized: "\(item.title) is yours for a game", locale: locale),
+                                   detail: String(localized: "It goes back once your next game is over", locale: locale)))
+            case .unavailable:
+                toaster.post(Toast(symbol: "play.slash", tint: Palette.terracotta,
+                                   title: String(localized: "No video to show right now", locale: locale),
+                                   detail: String(localized: "Try again in a little while.", locale: locale)))
+            case .closedEarly:
+                break
+            }
+        }
     }
 
     /// The last section to have gone under the bar, which is the one being looked at.
@@ -80,15 +137,19 @@ struct ShopContent: View {
 
     private var shelves: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
+            // Lazy, so only the sections near the screen are built and kept up to date:
+            // every frame of a scroll used to walk all five screens of the page.
+            LazyVStack(alignment: .leading, spacing: 30) {
                 balance
                 // Packs handed over rather than bought, torn here where they are sold.
                 ShopWaitingPacks(book: store.albumBook, purse: purse, till: till)
                 // Next to the balance it tops up, above the fold: further down, players
                 // did not know it was there.
                 watchForDenari
-                AdFreeShopRow(ads: ads)
+                // Above the fold too, ahead of what costs real money: under those it went unseen.
                 BoostShopRow(purse: purse)
+                DenariShopRow(purse: purse)
+                AdFreeShopRow(ads: ads, showOffer: { showsAdFree = true }, showPatron: { showsPatron = true })
                 hero
                 ShopGuide(isOpen: $guideOpen).id("guide")
                 packs.passesUnderShopBar(.packs, into: $passed)
@@ -105,7 +166,17 @@ struct ShopContent: View {
         }
         .defaultScrollAnchor(DebugLaunch.promoCode == nil ? nil : .bottom)
         .scrollsToDebugShelf()
+        .toursShopForDebugging()
         .softScrollEdge(.top)
+    }
+
+    /// `-patron` puts the gold page up once the sheet has finished rising, as a tap would.
+    private func showPatronForDebugging() async {
+        #if DEBUG
+        guard DebugLaunch.showsPatron else { return }
+        try? await Task.sleep(for: .seconds(1))
+        showsPatron = true
+        #endif
     }
 
     /// `-confirmBuy` puts the purchase question up for the first thing not owned yet, once
@@ -131,18 +202,27 @@ struct ShopContent: View {
                     .font(.display(28))
                     .foregroundStyle(Palette.onTable)
                     .contentTransition(.numericText())
-                Text(purse.problem ?? (purse.ownsEverything
-                    ? LocalizedStringKey("Tutto pulito — the whole shop is yours")
-                    : LocalizedStringKey("Won at the table. Spend wisely, or don't")))
+                Text(purse.problem ?? purseLine)
                     .font(.system(size: 13))
                     .foregroundStyle(purse.problem == nil ? Palette.onTableSoft : Palette.terracotta)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
+            if isPatron {
+                // The patron's crest, worn by the purse. A tap shows what it stands for.
+                Button { showsPatron = true } label: { PatronCrest(size: 46) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Patron of the house")
+            }
         }
         .padding(16)
         .glassPanel(radius: GlassRadius.control)
         .animation(.snappy, value: purse.balance)
+    }
+
+    private var purseLine: LocalizedStringKey {
+        if purse.ownsEverything { return "Tutto pulito — the whole shop is yours" }
+        return isPatron ? "Half again on every game. Spend like a patron" : "Won at the table. Spend wisely, or don't"
     }
 
     // MARK: Your table
@@ -216,7 +296,7 @@ struct ShopContent: View {
                 Button(action: watch) {
                     watchOffer
                         .padding(14)
-                        .glassPanel(radius: GlassRadius.control, interactive: true)
+                        .glassPanel(radius: GlassRadius.control)
                 }
                 .buttonStyle(.plain)
                 .disabled(isWatching)

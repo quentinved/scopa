@@ -39,6 +39,11 @@ public actor GuestClient {
         try await transport.send(.leave(localPlayer.id), to: .host)
     }
 
+    /// Tells the host this phone is walking out of the game on purpose. See `GameMessage.forfeit`.
+    public func forfeit() async throws {
+        try await transport.send(.forfeit, to: .host)
+    }
+
     /// Sends the best available move when this seat's clock runs out.
     public func playAutomatically() async throws {
         guard let view, let move = Rules.automaticMove(for: view) else { return }
@@ -66,8 +71,12 @@ public actor GuestClient {
         case .playerLeft(let id): continuation.yield(.playerLeft(id))
         case .reacted(let player, let reaction): continuation.yield(.reacted(player: player, reaction: reaction))
         case .record(let record): continuation.yield(.record(record))
+        case .packedRecord(let packed):
+            if let record = Wire.unpack(packed) { continuation.yield(.record(record)) }
         case .leave(let id): continuation.yield(.playerLeft(id))
-        case .join, .play, .react: return
+        case .playerReturned(let id): continuation.yield(.playerReturned(id))
+        case .tableClosed: continuation.yield(.tableClosed)
+        case .join, .play, .react, .forfeit: return
         }
     }
 }

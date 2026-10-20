@@ -30,6 +30,8 @@ struct Sigillo: View {
                 paint(&context, size: size, phase: phase)
             }
         }
+        // On the GPU, like the other flourishes. See `SweepStroke`.
+        .drawingGroup()
         // Stops the clock once it has lifted, so a banner that lingers costs nothing.
         .task {
             try? await Task.sleep(for: .seconds(Self.length + 0.1))

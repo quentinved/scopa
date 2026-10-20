@@ -42,11 +42,21 @@ private struct ReleaseMomentHost: ViewModifier {
                 guard !Task.isCancelled else { return }
                 desk.check(paid: purse.purse.keys)
             }
+            .preference(key: ReleaseMomentIsUp.self, value: desk.moment != nil)
     }
 
     private func close(opening shelf: PackTier.Shelf?) {
         desk.close()
         if let shelf { openPacks(shelf) }
+    }
+}
+
+/// Whether the arrival moment is up, for whatever else waits on the lobby to be clear.
+struct ReleaseMomentIsUp: PreferenceKey {
+    static let defaultValue = false
+
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
     }
 }
 

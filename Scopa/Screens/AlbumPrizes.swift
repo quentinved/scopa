@@ -44,7 +44,7 @@ struct AlbumPrizes: View {
             // The bloom behind the metal. Breathing, so the case reads as lit rather than
             // printed; it is the one thing on the page that moves on its own, so it runs on
             // the slow ambient clock rather than a `repeatForever` at the display's rate.
-            AmbientClock { time in
+            AmbientClock(period: 4.4) { time in
                 let breath = Self.breath(at: time)
                 ZStack {
                     Circle()

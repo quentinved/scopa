@@ -7,7 +7,7 @@ private extension View {
     func doorPlate(lift: CGFloat, tint: Color?, league: Int?) -> some View {
         frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(12 * lift)
-            .glassPanel(radius: GlassRadius.panel, tint: tint, interactive: true, hairline: league == nil)
+            .glassPanel(radius: GlassRadius.panel, tint: tint, hairline: league == nil)
             .overlay {
                 if let league {
                     LeagueRim(shape: RoundedRectangle(cornerRadius: GlassRadius.panel, style: .continuous),
@@ -96,7 +96,7 @@ struct ModeDoor<Mark: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.vertical, 12 * lift)
                 .padding(.horizontal, 6 * lift)
-                .glassPanel(radius: GlassRadius.control, tint: tint, interactive: true, hairline: league == nil)
+                .glassPanel(radius: GlassRadius.control, tint: tint, hairline: league == nil)
                 .overlay {
                     if let league {
                         LeagueRim(shape: RoundedRectangle(cornerRadius: GlassRadius.control, style: .continuous),
@@ -112,64 +112,74 @@ struct ModeDoor<Mark: View>: View {
     }
 }
 
-/// The quick game, which asks its one question on the tile rather than on a sheet.
-///
-/// It is the door called quick, and it used to open a sheet with a segmented picker, a
-/// toggle, a note and a button on it before a single card was dealt. The four tables it can
-/// deal — two, three, four, and four as two sides — are one chip that turns between them,
-/// and the words above it deal whichever it shows. The pick is kept, so the table played
-/// most is the one waiting. It was four pills across the width; the campaign and ranked
-/// took the width, and a quick game asks for half a row and no more.
-///
-/// While a game is saved on this phone the door is that game's way back instead: the same
-/// tile, so a table left half played sits where the thumb already goes, with an × to throw
-/// it away. A new deal over it was a dialog in the way of the resume; dealing after the ×
-/// is one tap more and never loses a table by mistake.
-struct QuickDoor: View {
-    @Environment(\.lift) private var lift
-    @Binding var table: QuickTable
-    var saved: SavedGame? = nil
-    let deal: () -> Void
-    var resume: () -> Void = {}
-    var forget: () -> Void = {}
+/// The game saved on this phone, as a row across the top of the doors.
+struct ResumeDoor: View {
+    let saved: SavedGame
+    let resume: () -> Void
+    let forget: () -> Void
 
     var body: some View {
-        Group {
-            if let saved { resumeFace(saved) } else { quickFace }
-        }
-        .doorPlate(lift: lift, tint: Palette.terracotta.opacity(saved == nil ? 0.78 : 0.92), league: nil)
-        .animation(.snappy(duration: 0.25), value: table)
-    }
-
-    private var quickFace: some View {
-        VStack(alignment: .leading, spacing: 6 * lift) {
-            Button(action: deal) {
-                DoorWords(title: "Quick game") { BotFace(tint: Palette.goldLight, size: 30 * lift) }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .contentShape(.rect)
+        ComebackRow(title: "Resume", detail: Self.detail(saved), forgetLabel: "Forget this game",
+                    action: resume, forget: forget) {
+            HStack(spacing: -12) {
+                CardBack(width: 20).rotationEffect(.degrees(-8))
+                CardBack(width: 20).rotationEffect(.degrees(6))
             }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text("Deals against the bots"))
-            sizeChip
         }
     }
 
-    /// "Resume" over who, the score and the round, the whole tile one tap back to the table.
-    private func resumeFace(_ saved: SavedGame) -> some View {
-        Button(action: resume) {
-            DoorWords(title: "Resume", detail: Self.detail(saved)) {
-                HStack(spacing: -12 * lift) {
-                    CardBack(width: 20 * lift).rotationEffect(.degrees(-8))
-                    CardBack(width: 20 * lift).rotationEffect(.degrees(6))
-                }
+    /// "Hugo · 3 – 1 · Round 2": who, where it stands, how far in.
+    static func detail(_ saved: SavedGame) -> LocalizedStringKey {
+        let names = saved.opponentNames.formatted(.list(type: .and, width: .short))
+        return "\(names) · \(saved.ownScore) – \(saved.bestOtherScore) · Round \(saved.state.roundNumber)"
+    }
+}
+
+/// A room game the app was closed in the middle of, offered back the way a saved one is.
+/// It floated over the foot of the lobby once, on top of the ladder and under the thumb;
+/// as a row of the column it is measured with everything else and never covers a door.
+struct RejoinDoor: View {
+    let hostName: String
+    let rejoin: () -> Void
+    let forget: () -> Void
+
+    var body: some View {
+        ComebackRow(title: "Rejoin", detail: "At \(hostName)'s table", forgetLabel: "Forget that game",
+                    action: rejoin, forget: forget) {
+            Image(systemName: "arrow.uturn.backward.circle.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(Palette.cream)
+        }
+    }
+}
+
+/// A game waiting to be picked back up, as a slim terracotta row: one tap back to the
+/// table, with an × to let it go. A new deal over it was a dialog in the way of the resume;
+/// dealing after the × is one tap more and never loses a table by mistake.
+private struct ComebackRow<Mark: View>: View {
+    @Environment(\.lift) private var lift
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    let forgetLabel: LocalizedStringKey
+    let action: () -> Void
+    let forget: () -> Void
+    /// Drawn at its size on a phone and lifted with the rest on an iPad.
+    @ViewBuilder var mark: Mark
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12 * lift) {
+                DoorWords(title: title, detail: detail) { mark.scaleEffect(lift) }
+                // Clear of the ×.
+                Spacer(minLength: 28 * lift)
             }
-            // Clear of the × in the corner.
-            .padding(.trailing, 22 * lift)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.horizontal, 14 * lift)
+            .padding(.vertical, 12 * lift)
+            .glassPanel(radius: GlassRadius.panel, tint: Palette.terracotta.opacity(0.92))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .overlay(alignment: .topTrailing) { forgetButton }
+        .overlay(alignment: .trailing) { forgetButton.padding(.trailing, 12 * lift) }
     }
 
     private var forgetButton: some View {
@@ -182,21 +192,19 @@ struct QuickDoor: View {
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .padding(.top, -4 * lift)
-        .padding(.trailing, -4 * lift)
-        .accessibilityLabel("Forget this game")
+        .accessibilityLabel(forgetLabel)
     }
+}
 
-    /// "Hugo · 3 – 1 · Round 2": who, where it stands, how far in.
-    static func detail(_ saved: SavedGame) -> LocalizedStringKey {
-        let names = saved.opponentNames.formatted(.list(type: .and, width: .short))
-        return "\(names) · \(saved.ownScore) – \(saved.bestOtherScore) · Round \(saved.state.roundNumber)"
-    }
+/// The table a quick game deals, as one chip: a tap turns it to the next size round. A chip
+/// only changes the size and the deal is the words beside it, so a thumb reaching for a
+/// four-hander never starts a two-hander by mistake. The pick is kept, so the table played
+/// most is the one waiting.
+struct QuickTableChip: View {
+    @Environment(\.lift) private var lift
+    @Binding var table: QuickTable
 
-    /// The table it deals, as one chip: a tap turns it to the next size round. A chip only
-    /// changes the size and the deal is the words above it, so a thumb reaching for a
-    /// four-hander never starts a two-hander by mistake.
-    private var sizeChip: some View {
+    var body: some View {
         Button {
             let all = QuickTable.allCases
             table = all[((all.firstIndex(of: table) ?? 0) + 1) % all.count]
@@ -221,39 +229,126 @@ struct QuickDoor: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(table.spokenLabel)
+        .animation(.snappy(duration: 0.25), value: table)
     }
 }
 
-/// The solo campaign: a road through Italy, stage after stage, the bots getting sharper on
-/// the way. Sea glaze rather than felt or metal, so it reads as a journey and not a grade.
-struct CampaignDoor: View {
+/// Everything that is not the league or the road, across the width like them: a quick game
+/// against the bots, or a table with friends on this phone, by a code, or through Game Center.
+struct FriendsDoor: View {
     @Environment(\.lift) private var lift
-    /// "Stage 4 · Napoli", once the campaign has somewhere to say you are.
-    var progress: LocalizedStringKey? = nil
     let open: () -> Void
 
     var body: some View {
         Button(action: open) {
             HStack(spacing: 12 * lift) {
-                DoorWords(title: "Campaign", detail: progress ?? "A journey through Italy",
-                          detailIsGold: progress != nil) {
-                    Image(systemName: "map.fill")
+                DoorWords(title: "Friends & bots", detail: "A quick game against the bots, or a table with friends.") {
+                    Image(systemName: "person.2.fill")
                         .font(.system(size: 22 * lift, weight: .semibold))
                         .foregroundStyle(Palette.goldLight)
                 }
-                RoadMotif()
-                    .frame(width: 112 * lift, height: 44 * lift)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14 * lift, weight: .semibold))
-                    .foregroundStyle(Palette.onTableSoft)
+                PlayPill()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 14 * lift)
             .padding(.vertical, 12 * lift)
-            .glassPanel(radius: GlassRadius.panel, tint: Palette.seaGlaze.opacity(0.55), interactive: true)
+            .glassPanel(radius: GlassRadius.panel)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// The solo campaign: a road through Italy, stage after stage, the bots getting sharper on
+/// the way. Sea glaze rather than felt or metal, so it reads as a journey and not a grade.
+///
+/// Laid out as the ranked door is, a seal where the medal stands and the road where the
+/// division bar runs, so the two ways to play alone stand at one size.
+struct CampaignDoor: View {
+    @Environment(\.lift) private var lift
+    let book: CampaignBook
+    let open: () -> Void
+
+    private var started: Bool { book.totalStars > 0 }
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 14 * lift) {
+                CampaignSeal(size: 54 * lift)
+                    .frame(width: 58 * lift)
+                VStack(alignment: .leading, spacing: 5 * lift) {
+                    heading
+                    VStack(alignment: .leading, spacing: 6 * lift) {
+                        place
+                        RoadMotif().frame(height: 14 * lift)
+                        footer
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14 * lift)
+            .padding(.vertical, 14 * lift)
+            .glassPanel(radius: GlassRadius.panel, tint: Palette.seaGlaze.opacity(0.55))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var heading: some View {
+        HStack(spacing: 8 * lift) {
+            Text("Campaign")
+                .font(.system(size: 19 * lift, weight: .bold))
+                .foregroundStyle(Palette.onTable)
+                .lineLimit(1)
+            Spacer(minLength: 4 * lift)
+            PlayPill()
+        }
+    }
+
+    /// Where the road has reached, once a stage is won; until then the door sells the trip.
+    private var place: some View {
+        let stage = book.current
+        let line: LocalizedStringKey = started ? "Stage \(stage.number) · \(stage.region.title)"
+                                               : "A journey through Italy"
+        return Text(line)
+            .textCase(.uppercase)
+            .font(.system(size: 12.5 * lift, weight: .bold))
+            .tracking(1.4)
+            .foregroundStyle(Palette.onTable)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    /// The stars won so far, or where the first table is before there are any.
+    private var footer: some View {
+        let first = Campaign.stages[0]
+        let line: LocalizedStringKey = started ? "\(book.totalStars) of \(CampaignBook.maxStars) stars"
+                                               : "Stage \(first.number) · \(first.region.title)"
+        return Text(line)
+            .font(.system(size: 11.5 * lift, weight: .semibold))
+            .foregroundStyle(Palette.goldLight.opacity(0.9))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+}
+
+/// The campaign's answer to the league medal: the map struck on a sea-glaze coin with a
+/// gold rim. Metal on the edge only, since the road is a journey and not a grade.
+private struct CampaignSeal: View {
+    let size: CGFloat
+
+    var body: some View {
+        Circle()
+            .fill(Palette.seaGlaze)
+            .overlay { Circle().fill(Palette.ink.opacity(0.18)).padding(size * 0.12) }
+            .overlay { Circle().strokeBorder(Palette.goldSheen, lineWidth: size * 0.06) }
+            .overlay {
+                Image(systemName: "map.fill")
+                    .font(.system(size: size * 0.4, weight: .semibold))
+                    .foregroundStyle(Palette.goldLight)
+            }
+            .frame(width: size, height: size)
+            .shadow(color: Palette.ink.opacity(0.3), radius: size * 0.06, y: size * 0.04)
     }
 }
 
@@ -303,6 +398,31 @@ private struct RoadMotif: View {
     }
 }
 
+/// "Play" on a gold pill, at the end of each of the three ways to play. A chevron there read
+/// as "more about this", so the league looked like a stats card rather than a game to sit at.
+/// The door around it is the button; this only says what it does.
+struct PlayPill: View {
+    @Environment(\.lift) private var lift
+
+    var body: some View {
+        HStack(spacing: 5 * lift) {
+            Image(systemName: "play.fill")
+                .font(.system(size: 10 * lift, weight: .bold))
+            Text("Play")
+                .textCase(.uppercase)
+                .font(.system(size: 12 * lift, weight: .heavy))
+                .tracking(0.8)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .foregroundStyle(Palette.ink)
+        .padding(.horizontal, 11 * lift)
+        .frame(height: 28 * lift)
+        .background { Capsule().fill(Palette.goldSheen) }
+        .accessibilityHidden(true)
+    }
+}
+
 /// Ranked, as the lobby's first door: the medal, the grade, how often you win and what the
 /// next division costs.
 ///
@@ -336,7 +456,7 @@ struct RankedHero: View {
             .padding(.horizontal, 14 * lift)
             .padding(.vertical, 14 * lift)
             .glassPanel(radius: GlassRadius.panel, tint: league.map { LeagueMetal.league($0).base.opacity(0.16) },
-                        interactive: true, hairline: league == nil)
+                        hairline: league == nil)
             .overlay {
                 if let league {
                     LeagueRim(shape: RoundedRectangle(cornerRadius: GlassRadius.panel, style: .continuous),
@@ -360,9 +480,7 @@ struct RankedHero: View {
                 .foregroundStyle(Palette.onTable)
                 .lineLimit(1)
             Spacer(minLength: 4 * lift)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14 * lift, weight: .semibold))
-                .foregroundStyle(Palette.onTableSoft)
+            PlayPill()
         }
     }
 
@@ -440,42 +558,13 @@ struct LeagueBar: View {
     }
 }
 
-/// Three cards of the deck in use, fanned behind the broom.
-struct MastheadFan: View {
-    @Environment(\.lift) private var lift
-    let width: CGFloat
-
-    private static let cards = [Card(.ace, of: .clubs), Card.settebello, Card(.knight, of: .cups)]
-
-    /// The cloth under it, so what it drops is the table's own shadow.
-    @Environment(\.tableFelt) private var felt
-
-    var body: some View {
-        ZStack {
-            ForEach(Array(Self.cards.enumerated()), id: \.element) { index, card in
-                let position = Double(index) - 1
-                CardView(card: card, width: width)
-                    .rotationEffect(.degrees(position * 18), anchor: .bottom)
-                    .offset(x: position * width * 0.34)
-            }
-        }
-        .shadow(color: felt.shade(0.5), radius: 10, y: 6)
-    }
-}
-
 #Preview("The doors") {
     @Previewable @State var table = QuickTable.two
     VStack(spacing: 10) {
         RankedHero(rank: nil) {}
-        HStack(spacing: 10) {
-            QuickDoor(table: $table) {}
-            ModeDoor(title: "With friends", detail: "This phone, a code, or Game Center") {
-                Image(systemName: "person.2.fill")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(Palette.goldLight)
-            } action: {}
-        }
-        .fixedSize(horizontal: false, vertical: true)
+        CampaignDoor(book: CampaignBook()) {}
+        FriendsDoor {}
+        QuickTableChip(table: $table)
     }
     .padding(20)
     .frame(maxWidth: .infinity, maxHeight: .infinity)

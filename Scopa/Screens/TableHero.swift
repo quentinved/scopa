@@ -15,6 +15,9 @@ struct TableHero: View {
     var livery: SeatLivery = .tavolo
     let companion: Companion
 
+    /// Scrolled out of sight the companion stops stirring: each stir redraws the whole shop.
+    @State private var isOnScreen = true
+
     /// The settebello, a court card for the drawing, and a plain card for the pips.
     private static let hand: [Card] = [
         .settebello, Card(.king, of: .cups), Card(.three, of: .swords),
@@ -46,7 +49,7 @@ struct TableHero: View {
         }
         // Opposite the seat mark, and away from the caption at the bottom.
         .overlay(alignment: .topTrailing) {
-            CompanionView(companion: companion, size: 46, mood: .watching)
+            CompanionView(companion: companion, size: 46, mood: .watching, idles: isOnScreen)
                 .padding(.trailing, 14)
                 .padding(.top, 10)
         }
@@ -58,6 +61,7 @@ struct TableHero: View {
                 .fill(felt.shade(0.5))
                 .shadow(color: felt.shade(0.5), radius: 14, y: 8)
         }
+        .reportsOnScreen(into: $isOnScreen)
     }
 
     private var fan: some View {
@@ -84,8 +88,8 @@ struct TableHero: View {
                            startPoint: .topLeading, endPoint: .bottomTrailing)
             RadialGradient(colors: [Palette.gold.opacity(0.18), .clear],
                            center: UnitPoint(x: 0.5, y: 0.42), startRadius: 0, endRadius: 190)
-            // Half scale: the hero is about half a screen wide, so a border sewn for a
-            // phone would have its corners off the end of it.
+            // Half scale: the hero is about half a screen wide, so the repeat is drawn
+            // small enough to read as cloth in it rather than one motif.
             TapisWeave(tapis: tapis, scale: 0.55)
         }
     }

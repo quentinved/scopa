@@ -26,14 +26,22 @@ public actor HotSeatTable {
     /// Set while a fresh hand is still landing on the table, so the bot about to play waits
     /// out `dealPace` instead of `pace` and the three cards can be watched arriving.
     private var handIsLanding = false
+    /// Set when that hand was dealt by the move that emptied the last one. See `refillPace`.
+    private var handFollowsAMove = false
     private var rng: any RandomNumberGenerator & Sendable
     /// The seat whose cards are on screen. It follows the turn between people and stays put
     /// while a bot plays, because a bot's view would put its hand face up on the phone.
     private var shownSeat: Int
     private var isThinking = false
     private var isStopped = false
-    /// See `holdBots(for:)`.
-    private var botsHeldUntil: ContinuousClock.Instant?
+    /// See `holdBots(for:)`. A sleep the bots wait out, cancelled by a release.
+    private var hold: Task<Void, Never>?
+    /// Moves the bots make before thinking for themselves, in order. See `deal(stacked:botMoves:)`.
+    private var botScript: [Move] = []
+    /// Bot seats whose moves are handed in from outside instead of thought up. See `steer(_:)`.
+    private var steered: Set<Int> = []
+    /// A steered seat let off to think for itself, for one turn. See `letSteeredSeatPlay()`.
+    private var freedSeat: Int?
 
     public init(
         configuration: GameConfiguration,
@@ -108,9 +116,23 @@ public actor HotSeatTable {
     /// fixed, so a table paced at zero still runs flat out.
     private var dealPace: Duration { pace + pace / 2 }
 
+    /// What a hand dealt by the move that emptied the last one adds to that move's own
+    /// wait. The screen lets the last card land before it shows the new hand and its banner,
+    /// so a bot leading straight away would play under the banner.
+    private var refillPace: Duration { pace * 4 / 5 }
+
     /// Deals the first round, or the next one after a scoreboard pause.
     public func deal() async {
         await publish(session.startRound())
+        await letBotsPlay()
+    }
+
+    /// Deals a round laid out in advance and has the bots play `botMoves` in turn, for a
+    /// practice table where every move is part of the lesson. A scripted move the rules
+    /// refuse ends the script, and the bots think for themselves from there.
+    public func deal(stacked deck: [Card], botMoves: [Move]) async {
+        botScript = botMoves
+        await publish(session.startRound(deck: deck))
         await letBotsPlay()
     }
 
@@ -142,6 +164,7 @@ public actor HotSeatTable {
 
     public func stop() {
         isStopped = true
+        hold?.cancel()
         continuation.finish()
     }
 
@@ -149,11 +172,36 @@ public actor HotSeatTable {
     /// such as what a ranked game pays. A deadline rather than a flag, so a release that never
     /// comes cannot stall the table for good.
     public func holdBots(for duration: Duration) {
-        botsHeldUntil = .now + duration
+        hold?.cancel()
+        hold = Task { try? await Task.sleep(for: duration) }
     }
 
     public func releaseBots() {
-        botsHeldUntil = nil
+        hold?.cancel()
+        hold = nil
+    }
+
+    // MARK: Scatouch
+
+    /// Bot seats that wait for their move to come in through `play` rather than thinking, for
+    /// the quick game's god mode. Local only, like everything on this table.
+    public func steer(_ seats: Set<Int>) async {
+        steered = seats.intersection(bots)
+        await letBotsPlay()
+    }
+
+    /// The steered seat on the move thinks for itself, this turn only.
+    public func letSteeredSeatPlay() async {
+        guard let seat = await session.state.round?.turnSeat, steered.contains(seat) else { return }
+        freedSeat = seat
+        await letBotsPlay()
+    }
+
+    /// Trades a card in a person's hand for one still in the stock, and shows the table again.
+    public func swap(_ held: Card, inHandOf seat: Int, for wanted: Card) async throws(SwapError) {
+        guard !bots.contains(seat) else { throw .cardNotInHand }
+        try await session.swap(held, inHandOf: seat, for: wanted)
+        await publish([])
     }
 
     // MARK: Bots
@@ -167,29 +215,48 @@ public actor HotSeatTable {
         defer { isThinking = false }
 
         while !isStopped, let waiting = await seatWaitingOnABot() {
-            let wait = handIsLanding ? dealPace : (lastMoveTook ? pace : quickPace)
+            // A seat let off by hand has had its table watched already, so it barely waits.
+            let moved = lastMoveTook ? pace : quickPace
+            let paced = handIsLanding ? (handFollowsAMove ? moved + refillPace : dealPace) : moved
+            let wait = freedSeat == waiting ? pace / 5 : paced
             handIsLanding = false
+            handFollowsAMove = false
             try? await Task.sleep(for: wait)
             await waitOutHold()
             guard !isStopped, await seatWaitingOnABot() == waiting else { return }
-            guard let move = bot.move(for: await session.state.view(forSeat: waiting), using: &rng),
+            if freedSeat == waiting { freedSeat = nil }
+            guard let move = await move(for: waiting),
                   let events = try? await session.play(move)
             else { return }
             await publish(events)
         }
     }
 
-    /// Checked often rather than slept out, so a release lets the bot go straight away.
+    /// The scripted move when the script has one for this seat, otherwise the bot's own.
+    private func move(for seat: Int) async -> Move? {
+        let state = await session.state
+        if let next = botScript.first, next.seat == seat {
+            botScript.removeFirst()
+            if (try? Rules.validate(next, in: state)) != nil { return next }
+            botScript = []
+        }
+        return bot.move(for: state.view(forSeat: seat), using: &rng)
+    }
+
+    /// Slept out rather than polled: a release cancels the sleep, so the bot still goes
+    /// straight away. A hold made longer while waiting is waited out too.
     private func waitOutHold() async {
-        while !isStopped, let until = botsHeldUntil, until > .now {
-            try? await Task.sleep(for: .milliseconds(100))
+        while !isStopped, let current = hold {
+            await current.value
+            if hold == current { hold = nil }
         }
     }
 
     /// The seat the table is waiting on, when a bot is sitting in it.
     private func seatWaitingOnABot() async -> Int? {
         let state = await session.state
-        guard state.phase == .playing, let seat = state.round?.turnSeat, bots.contains(seat) else { return nil }
+        guard state.phase == .playing, let seat = state.round?.turnSeat, bots.contains(seat),
+              !steered.contains(seat) || freedSeat == seat else { return nil }
         return seat
     }
 
@@ -198,7 +265,10 @@ public actor HotSeatTable {
     /// The phone shows the seat about to play, unless a bot is about to play, in which case
     /// it keeps showing whoever passed it last.
     private func publish(_ events: [GameEvent]) async {
-        if events.contains(.dealt) { handIsLanding = true }
+        // Only the move straight after a deal waits for it: a person playing first has
+        // already watched the hand land.
+        handIsLanding = events.contains(.dealt)
+        handFollowsAMove = handIsLanding && events.contains { if case .played = $0 { true } else { false } }
         lastMoveTook = events.contains { if case .captured = $0 { true } else { false } }
         let state = await session.state
         if let seat = state.round?.turnSeat, !bots.contains(seat) { shownSeat = seat }

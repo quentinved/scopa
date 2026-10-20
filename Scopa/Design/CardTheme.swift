@@ -62,6 +62,14 @@ enum CardSkin: String, CaseIterable, Codable, Sendable, Identifiable {
     case pergamena
     /// Night: the deck printed in reverse, bone and gold on near-black stock.
     case notturna
+    /// Venice: ivory, a lagoon teal back, carnival crimson and gold.
+    case veneziana
+    /// Sorrento: lemonwood stock, a walnut back, olive and honey.
+    case sorrentina
+    /// Burano: lace-white stock, the island's painted houses for the suits, a dark net back.
+    case buranella
+    /// Milan under the Visconti: vellum, gold leaf and ultramarine.
+    case milanese
 
     static let `default` = CardSkin.riviera
 
@@ -79,6 +87,10 @@ enum CardSkin: String, CaseIterable, Codable, Sendable, Identifiable {
         case .bergamasca: "Bergamo"
         case .pergamena: "Pergamena"
         case .notturna: "Notturna"
+        case .veneziana: "Venezia"
+        case .sorrentina: "Sorrento"
+        case .buranella: "Burano"
+        case .milanese: "Milano"
         }
     }
 
@@ -91,6 +103,10 @@ enum CardSkin: String, CaseIterable, Codable, Sendable, Identifiable {
         case .bergamasca: "Bright, on cobalt"
         case .pergamena: "Aged paper and brown ink"
         case .notturna: "Bone and gold on black, printed in reverse"
+        case .veneziana: "Ivory and crimson on lagoon teal"
+        case .sorrentina: "Lemonwood and olive on walnut"
+        case .buranella: "Painted-house colours on a dark net"
+        case .milanese: "Gold and ultramarine on vellum"
         }
     }
 
@@ -102,6 +118,10 @@ enum CardSkin: String, CaseIterable, Codable, Sendable, Identifiable {
         case .bergamasca: Self.bergamascaFace
         case .notturna: Self.notturnaFace
         case .pergamena: Self.pergamenaFace
+        case .veneziana: Self.venezianaFace
+        case .sorrentina: Self.sorrentinaFace
+        case .buranella: Self.buranellaFace
+        case .milanese: Self.milaneseFace
         }
     }
 
@@ -212,6 +232,82 @@ enum CardSkin: String, CaseIterable, Codable, Sendable, Identifiable {
             backPattern: Color(red: 0.925, green: 0.882, blue: 0.796).opacity(0.28),
             backTrim: Color(red: 0.741, green: 0.620, blue: 0.435),
             backEdge: Color(red: 0.925, green: 0.882, blue: 0.796)
+        )
+
+    /// Carnevale's own inks: the ivory of its stock, its crimson and gold, and the lagoon
+    /// for the back, so the deck it dresses reads as one print.
+    private static let venezianaFace =
+        CardFace(
+            stock: Color(red: 0.973, green: 0.949, blue: 0.890),
+            ink: Color(red: 0.110, green: 0.086, blue: 0.082),
+            rule: Color(red: 0.639, green: 0.122, blue: 0.141).opacity(0.32),
+            edge: Color(red: 0.110, green: 0.086, blue: 0.082).opacity(0.16),
+            accent: Color(red: 0.835, green: 0.627, blue: 0.220),
+            coins: Color(red: 0.855, green: 0.651, blue: 0.231),
+            cups: Color(red: 0.639, green: 0.122, blue: 0.141),
+            swords: Color(red: 0.090, green: 0.435, blue: 0.467),
+            clubs: Color(red: 0.392, green: 0.267, blue: 0.180),
+            backGround: Color(red: 0.063, green: 0.310, blue: 0.341),
+            backPattern: Color(red: 0.973, green: 0.949, blue: 0.890).opacity(0.22),
+            backTrim: Color(red: 0.918, green: 0.737, blue: 0.341),
+            backEdge: Color(red: 0.973, green: 0.949, blue: 0.890)
+        )
+
+    /// The woods a Sorrento box is inlaid with: lemonwood for the paper, walnut for the
+    /// back, olive, cherry and a grey-stained maple for the suits.
+    private static let sorrentinaFace =
+        CardFace(
+            stock: Color(red: 0.957, green: 0.914, blue: 0.788),
+            ink: Color(red: 0.208, green: 0.137, blue: 0.086),
+            rule: Color(red: 0.443, green: 0.298, blue: 0.180).opacity(0.42),
+            edge: Color(red: 0.208, green: 0.137, blue: 0.086).opacity(0.26),
+            accent: Color(red: 0.737, green: 0.533, blue: 0.212),
+            coins: Color(red: 0.776, green: 0.573, blue: 0.204),
+            cups: Color(red: 0.612, green: 0.251, blue: 0.169),
+            swords: Color(red: 0.322, green: 0.353, blue: 0.373),
+            clubs: Color(red: 0.400, green: 0.443, blue: 0.200),
+            backGround: Color(red: 0.322, green: 0.200, blue: 0.118),
+            backPattern: Color(red: 0.957, green: 0.914, blue: 0.788).opacity(0.24),
+            backTrim: Color(red: 0.918, green: 0.812, blue: 0.533),
+            backEdge: Color(red: 0.957, green: 0.914, blue: 0.788)
+        )
+
+    /// The colours Burano paints its houses, so a fisherman finds his own in the fog: yellow,
+    /// raspberry, cobalt and green on lace-white, and the back the dark the lace is laid on.
+    private static let buranellaFace =
+        CardFace(
+            stock: Color(red: 0.980, green: 0.973, blue: 0.945),
+            ink: Color(red: 0.118, green: 0.110, blue: 0.149),
+            rule: Color(red: 0.776, green: 0.180, blue: 0.333).opacity(0.30),
+            edge: Color(red: 0.118, green: 0.110, blue: 0.149).opacity(0.16),
+            accent: Color(red: 0.937, green: 0.722, blue: 0.180),
+            coins: Color(red: 0.937, green: 0.706, blue: 0.157),
+            cups: Color(red: 0.776, green: 0.180, blue: 0.333),
+            swords: Color(red: 0.165, green: 0.373, blue: 0.722),
+            clubs: Color(red: 0.149, green: 0.533, blue: 0.369),
+            backGround: Color(red: 0.188, green: 0.110, blue: 0.200),
+            backPattern: Color(red: 0.980, green: 0.973, blue: 0.945).opacity(0.24),
+            backTrim: Color(red: 0.957, green: 0.784, blue: 0.294),
+            backEdge: Color(red: 0.980, green: 0.973, blue: 0.945)
+        )
+
+    /// A Visconti tarot's materials: vellum for the paper, ultramarine for the back, gold
+    /// leaf for the trim, and the vermilion and green its court is dressed in.
+    private static let milaneseFace =
+        CardFace(
+            stock: Color(red: 0.961, green: 0.925, blue: 0.835),
+            ink: Color(red: 0.149, green: 0.106, blue: 0.075),
+            rule: Color(red: 0.718, green: 0.533, blue: 0.188).opacity(0.48),
+            edge: Color(red: 0.149, green: 0.106, blue: 0.075).opacity(0.20),
+            accent: Color(red: 0.804, green: 0.608, blue: 0.212),
+            coins: Color(red: 0.820, green: 0.616, blue: 0.200),
+            cups: Color(red: 0.733, green: 0.204, blue: 0.149),
+            swords: Color(red: 0.149, green: 0.235, blue: 0.592),
+            clubs: Color(red: 0.204, green: 0.392, blue: 0.259),
+            backGround: Color(red: 0.094, green: 0.141, blue: 0.447),
+            backPattern: Color(red: 0.918, green: 0.773, blue: 0.408).opacity(0.30),
+            backTrim: Color(red: 0.929, green: 0.773, blue: 0.392),
+            backEdge: Color(red: 0.961, green: 0.925, blue: 0.835)
         )
 }
 

@@ -4,8 +4,9 @@ import SwiftUI
 /// The song that plays under a game, picked in the shop.
 ///
 /// The two loops the game shipped with are free. The rest are sold, graded like every other
-/// shelf, and the dearer the song the more of the band plays it. All of them keep to the house
-/// key, so a cheer or a win lands on any of them. `Tools/SoundForge/songs.py` composes them.
+/// shelf, and the dearer the song the more of the band plays it, except the one the Maiolica
+/// album hands over, which is never sold. All of them keep to the house key, so a cheer or a
+/// win lands on any of them. `Tools/SoundForge/songs.py` and `album_songs.py` compose them.
 enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The lobby's own loop, which can follow you to the table.
     case lungomare
@@ -17,13 +18,16 @@ enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
     case serenata
     case tarantella
     case mergellina
+    /// A mazurka from the town that named faience. The Maiolica album's prize.
+    case faenza
 
     var id: String { rawValue }
 
     static let stored = "tableSong"
 
-    /// The songs the shop sells. The two house loops are never locked.
-    static let forSale: [Song] = allCases.filter { $0.price != nil }
+    /// The songs the shop sells. The two house loops are never locked, and an album's song
+    /// is on the shelf at nothing only so the ledger can record it.
+    static let forSale: [Song] = allCases.filter { $0.price != nil && $0.price != .zero }
 
     var track: Track {
         switch self {
@@ -35,6 +39,7 @@ enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
         case .serenata: .serenata
         case .tarantella: .tarantella
         case .mergellina: .mergellina
+        case .faenza: .faenza
         }
     }
 
@@ -52,6 +57,7 @@ enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
         case .serenata: "A mandolin serenade"
         case .tarantella: "A tarantella with tambourine"
         case .mergellina: "A Neapolitan song, the whole band"
+        case .faenza: "A Romagna mazurka, the whole band"
         }
     }
 
@@ -65,6 +71,7 @@ enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
         case .serenata: "A mandolin under a window. Fingers crossed"
         case .tarantella: "Tambourine, accordion, mandolin. Try sitting still"
         case .mergellina: "Naples, the whole band, full volume"
+        case .faenza: "A mazurka from Romagna. Mind the crockery"
         }
     }
 
@@ -73,7 +80,7 @@ enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
         case .lungomare, .tavolo, .pomeriggio, .piazza: .comune
         case .barcarola, .serenata: .raro
         case .tarantella: .prezioso
-        case .mergellina: .leggendario
+        case .mergellina, .faenza: .leggendario
         }
     }
 
@@ -85,6 +92,8 @@ enum Song: String, CaseIterable, Codable, Sendable, Identifiable {
         case .barcarola, .serenata: 260
         case .tarantella: 500
         case .mergellina: 950
+        // Earned rather than bought: the zero price lets the ledger record it as owned.
+        case .faenza: .zero
         }
     }
 }

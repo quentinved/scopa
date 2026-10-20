@@ -14,6 +14,9 @@ import SwiftUI
 /// sheen, night is steel with a hairline of gold cut round it, and iride moves through four
 /// colours across the circle. That is the whole difference between a `comune` and a
 /// `leggendario` here, and it is meant to be visible at 26 points in a lobby chip.
+///
+/// `trina` is never sold: the Merletto album hands it over. Velvet with Burano lace worked
+/// round its edge, and the lace kept to the rim so the mark in the middle stays clear.
 enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
     /// The seat colour the table deals you, which changes chair to chair. Free, and what a
     /// player who has never opened the shop is wearing.
@@ -29,6 +32,8 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
     case notte
     /// Four colours across one circle.
     case iride
+    /// Burano lace round a velvet circle. The Merletto album's.
+    case trina
 
     var id: String { rawValue }
 
@@ -58,6 +63,7 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
         case .oro: "Oro"
         case .notte: "Notte"
         case .iride: "Iride"
+        case .trina: "Trina"
         }
     }
 
@@ -73,6 +79,7 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
         case .oro: "Struck gold"
         case .notte: "Steel at night, edged in gold"
         case .iride: "Four colours across one circle"
+        case .trina: "Burano lace on velvet"
         }
     }
 
@@ -88,6 +95,7 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
         case .oro: "Real gold. Struck, not painted"
         case .notte: "Steel edged in gold. Very mysterious"
         case .iride: "Changes colour as it turns. Show-off"
+        case .trina: "Burano lace round your badge. Do not iron"
         }
     }
 
@@ -104,6 +112,7 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
         case .oro: Palette.gold
         case .notte: Palette.steel
         case .iride: Color(red: 0.400, green: 0.435, blue: 0.702)
+        case .trina: LaceRing.velvet
         }
     }
 
@@ -129,6 +138,9 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
                          Color(red: 0.400, green: 0.749, blue: 0.702),
                          Color(red: 0.376, green: 0.471, blue: 0.831)],
                 center: .center))
+        case .trina:
+            AnyShapeStyle(LinearGradient(colors: [LaceRing.velvetLight, LaceRing.velvet, LaceRing.velvetDeep],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
         default:
             AnyShapeStyle(plain(seat: seat))
         }
@@ -144,6 +156,8 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
             Circle().strokeBorder(Palette.goldLight.opacity(0.9), lineWidth: size * 0.035)
         case .iride:
             Circle().strokeBorder(.white.opacity(0.65), lineWidth: size * 0.03)
+        case .trina:
+            LaceRing(size: size)
         default:
             EmptyView()
         }
@@ -161,7 +175,8 @@ enum SeatLivery: String, CaseIterable, Codable, Sendable, Identifiable {
         case .tavolo: .comune
         case .terracotta, .lavanda, .oliva, .mare: .comune
         case .rubino: .raro
-        case .oro, .notte: .prezioso
+        // Graded like the other things only an album gives.
+        case .oro, .notte, .trina: .prezioso
         case .iride: .leggendario
         }
     }

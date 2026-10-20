@@ -123,7 +123,8 @@ do_shot() {
   log "waiting ${delay}s for the app to settle"
   sleep "$delay"
   xcrun simctl io "$DEVICE" screenshot --type=png "$out" >/dev/null
-  sips -Z 1500 "$out" >/dev/null 2>&1 || true
+  # Shrunk to be cheap to look at; SCOPA_SHOT_FULL=1 keeps the device's size, for App Review.
+  [ -n "${SCOPA_SHOT_FULL:-}" ] || sips -Z 1500 "$out" >/dev/null 2>&1 || true
   log "wrote $out"
 }
 

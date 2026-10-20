@@ -137,7 +137,7 @@ private struct StakeRow: View {
                     if short != nil { reach.padding(.horizontal, 14).padding(.bottom, 5) }
                 }
                 .glassPanel(radius: GlassRadius.control,
-                            tint: affordable ? Palette.gold.opacity(0.22) : nil, interactive: affordable)
+                            tint: affordable ? Palette.gold.opacity(0.22) : nil)
         }
         .buttonStyle(.plain)
         .disabled(!affordable || isBusy)

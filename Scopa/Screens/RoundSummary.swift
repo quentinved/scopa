@@ -8,6 +8,8 @@ import ScopaRewards
 struct RoundSummary: View {
     let score: RoundScore?
     let view: PlayerView
+    /// The chair this phone belongs to, which the colours are counted from.
+    let home: Int
     /// False when the table is waiting on somebody else to move things on.
     let showsAction: Bool
     /// "Round 3", or "Game over".
@@ -22,6 +24,8 @@ struct RoundSummary: View {
     var earnings: [PayoutLine] = []
     /// The offer to earn it again for an ad. Nil when there is nothing to offer.
     var doubling: Doubling? = nil
+    /// A run of doubled games, offered on a game that just paid. Nil when there is nothing to offer.
+    var boost: BoostOffer? = nil
     /// What the game was worth in experience, on the last summary of a game.
     var experience: Experience.Gain? = nil
     /// Opens the review of the finished game. Nil until there is one to open.
@@ -39,6 +43,8 @@ struct RoundSummary: View {
     var awaitingLadder = false
     /// Deals the same table again, where this phone is allowed to. Nil for a guest.
     var again: (() -> Void)? = nil
+    /// What `again` is called. A practice table keeps playing rather than playing again.
+    var againTitle: LocalizedStringKey = "Play again"
     /// The way out of a finished game. A campaign table goes back to its map.
     var leaveTitle: LocalizedStringKey = "Back to the lobby"
     let action: () -> Void
@@ -365,7 +371,7 @@ struct RoundSummary: View {
             ForEach(Array(order.enumerated()), id: \.element) { index, side in
                 ScoreTile(
                     name: name(of: side),
-                    tint: Palette.seat(side, teams: view.configuration.teams),
+                    tint: Palette.side(side, teams: view.configuration.teams, home: home),
                     before: base(side),
                     value: running(index),
                     target: showsTarget ? view.configuration.targetScore : nil,
@@ -418,7 +424,7 @@ struct RoundSummary: View {
                                                    minHeight: stage.pick(tall: 50, wide: 44)))
             }
             if isFinal, let again {
-                Button("Play again", action: again)
+                Button(againTitle, action: again)
                     .buttonStyle(FilledButtonStyle(minHeight: stage.pick(tall: 56, wide: 48)))
                 Button(leaveTitle, action: action)
                     .buttonStyle(FilledButtonStyle(tint: Palette.linen, foreground: Palette.ink,
@@ -434,7 +440,7 @@ struct RoundSummary: View {
     private var hasPayout: Bool { !earnings.isEmpty || experience != nil }
 
     private var payout: some View {
-        SummaryPayout(earnings: earnings, doubling: doubling, experience: experience)
+        SummaryPayout(earnings: earnings, doubling: doubling, experience: experience, boost: boost)
     }
 
     // MARK: Copy

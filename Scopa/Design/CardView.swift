@@ -1,5 +1,6 @@
 import SwiftUI
 import ScopaCore
+import ScopaRewards
 
 /// One card face. Width drives every other measurement, so the same view serves the hand,
 /// the table and the sheet.
@@ -20,18 +21,65 @@ struct CardView: View {
         // The face is rasterised once and moved as one piece: live, a seven is seventy-odd
         // shapes and a full table runs to a thousand layers per frame. The border stays
         // outside the group because it changes while the card is on the table.
-        CardArt(card: card, width: width)
+        art
+            .overlay { faceFinish }
             .drawingGroup()
             .overlay {
-                RoundedRectangle(cornerRadius: radius)
-                    .strokeBorder(borderColour, lineWidth: borderWidth)
+                if isFinished {
+                    finishedEdge
+                } else if let borderColour {
+                    RoundedRectangle(cornerRadius: radius)
+                        .strokeBorder(borderColour, lineWidth: borderWidth)
+                }
             }
             .background { CardShadow(width: width, radius: radius, fill: face.stock) }
     }
 
-    private var borderColour: Color {
+    /// The face, painted whole by its own deck or put together from the shared parts.
+    @ViewBuilder private var art: some View {
+        if theme.style.paintsItsOwnFace {
+            PaintedFace(style: theme.style, card: card, width: width)
+        } else {
+            CardArt(card: card, width: width)
+        }
+    }
+
+    @Environment(\.cardEdge) private var edge
+    @Environment(\.foilFace) private var foilFace
+    /// Bordo d'oro or Madreperla, unless the card is picked out, which the table has to be
+    /// able to see.
+    private var isFinished: Bool { edge != .plain && !highlighted && !outlined }
+
+    @ViewBuilder private var finishedEdge: some View {
+        switch edge {
+        case .oro: GildedEdge(width: width, radius: radius, wide: theme.style.paintsItsOwnFace)
+        case .madreperla: PearlEdge(width: width, radius: radius, wide: theme.style.paintsItsOwnFace)
+        case .plain: EmptyView()
+        }
+    }
+
+    /// What lies over the face, inside the rasterised group so a tilt cannot lift it off
+    /// and a dealt card costs nothing more: a foil's whole finish, or Madreperla's sheen.
+    @ViewBuilder private var faceFinish: some View {
+        switch foilFace {
+        case .oro: GoldFoilFace(width: width, painted: theme.style.paintsItsOwnFace)
+        case .perla: pearl(.foil)
+        case nil: if edge == .madreperla { pearl(.sheen) }
+        }
+    }
+
+    /// Each card is cut from its own place in the shell, so a hand never repeats a colour.
+    private func pearl(_ depth: Nacre.Depth) -> some View {
+        let suit = Suit.allCases.firstIndex(of: card.suit) ?? 0
+        let phase = Double((card.rank.rawValue * 7 + suit * 3) % 10) / 10
+        return NacreFace(width: width, depth: depth, painted: theme.style.paintsItsOwnFace, phase: phase)
+    }
+
+    /// Nil where the face paints its own edge, until the card is picked out.
+    private var borderColour: Color? {
         if highlighted { return Palette.terracotta }
         if outlined { return Palette.terracotta.opacity(0.55) }
+        if theme.style.paintsItsOwnFace { return nil }
         if isSettebello { return face.accent }
         // Coins score a point of their own, so they are edged in the settebello's gold a
         // shade down.
@@ -153,8 +201,9 @@ private struct CardArt: View {
 /// The shadow under a card, cast by its outline rather than by the card itself.
 ///
 /// `.shadow` on the finished card re-renders the whole face off screen every time it
-/// moves, and an opaque rounded rectangle casts the same shadow for far less. Cards under
-/// 30 points cast none: the blur is under two points and invisible.
+/// moves, and even an outline's shadow is blurred again on every frame of every move, so
+/// the blur is a `ShadowPlate`. Cards under 30 points cast none: the blur is under two
+/// points and invisible.
 private struct CardShadow: View {
     let width: CGFloat
     let radius: CGFloat
@@ -164,7 +213,10 @@ private struct CardShadow: View {
         if width >= 30 {
             RoundedRectangle(cornerRadius: radius)
                 .fill(fill)
-                .shadow(color: Palette.ink.opacity(0.16), radius: width * 0.09, y: width * 0.05)
+                .background {
+                    ShadowPlate(size: CGSize(width: width, height: width * 1.5), cornerRadius: radius,
+                                color: Palette.ink.opacity(0.16), radius: width * 0.09, y: width * 0.05)
+                }
         }
     }
 }

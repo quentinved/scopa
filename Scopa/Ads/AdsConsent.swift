@@ -20,6 +20,9 @@ final class AdsConsent {
     /// settings sheet then has to offer.
     private(set) var offersPrivacyChoices = false
 
+    /// The SDK holds its audio delegate weakly, so it is kept here.
+    private let adVoice = AdVoice()
+
     func gather() async {
         #if DEBUG
         if DebugLaunch.resetsConsent { ConsentInformation.shared.reset() }
@@ -64,6 +67,11 @@ final class AdsConsent {
     }
 
     private func startAdsSDK() async {
+        // The game shapes the audio session itself. Left to the SDK, a video turning its sound
+        // on switches the session to solo ambient, which stops the player's own music.
+        let audio = MobileAds.shared.audioVideoManager
+        audio.isAudioSessionApplicationManaged = true
+        audio.delegate = adVoice
         await withCheckedContinuation { resume in
             MobileAds.shared.start { status in
                 for (name, adapter) in status.adapterStatusesByClassName where adapter.state != .ready {
@@ -93,5 +101,21 @@ final class AdsConsent {
         }
         #endif
         return parameters
+    }
+}
+
+/// Tells `Audio` when an ad starts and stops making sound, now that the app keeps the
+/// audio session rather than the SDK.
+private final class AdVoice: NSObject, AudioVideoManagerDelegate {
+    func audioVideoManagerWillPlayAudio(_ audioVideoManager: AudioVideoManager) {
+        Audio.shared.adSpeaks(true)
+    }
+
+    func audioVideoManagerDidStopPlayingAudio(_ audioVideoManager: AudioVideoManager) {
+        Audio.shared.adSpeaks(false)
+    }
+
+    func audioVideoManagerDidPauseAllVideo(_ audioVideoManager: AudioVideoManager) {
+        Audio.shared.adSpeaks(false)
     }
 }

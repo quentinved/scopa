@@ -24,6 +24,8 @@ struct CampaignView: View {
     @State private var lesson: Lesson?
     /// The table to deal once its lesson has been read and the sheet is gone.
     @State private var dealsAfterLesson: CampaignStage?
+    /// The rule to practise once the lesson that asked for it is gone.
+    @State private var practisesAfterLesson: HouseRule?
 
     struct Lesson: Identifiable {
         let id = UUID()
@@ -54,10 +56,11 @@ struct CampaignView: View {
             .sheet(item: $lesson, onDismiss: dealAfterLesson) { lesson in
                 HouseRuleLesson(rules: lesson.rules, onFinish: lesson.stage.map { stage in
                     { HouseRuleLessons.learn(lesson.rules); dealsAfterLesson = stage }
-                })
+                }, practise: { practisesAfterLesson = $0 })
                 .coversBanner()
             }
             .task { showDebugLesson() }
+            .environment(\.practiseRule) { practise($0) }
         }
     }
 
@@ -132,7 +135,7 @@ struct CampaignView: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Palette.goldLight)
                 .frame(width: 34, height: 34)
-                .glass(.riviera(interactive: true), in: .circle)
+                .glass(.riviera(), in: .circle)
                 .overlay { Circle().strokeBorder(Palette.gold.opacity(0.30), lineWidth: 1) }
                 .contentShape(.circle)
         }
@@ -170,6 +173,11 @@ struct CampaignView: View {
     }
 
     private func dealAfterLesson() {
+        if let rule = practisesAfterLesson {
+            practisesAfterLesson = nil
+            dealsAfterLesson = nil
+            return practise(rule)
+        }
         guard let stage = dealsAfterLesson else { return }
         dealsAfterLesson = nil
         deal(stage)
@@ -186,6 +194,13 @@ struct CampaignView: View {
         book.showsMap = false
         dismiss()
         store.playCampaign(stage)
+    }
+
+    /// The practice table for a rule. Leaving it comes back here.
+    private func practise(_ rule: HouseRule) {
+        book.showsMap = false
+        dismiss()
+        store.playPractice(rule)
     }
 
     private func close() {

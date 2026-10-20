@@ -63,16 +63,25 @@ struct LeaderboardView: View {
                 detail: "It needs a line out to the world. Try again in a moment."
             )
         } else if board != nil {
-            message(
-                symbol: "figure.walk.departure",
-                title: day == .today ? "Nobody has played today yet" : "Nobody played yesterday",
-                detail: day == .today
-                    ? "Play today's deal and the ladder starts with you."
-                    : "The deal was there; the room was empty."
-            )
+            vacant
         } else {
             // A spinner rather than an empty board while the request is in flight.
             waiting
+        }
+    }
+
+    /// Nobody on the board. Today it is an invitation, with the deal a tap away until it is
+    /// played; yesterday is only a fact.
+    @ViewBuilder private var vacant: some View {
+        if day == .yesterday {
+            VacantBoard(title: "Nobody played yesterday", detail: "The deal was there; the room was empty.")
+        } else if store.dailyBook.hasPlayed(store.today) {
+            VacantBoard(title: "First place is free", detail: "No scores are in yet. The board fills as the day goes on.")
+        } else {
+            VacantBoard(title: "First place is free", detail: "Play today's deal and the ladder starts with you.") {
+                dismiss()
+                store.playTodaysDeal()
+            }
         }
     }
 
@@ -146,7 +155,7 @@ struct LeaderboardView: View {
     private func load() async {
         board = nil
         failed = false
-        guard let answer = await store.ladderBoard(day: name(of: day)) else {
+        guard let answer = await store.boardToShow(day: name(of: day)) else {
             failed = true
             return
         }

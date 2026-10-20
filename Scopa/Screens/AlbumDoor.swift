@@ -50,7 +50,7 @@ struct AlbumDoor: View {
             .background {
                 if waiting > 0 { Capsule().fill(Palette.goldSheen) }
             }
-            .glassCapsule(interactive: true)
+            .glassCapsule()
             .contentShape(.capsule)
         }
         .buttonStyle(.plain)

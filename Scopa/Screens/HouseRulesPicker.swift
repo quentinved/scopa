@@ -41,7 +41,7 @@ struct HouseRulesPicker: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, minHeight: 38)
-                .glass(picked ? .riviera(tint: Palette.terracotta.opacity(0.8), interactive: true) : .identity,
+                .glass(picked ? .riviera(tint: Palette.terracotta.opacity(0.8)) : .identity,
                        in: .rect(cornerRadius: GlassRadius.chip))
                 .overlay {
                     if !picked {

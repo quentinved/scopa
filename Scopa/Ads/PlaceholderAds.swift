@@ -47,10 +47,10 @@ final class PlaceholderAds: AdsGateway {
         return true
     }
 
-    var isRewardedReady: Bool { true }
-    func preloadRewarded() {}
+    func isRewardedReady(_ slot: RewardedSlot) -> Bool { true }
+    func preloadRewarded(_ slot: RewardedSlot) {}
 
-    func showRewarded() async -> Bool {
+    func showRewarded(_ slot: RewardedSlot) async -> Bool {
         await present(.rewarded)
         return true
     }

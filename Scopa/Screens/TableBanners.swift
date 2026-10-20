@@ -9,18 +9,26 @@ import ScopaCore
 /// another, and when the last one lands the band takes the weight like a stamp, throwing
 /// a ring and a burst of sparks. Then the band is swept on off the far side, so the cloth
 /// is back in play inside a second and a half. Somebody else's sweep is the same stroke,
-/// thinner, without the sparks.
+/// thinner, without the sparks. A sweep that also took a prize brings its plate in above
+/// the band a beat after the stamp.
 struct ScopaBanner: View {
     /// Who swept, or empty when it was you.
     var by: String
     /// What the room does about it, over and around the band: the flourish of whoever swept.
     var flourish: Flourish = .stendardo
+    /// What else the sweep took: the seven of coins, or a house rule's moment.
+    var prize: TableHighlight?
+    /// How low the prize's plate may reach, on screen: in portrait the cloth straight above
+    /// the band is where the swept cards are fanned out. Nil sits it just over the band.
+    var prizeFloor: CGFloat?
 
     private let cheer = "Scopa!"
     /// Long enough for the last letter to settle.
     private static let dropLength: Double = 1.2
     /// When the last letter first touches the band, which is when the band takes the blow.
     static let stampTime: Double = 0.47
+    /// When a prize's plate comes in: once the stamp has been read.
+    static let prizeTime: Double = 0.7
     /// When the band is swept on off the cloth.
     private static let leaveTime: Double = 1.18
 
@@ -33,6 +41,7 @@ struct ScopaBanner: View {
     @State private var arrived = false
     @State private var stamped = false
     @State private var leaving = false
+    @State private var showsPrize = false
     /// Seconds since the band arrived, driven linearly so the letters can run their own
     /// springs off it. See `LetterDrop`.
     @State private var elapsed: Double = 0
@@ -69,17 +78,19 @@ struct ScopaBanner: View {
         // Over the band rather than under it: confetti that fell behind the announcement
         // would be a texture, and the point of it is that it is in front of the table.
         .overlay { FlourishView(flourish: flourish) }
+        .overlay { prizePlate }
         .ignoresSafeArea()
         .transition(.opacity)
         .allowsHitTesting(false)
         .task { await play() }
     }
 
-    /// The beats: in, the stamp as the last letter lands, and away.
+    /// The beats: in, the stamp as the last letter lands, the prize, and away.
     private func play() async {
         guard !reduceMotion else {
             arrived = true
             elapsed = Self.dropLength
+            showsPrize = true
             return
         }
         withAnimation(.spring(duration: 0.42, bounce: 0.24)) { arrived = true }
@@ -87,23 +98,55 @@ struct ScopaBanner: View {
         try? await Task.sleep(for: .seconds(Self.stampTime))
         guard !Task.isCancelled else { return }
         stamped = true
-        try? await Task.sleep(for: .seconds(Self.leaveTime - Self.stampTime))
+        try? await Task.sleep(for: .seconds(Self.prizeTime - Self.stampTime))
         guard !Task.isCancelled else { return }
+        withAnimation(.spring(duration: 0.32, bounce: 0.3)) { showsPrize = true }
+        try? await Task.sleep(for: .seconds(Self.leaveTime - Self.prizeTime))
+        // `-holdSweep` leaves the band up for a screenshot.
+        guard !Task.isCancelled, !DebugLaunch.holdsSweep else { return }
         withAnimation(.easeIn(duration: 0.26)) { leaving = true }
     }
 
-    /// The slab is given both dimensions and clipped: left to size itself inside a
-    /// `GeometryReader` the glass grew to most of the height on offer.
+    /// Over the flourish, so nothing thrown about covers it, and clear of the band's top
+    /// edge where the tilt lifts it highest under the plate's corner. Compact, so in
+    /// portrait it fits between the scores and the last move's tag. The reader stays
+    /// outside the `if` so the plate's own transition runs.
+    private var prizePlate: some View {
+        GeometryReader { proxy in
+            if showsPrize, let prize {
+                // No compact plate is wider than this, so the band rises no higher under it.
+                let rise = min(proxy.size.width, 320) / 2 * CGFloat(tan(abs(tilt) * .pi / 180))
+                let onBand = proxy.size.height / 2 - bandHeight / 2 - rise - 14
+                let floor = prizeFloor.map { $0 - proxy.frame(in: .global).minY - 6 } ?? onBand
+                HighlightPlate(highlight: prize, by: by, compact: true)
+                    .frame(width: proxy.size.width, height: max(min(onBand, floor), 0), alignment: .bottom)
+            }
+        }
+    }
+
+    /// The slab is given both dimensions: left to size itself inside a `GeometryReader` it
+    /// grew to most of the height on offer.
+    ///
+    /// Solid terracotta rather than glass, which looked the same: the tint is opaque, so the
+    /// frost under it was a blur a screen and a half wide worked out every frame and never
+    /// seen. The shadow is the slab's alone. Thrown by the whole band it was blurred again
+    /// round letters that move on every frame of the drop.
     private func band(width: CGFloat, lettering: CGFloat) -> some View {
-        Color.clear
+        RoundedRectangle(cornerRadius: 10)
+            .fill(Palette.terracotta)
+            .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.cream.opacity(0.10), lineWidth: 0.5) }
             .frame(width: width, height: bandHeight)
-            .glass(.riviera(tint: Palette.terracotta), in: .rect(cornerRadius: 10))
-            .overlay { if !reduceMotion { Gleam(delay: 0.32) } }
-            .clipShape(.rect(cornerRadius: 10))
+            .shadow(color: Palette.terracotta.opacity(0.35), radius: 30, y: 12)
+            .overlay {
+                if !reduceMotion {
+                    Gleam(delay: 0.32)
+                        .clipShape(.rect(cornerRadius: 10))
+                        .blendMode(.plusLighter)
+                }
+            }
             // Held to the screen width, not the slab's, so `minimumScaleFactor` measures
             // the cheer against something the phone can show.
             .overlay { text.frame(maxWidth: lettering) }
-            .shadow(color: Palette.terracotta.opacity(0.35), radius: 30, y: 12)
             .keyframeAnimator(initialValue: Stamp(), trigger: stamped) { slab, stamp in
                 slab.scaleEffect(stamp.scale).offset(y: stamp.drop)
             } keyframes: { _ in
@@ -247,7 +290,6 @@ private struct Gleam: View {
             .frame(width: width * 0.22)
             .rotationEffect(.degrees(18))
             .offset(x: across ? width : -width * 0.25)
-            .blendMode(.plusLighter)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 0.85).delay(delay)) { across = true }
@@ -290,9 +332,18 @@ private struct Twinkles: View {
     }
 }
 
-/// Three fresh cards each, announced with the same weight as a scopa.
+/// What one side took in a hand: who, and how many cards.
+struct HandTake: Hashable {
+    let side: Int
+    let name: String
+    let cards: Int
+}
+
+/// Three fresh cards each, announced with the same weight as a scopa, with what every side
+/// took in the hand just played.
 struct DealBanner: View {
     var hand: Int
+    var taken: [HandTake] = []
 
     /// The cloth under it, so the glass is tinted with the table's own shadow.
     @Environment(\.tableFelt) private var felt
@@ -309,6 +360,7 @@ struct DealBanner: View {
                         .font(.system(size: 12, weight: .semibold))
                         .tracking(1.6)
                         .foregroundStyle(Palette.goldLight)
+                    if !taken.isEmpty { tally.padding(.top, 5) }
                 }
             }
             .padding(.horizontal, 26)
@@ -322,6 +374,27 @@ struct DealBanner: View {
         }
         .transition(.scale(scale: 0.86).combined(with: .opacity))
         .allowsHitTesting(false)
+    }
+}
+
+extension DealBanner {
+    /// "Last hand · You 4 · Hugo 2": what the hand just played came to, side by side.
+    var tally: some View {
+        HStack(spacing: 7) {
+            Text("LAST HAND")
+                .foregroundStyle(Palette.onTableSoft)
+            ForEach(taken, id: \.side) { take in
+                Text(verbatim: "·").foregroundStyle(Palette.onTableSoft)
+                Text(verbatim: "\(take.name.uppercased()) \(take.cards)")
+                    .foregroundStyle(Palette.onTable)
+                    .monospacedDigit()
+            }
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .tracking(1.1)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+        .accessibilityElement(children: .combine)
     }
 }
 
