@@ -36,6 +36,8 @@ struct RoundSummary: View {
     var showsTarget = true
     /// One line under everything else: the league after a ranked game.
     var footnote: String? = nil
+    /// Under that, how it stands with the person across the table: "You lead Marco 5–3".
+    var rivalry: String? = nil
     /// What the ladder did about a ranked game. Takes the footnote's place once the ladder
     /// has answered with a change to show.
     var verdict: RankedVerdict.Move? = nil
@@ -304,6 +306,7 @@ struct RoundSummary: View {
     // MARK: Sections
 
     /// The ladder's answer: the moving league, the wait for it, or a line of small type.
+    /// The head-to-head goes under whichever it is.
     @ViewBuilder private var ladder: some View {
         if let verdict {
             RankedVerdict(move: verdict)
@@ -312,6 +315,20 @@ struct RoundSummary: View {
         } else if let footnote {
             note(footnote)
         }
+        if let rivalry { standing(rivalry) }
+    }
+
+    /// Quieter than the league: a fact about the two of you, not news from the ladder.
+    private func standing(_ text: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 12, weight: .semibold))
+            Text(verbatim: text)
+                .font(.system(size: 13, weight: .semibold))
+                .monospacedDigit()
+        }
+        .foregroundStyle(Palette.inkSoft)
+        .transition(.opacity)
     }
 
     private var counting: some View {

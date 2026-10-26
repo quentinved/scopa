@@ -36,11 +36,11 @@ let frames: [Frame] = [
     ]),
     Frame(shot: "9-campaign", name: "02-campaign", captions: [
         "en": Caption(headline: "A journey through *Italy*",
-                      line: "36 tables, region by region"),
+                      line: "60 tables, region by region"),
         "fr-FR": Caption(headline: "Un voyage à travers *l’Italie*",
-                         line: "36 tables, de région en région"),
+                         line: "60 tables, de région en région"),
         "it": Caption(headline: "Un viaggio attraverso *l’Italia*",
-                      line: "36 tavoli, di regione in regione"),
+                      line: "60 tavoli, di regione in regione"),
     ]),
     Frame(shot: "5-lobby", name: "03-lobby", captions: [
         "en": Caption(headline: "Play at *your own pace*",
@@ -52,11 +52,11 @@ let frames: [Frame] = [
     ]),
     Frame(shot: "4-ranked", name: "04-ranked", captions: [
         "en": Caption(headline: "Take on *real players*",
-                      line: "Climb the ladder from Bronze to Diamond"),
+                      line: "From Bronze all the way to Gran Maestro"),
         "fr-FR": Caption(headline: "Affrontez de *vrais joueurs*",
-                         line: "Grimpez au classement, du Bronze au Diamant"),
+                         line: "Du Bronze jusqu’au Gran Maestro"),
         "it": Caption(headline: "Sfida *giocatori veri*",
-                      line: "Scala la classifica, dal Bronzo al Diamante"),
+                      line: "Dal Bronzo fino al Gran Maestro"),
     ]),
     Frame(shot: "10-wheel", name: "05-wheel", captions: [
         "en": Caption(headline: "A free spin *every day*",

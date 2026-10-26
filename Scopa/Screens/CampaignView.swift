@@ -20,7 +20,7 @@ struct CampaignView: View {
     /// Who else sits at each table, by stage number.
     @State private var tables: [Int: Ladder.CampaignTable] = [:]
     @State private var showsBoard = DebugLaunch.showsCampaignBoard
-    /// A house rule being taught, before a table that brings it in or because it was asked for.
+    /// A house rule or mode being taught, before a table that brings it in or because it was asked for.
     @State private var lesson: Lesson?
     /// The table to deal once its lesson has been read and the sheet is gone.
     @State private var dealsAfterLesson: CampaignStage?
@@ -29,7 +29,7 @@ struct CampaignView: View {
 
     struct Lesson: Identifiable {
         let id = UUID()
-        let rules: [HouseRule]
+        let pages: [LessonPage]
         /// The table the lesson stands in front of. Nil when it is only being read.
         var stage: CampaignStage?
     }
@@ -42,7 +42,7 @@ struct CampaignView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            SheetScaffold(title: "Campaign", subtitle: "Thirty-six tables across Italy. Win one to open the road to the next.",
+            SheetScaffold(title: "Campaign", subtitle: "Sixty tables across Italy. Win one to open the road to the next.",
                           close: close, bleeds: true, accessory: AnyView(boardButton)) {
                 content(proxy)
             } bottom: {
@@ -54,8 +54,8 @@ struct CampaignView: View {
             .task { await meetTheRoad() }
             .sheet(isPresented: $showsBoard) { CampaignBoardSheet(store: store).coversBanner() }
             .sheet(item: $lesson, onDismiss: dealAfterLesson) { lesson in
-                HouseRuleLesson(rules: lesson.rules, onFinish: lesson.stage.map { stage in
-                    { HouseRuleLessons.learn(lesson.rules); dealsAfterLesson = stage }
+                HouseRuleLesson(pages: lesson.pages, onFinish: lesson.stage.map { stage in
+                    { HouseRuleLessons.learn(lesson.pages); dealsAfterLesson = stage }
                 }, practise: { practisesAfterLesson = $0 })
                 .coversBanner()
             }
@@ -110,10 +110,10 @@ struct CampaignView: View {
 
     @ViewBuilder private func card(_ proxy: ScrollViewProxy) -> some View {
         if let selected {
-            CampaignStageCard(stage: selected, stars: book.stars(of: selected)) {
+            CampaignStageCard(stage: selected, stars: book.stars(of: selected), run: book.run(at: selected)) {
                 withAnimation(.spring(duration: 0.35, bounce: 0.15)) { self.selected = nil }
-            } explain: { rules in
-                lesson = Lesson(rules: rules)
+            } explain: { pages in
+                lesson = Lesson(pages: pages)
             } play: {
                 play(selected)
             }
@@ -162,11 +162,11 @@ struct CampaignView: View {
     /// High enough on screen that the card at the foot does not cover the table it is about.
     private static let overCard = UnitPoint(x: 0.5, y: 0.3)
 
-    /// A rule nobody has taught this phone yet is taught first, and the cards follow.
+    /// A rule or mode nobody has taught this phone yet is taught first, and the cards follow.
     private func play(_ stage: CampaignStage) {
-        let unlearned = HouseRuleLessons.unlearned(in: stage.house)
+        let unlearned = HouseRuleLessons.unlearned(at: stage)
         guard unlearned.isEmpty else {
-            lesson = Lesson(rules: unlearned, stage: stage)
+            lesson = Lesson(pages: unlearned, stage: stage)
             return
         }
         deal(stage)
@@ -183,11 +183,11 @@ struct CampaignView: View {
         deal(stage)
     }
 
-    /// `-houseLesson napola,scopone` opens the lesson over the map.
+    /// `-houseLesson napola,rimonta` opens the lesson over the map.
     private func showDebugLesson() {
-        let rules = DebugLaunch.houseLesson
-        guard !rules.isEmpty else { return }
-        lesson = Lesson(rules: rules, stage: Campaign.stages.first)
+        let pages = DebugLaunch.lessonPages
+        guard !pages.isEmpty else { return }
+        lesson = Lesson(pages: pages, stage: Campaign.stages.first)
     }
 
     private func deal(_ stage: CampaignStage) {
@@ -221,14 +221,13 @@ struct CampaignView: View {
             proxy.scrollTo(CampaignLayout.anchor((shown ?? book.current).id), anchor: shown == nil ? .center : Self.overCard)
             return
         }
-        // No road to draw to a table won before, as after a region put in ahead of it.
-        let next = outcome.firstClear ? Campaign.stage(number: outcome.stage.number + 1).flatMap {
-            book.isCleared($0) ? nil : $0
-        } : nil
+        let next = opened(by: outcome)
         moment = CampaignMoment(outcome: outcome, struck: outcome.before, unlocking: next)
         proxy.scrollTo(CampaignLayout.anchor(outcome.stage.id), anchor: .center)
         guard outcome.won else {
-            // A loss opens the same table again, one tap from another go.
+            // A loss opens the same table again, one tap from another go; so does a torneo's
+            // game short of the last, its card now on the next one.
+            if outcome.torneo == .next { Audio.shared.play(.step) }
             withAnimation(.spring(duration: 0.35, bounce: 0.15)) { selected = outcome.stage }
             return
         }
@@ -240,6 +239,16 @@ struct CampaignView: View {
             prize = region
         }
         moment = CampaignMoment()
+    }
+
+    /// The table this game opened, for its road to be drawn in: the next one on a first win,
+    /// or the first of a region whose stars it made up. None to a table won before, as after a
+    /// region put in ahead of it, nor to one its stars still keep shut.
+    private func opened(by outcome: CampaignBook.Outcome) -> CampaignStage? {
+        if outcome.firstClear, let next = Campaign.stage(number: outcome.stage.number + 1),
+           !book.isCleared(next), book.isUnlocked(next) { return next }
+        let before = book.totalStars - (outcome.best - outcome.before)
+        return Campaign.stages.first { !book.isCleared($0) && book.isUnlocked($0) && !$0.opens(holding: before) }
     }
 
     private func strikeStars(_ outcome: CampaignBook.Outcome) async {

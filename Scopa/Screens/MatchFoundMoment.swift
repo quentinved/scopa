@@ -255,12 +255,12 @@ private struct MatchFoundSide: View {
         return player(name).flatMap { store.rank(of: $0) }.map { Ranking.standing(for: $0.rating) }
     }
 
-    /// A medal and the league, or only its numeral as over a seat at the table.
+    /// A medal and the league, or only its numeral as over a seat at the table. Gran Maestro
+    /// has no numeral, so it is the points.
     private func chip(_ standing: Standing, named: Bool) -> some View {
         HStack(spacing: 5) {
             LeagueMedal(league: standing.league.rawValue, size: 20)
-            Text(verbatim: named ? standing.leagueTitle(locale: locale)
-                                 : ["I", "II", "III"][safe: standing.division - 1] ?? "")
+            Text(verbatim: named ? standing.titleWithPoints(locale: locale) : standing.chipLabel(locale: locale))
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(LeagueMetal.league(standing.league.rawValue).light)
                 .lineLimit(1)

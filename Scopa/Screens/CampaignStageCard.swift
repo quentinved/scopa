@@ -3,13 +3,15 @@ import ScopaCore
 import ScopaRewards
 
 /// The card a tapped table opens at the foot of the map: who is sitting there, how hard
-/// they play, what the table is, what each star asks, and what winning it pays.
+/// they play, what the table is, what each star asks, and what winning it pays. At a torneo,
+/// who is sitting there is whoever the run has reached.
 struct CampaignStageCard: View {
     let stage: CampaignStage
     let stars: Int
+    let run: Torneo
     let close: () -> Void
-    /// Opens the lesson for these rules.
-    let explain: ([HouseRule]) -> Void
+    /// Opens the lesson for these pages.
+    let explain: ([LessonPage]) -> Void
     let play: () -> Void
 
     @Environment(\.locale) private var locale
@@ -40,7 +42,7 @@ struct CampaignStageCard: View {
                     .foregroundStyle(Palette.onTable)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text(verbatim: "\(stage.opponent) · \(stage.region.title) · \(stage.number)/\(Campaign.stages.count)")
+                Text(verbatim: "\(rival.opponent) · \(stage.region.title) · \(stage.number)/\(Campaign.stages.count)")
                     .font(.system(size: 12.5, weight: .medium))
                     .foregroundStyle(Palette.onTableSoft)
             }
@@ -67,10 +69,14 @@ struct CampaignStageCard: View {
 
     // MARK: The table
 
+    /// Who plays the game about to be dealt.
+    private var rival: CampaignStage.Rival { stage.rival(at: run.game) }
+
     private var facts: some View {
         FlowRow(spacing: 6) {
+            if stage.games > 1 { chip { Text("Game \(run.game + 1) of \(stage.games)") } }
             chip { pips }
-            chip { Text("To \(stage.target) points") }
+            chip { stage.isOneRound ? Text("One round") : Text("To \(stage.target) points") }
             chip { Text(seatingTitle) }
             if let seconds = stage.clock.seconds { chip { Label("\(seconds)-second turns", systemImage: "timer") } }
             if stage.primiera == .classic { chip { Text("Classic primiera") } }
@@ -78,35 +84,44 @@ struct CampaignStageCard: View {
     }
 
     /// Every table says which rules it plays, so nobody sits down to a surprise: classic,
-    /// or each house rule spelled out with its lesson a tap away.
+    /// or each mode and house rule spelled out with its lesson a tap away.
     private var houseRules: some View {
         let rules = HouseRule.allCases.filter(stage.house.contains)
         return VStack(alignment: .leading, spacing: 8) {
             Caption(text: "Rules at this table")
+            ForEach(stage.modes, id: \.self) { mode in
+                ruleRow(Text(verbatim: mode.name), Text(stage.explanation(of: mode, locale: locale)),
+                        page: .mode(mode)) { EmptyView() }
+            }
+            ForEach(rules, id: \.self) { rule in
+                ruleRow(Text(rule.label), Text(rule.explanation), page: .rule(rule)) { TryRuleButton(rule: rule) }
+            }
             if rules.isEmpty {
-                Text("Classic Scopa, nothing added")
+                (stage.modes.isEmpty ? Text("Classic Scopa, nothing added") : Text("Otherwise classic Scopa"))
                     .font(.system(size: 13.5, weight: .medium))
                     .foregroundStyle(Palette.onTable)
             }
-            ForEach(rules, id: \.self) { rule in
-                HStack(alignment: .top, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(rule.label)
-                            .font(.system(size: 13.5, weight: .semibold))
-                            .foregroundStyle(Palette.goldLight)
-                        Text(rule.explanation)
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(Palette.onTableSoft)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 4)
-                    VStack(alignment: .trailing, spacing: 8) {
-                        Button("How it works") { explain([rule]) }
-                            .font(.system(size: 12.5, weight: .semibold))
-                            .foregroundStyle(Palette.terracotta)
-                        TryRuleButton(rule: rule)
-                    }
-                }
+        }
+    }
+
+    private func ruleRow(_ title: Text, _ detail: Text, page: LessonPage,
+                         @ViewBuilder trying: () -> some View) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                title
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(Palette.goldLight)
+                detail
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            VStack(alignment: .trailing, spacing: 8) {
+                Button("How it works") { explain([page]) }
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(Palette.terracotta)
+                trying()
             }
         }
     }
@@ -116,7 +131,7 @@ struct CampaignStageCard: View {
             HStack(spacing: 3) {
                 ForEach(1...5, id: \.self) { pip in
                     Circle()
-                        .fill(pip <= stage.difficulty ? Palette.terracotta : Palette.cream.opacity(0.25))
+                        .fill(pip <= rival.difficulty ? Palette.terracotta : Palette.cream.opacity(0.25))
                         .frame(width: 7, height: 7)
                 }
             }
@@ -127,7 +142,7 @@ struct CampaignStageCard: View {
     }
 
     private var levelTitle: LocalizedStringKey {
-        switch stage.level {
+        switch stage.level(game: run.game) {
         case .easy: "Easy"
         case .normal: "Normal"
         case .hard: "Hard"
@@ -154,11 +169,18 @@ struct CampaignStageCard: View {
 
     // MARK: Stars and pay
 
-    private var goals: some View {
+    /// What each star asks. At a torneo the first is the whole run, the others the last game's.
+    @ViewBuilder private var goals: some View {
         VStack(alignment: .leading, spacing: 5) {
-            goal("Win the game")
-            goal("Win by \(stage.marginGoal) points or more")
-            goal("Sweep \(stage.scopeGoal) scope or more")
+            if stage.games > 1 {
+                goal("Win all \(stage.games) games")
+                goal("Win the last by \(stage.marginGoal) points or more")
+                goal("Sweep \(stage.scopeGoal) scope or more in the last")
+            } else {
+                goal("Win the game")
+                goal("Win by \(stage.marginGoal) points or more")
+                goal("Sweep \(stage.scopeGoal) scope or more")
+            }
         }
     }
 

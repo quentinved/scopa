@@ -39,6 +39,10 @@ struct RegionEngraving: Shape {
         case .venezia: Engraving.arcade(rect, at: 0.18, pointed: true) + Engraving.waves(rect, from: 0.5)
             + Engraving.gondola(rect)
         case .roma: Engraving.colosseum(rect) + Engraving.columns(rect)
+        case .toscana: Engraving.hills(rect) + Engraving.cypresses(rect) + Engraving.cupola(rect)
+        case .puglia: Engraving.trulli(rect) + Engraving.olive(rect) + Engraving.waves(rect, from: 0.8)
+        case .sardegna: Engraving.nuraghe(rect) + Engraving.boulders(rect) + Engraving.waves(rect, from: 0.66)
+        case .lombardia: Engraving.spires(rect) + Engraving.galleria(rect) + Engraving.river(rect, at: 0.86)
         }
     }
 }
@@ -51,8 +55,9 @@ private extension Path {
     }
 }
 
-/// The plates' drawings, each a pure function of the rect it is laid in.
-private enum Engraving {
+/// The plates' drawings, each a pure function of the rect it is laid in. The second road's
+/// are in `CampaignArtSecondRoad.swift`.
+enum Engraving {
     /// Rows of gentle swell, the sea every region but Rome looks out on.
     static func waves(_ rect: CGRect, from start: CGFloat) -> Path {
         var path = Path()

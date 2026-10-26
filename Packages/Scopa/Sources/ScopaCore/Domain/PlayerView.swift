@@ -4,6 +4,9 @@ public struct PlayerView: Hashable, Codable, Sendable {
         public let seat: Int
         public let player: Player
         public let cardsInHand: Int
+        /// The cards themselves, at a table dealt with every hand face up. Nil wherever hands
+        /// are hidden, and then left off the wire.
+        public var hand: [Card]? = nil
     }
 
     public let seat: Int
@@ -86,7 +89,8 @@ public extension GameState {
         let round = self.round
         let opponents = configuration.players.enumerated()
             .filter { $0.offset != seat }
-            .map { PlayerView.Opponent(seat: $0.offset, player: $0.element, cardsInHand: round?.hands[$0.offset].count ?? 0) }
+            .map { PlayerView.Opponent(seat: $0.offset, player: $0.element, cardsInHand: round?.hands[$0.offset].count ?? 0,
+                                       hand: configuration.openHands ? round?.hands[$0.offset] : nil) }
 
         return PlayerView(
             seat: seat,
@@ -110,6 +114,14 @@ public extension GameState {
 
 /// Counting what is left, from this seat.
 public extension PlayerView {
+    /// The hand of whoever plays next, when the table is played face up and it holds any
+    /// cards. Nil when it is hidden, or empty until the next deal.
+    var nextHand: [Card]? {
+        let next = configuration.nextSeat(after: seat)
+        guard let hand = opponents.first(where: { $0.seat == next })?.hand, !hand.isEmpty else { return nil }
+        return hand
+    }
+
     /// How many cards of a rank nobody has seen: not in this hand, not on the table, not in
     /// anybody's pile. Captures happen face up, so this is counting rather than peeking.
     func unseen(_ rank: Rank) -> Int {

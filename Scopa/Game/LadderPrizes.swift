@@ -57,6 +57,7 @@ extension League {
         case .platinum: String(localized: "Platinum", locale: locale)
         case .diamond: String(localized: "Diamond", locale: locale)
         case .maestro: String(localized: "Maestro", locale: locale)
+        case .granMaestro: String(localized: "Gran Maestro", locale: locale)
         }
     }
 
@@ -69,6 +70,7 @@ extension League {
         case .platinum: .medalPlatinum
         case .diamond: .medalDiamond
         case .maestro: .medalMaestro
+        case .granMaestro: .medalGranMaestro
         }
     }
 
@@ -81,7 +83,7 @@ extension League {
 
 /// The app icons the ladder gives, one per league from Silver up.
 enum LadderIcon: String, CaseIterable, Identifiable {
-    case silver, gold, platinum, diamond, maestro
+    case silver, gold, platinum, diamond, maestro, granMaestro
 
     var id: String { rawValue }
 
@@ -92,6 +94,7 @@ enum LadderIcon: String, CaseIterable, Identifiable {
         case .platinum: .platinum
         case .diamond: .diamond
         case .maestro: .maestro
+        case .granMaestro: .granMaestro
         }
     }
 
@@ -102,6 +105,7 @@ enum LadderIcon: String, CaseIterable, Identifiable {
         case .platinum: "Platinum icon"
         case .diamond: "Diamond icon"
         case .maestro: "Maestro icon"
+        case .granMaestro: "Gran Maestro icon"
         }
     }
 
@@ -115,6 +119,7 @@ enum LadderIcon: String, CaseIterable, Identifiable {
         case .platinum: .platinum
         case .diamond: .diamond
         case .maestro: .maestro
+        case .granMaestro: .granMaestro
         }
     }
 

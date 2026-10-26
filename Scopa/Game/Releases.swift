@@ -9,6 +9,16 @@ import ScopaRewards
 /// a gift if it has one; the lobby does the rest, once per player.
 enum Releases {
     static let all: [Release] = [
+        Release(version: "1.5", gift: nil, notes: [
+            ReleaseNote(art: .medals, title: "Gran Maestro",
+                        body: "After Maestro I comes Gran Maestro. No divisions there, only points, with no ceiling: a win against the house is worth 15, a loss costs 10. Hold 300 points and a place in the top ten and you are a Campione, on the Gran Maestro tab of the season's ladder."),
+            ReleaseNote(art: .house, title: "A Maestro you can beat",
+                        body: "The house no longer counts the cards still to come or plays a perfect last hand, in any league. Maestro is still the hardest table on the ladder, and now it can be beaten."),
+            ReleaseNote(art: .journey, title: "Twenty-four more tables",
+                        body: "The campaign goes on past Roma. In Toscana you start two points behind, in Puglia one round decides, in Sardegna every hand is face up, and in Lombardia you play three games in a row. Each new region opens with the stars won on the road behind you."),
+            ReleaseNote(art: .board, title: "Your record",
+                        body: "Settings now keeps your record: every game you finish, your best ones, and the score against each friend and each bot. After a game with friends, the summary says who leads."),
+        ]),
         Release(version: "1.4", gift: nil, notes: [
             ReleaseNote(art: .house, title: "A duo against a duo",
                         body: "Ranked duo now looks for another pair to play. Five seconds in, the house offers to play you instead, while the search goes on. Whoever is found sits down across from you."),

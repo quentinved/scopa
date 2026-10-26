@@ -32,6 +32,12 @@ struct RankedVerdictSheet: View {
              move: .init(before: 455, after: 450, won: false, streak: 0, isHouse: true)),
         Case(id: "houseSpent", caption: "A house game past the day's ten, the run kept",
              move: .init(before: 455, after: 455, won: true, streak: 3, isHouse: true)),
+        Case(id: "granMaestro", caption: "A win that reaches Gran Maestro",
+             move: .init(before: 1_788, after: 1_813, won: true)),
+        Case(id: "grandHouseWin", caption: "A house win in Gran Maestro, as a Campione",
+             move: .init(before: 2_125, after: 2_140, won: true, isHouse: true, place: 4, isCampione: true)),
+        Case(id: "grandHouseLoss", caption: "A house loss in Gran Maestro",
+             move: .init(before: 2_140, after: 2_130, won: false, isHouse: true, place: 12)),
     ]
 
     var body: some View {
@@ -68,6 +74,7 @@ struct RankedVerdictSheet: View {
             RankedStakes(odds: Self.recorded(RankedStakes.odds(mine: 745, theirs: [760], streak: 4)))
             RankedStakes(odds: Self.recorded(RankedStakes.odds(mine: 745, theirs: [1_120])))
             RankedStakes(odds: RankedStakes.houseOdds(mine: 745, theirs: 700, counting: false))
+            RankedStakes(odds: Self.recorded(RankedStakes.houseOdds(mine: 2_140, theirs: 1_840, counting: true)))
             RankedStakes(odds: RankedStakes.odds(mine: 600, theirs: []))
         }
     }

@@ -25,6 +25,8 @@ struct SettingsSheet: View {
     @State private var showsPostbox = false
     /// Opened by the row, and by `-album` on the way in.
     @State private var showsAlbum = DebugLaunch.showsAlbum
+    /// Opened by the row under the name, and by `-recordPage`.
+    @State private var showsRecord = DebugLaunch.showsRecord
     @FocusState private var isTypingName: Bool
     @Environment(FriendsOnline.self) private var friendsOnline: FriendsOnline?
 
@@ -62,6 +64,7 @@ struct SettingsSheet: View {
             .navigationDestination(isPresented: $showsAlbum) {
                 AlbumView(store: store, purse: purse)
             }
+            .navigationDestination(isPresented: $showsRecord) { RecordPage() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
@@ -256,6 +259,7 @@ struct SettingsSheet: View {
                 .frame(height: 1)
             levelRow
             purseRow
+            RecordEntryRow { showsRecord = true }
         }
         .padding(16)
         .glassPanel(radius: GlassRadius.panel)

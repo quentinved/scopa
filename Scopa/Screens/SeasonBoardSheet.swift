@@ -9,12 +9,14 @@ import ScopaGameCenter
 /// A row shows what the rest of the app shows of a rating — the league's medal, its title
 /// and how far through the division — and never the number itself. The medal is the
 /// player's league, not their place: bronze here is a grade somebody is in, not third.
+/// Gran Maestro is the exception, its points shown because they are what it is ranked by,
+/// and its own tab lists only its players. See `GrandBoardRows`.
 struct SeasonBoardSheet: View {
     let store: TableStore
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @State private var who: Who
+    @State private var who: Tab
     @State private var board: Ladder.SeasonBoard?
     /// Ladder off, Worker down, or no network. One state, as on the daily board.
     @State private var failed = false
@@ -23,14 +25,35 @@ struct SeasonBoardSheet: View {
 
     init(store: TableStore) {
         self.store = store
-        _who = State(initialValue: DebugLaunch.seasonOpensOnFriends ? .friends : .everyone)
+        let isGrand = store.rank?.standing.isGrand == true
+        _who = State(initialValue: DebugLaunch.seasonOpensOnFriends ? .friends
+                                   : DebugLaunch.seasonOpensOnGrand && isGrand ? .grand : .everyone)
     }
 
-    /// The whole season, or only the people you know in it.
+    /// Gran Maestro's board is for the people on it: below it, the tab is not there at all.
+    private var tabs: [Tab] {
+        store.rank?.standing.isGrand == true ? Tab.allCases : [.everyone, .friends]
+    }
+
+    /// The whole season, or only the people you know in it. The campaign's board has the
+    /// same two.
     enum Who: Hashable, CaseIterable {
         case everyone, friends
 
         var title: LocalizedStringKey { self == .everyone ? "Everyone" : "Friends" }
+    }
+
+    /// The season's two, and Gran Maestro's own board, which only the ladder has.
+    enum Tab: Hashable, CaseIterable {
+        case everyone, friends, grand
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .everyone: Who.everyone.title
+            case .friends: Who.friends.title
+            case .grand: "Gran Maestro"
+            }
+        }
     }
 
     var body: some View {
@@ -38,7 +61,7 @@ struct SeasonBoardSheet: View {
         SheetScaffold(title: "The season's ladder", subtitle: "Everyone in ranked this season, highest league first.",
                       close: { dismiss() }) {
             VStack(spacing: 0) {
-                GlassSegments(options: Who.allCases, selection: $who) { $0.title }
+                GlassSegments(options: tabs, selection: $who) { $0.title }
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
                     .padding(.bottom, 12)
@@ -76,6 +99,9 @@ struct SeasonBoardSheet: View {
             message(symbol: "person.2", title: "None of your friends has played ranked this season",
                     detail: "Someone missing? They need Scopa too. Add them on Game Center and they show up here when you come back.",
                     action: ("Find friends on Game Center", findFriends))
+        case .grand:
+            message(symbol: "laurel.leading", title: "Nobody has reached Gran Maestro this season yet",
+                    detail: "Past Maestro I the ladder counts points, and the season's ten best are its Campioni.")
         }
     }
 
@@ -84,7 +110,17 @@ struct SeasonBoardSheet: View {
         FriendsTrouble(problem: problem, openSettings: openSettings, retry: reload)
     }
 
-    private func rows(_ board: Ladder.SeasonBoard) -> some View {
+    @ViewBuilder private func rows(_ board: Ladder.SeasonBoard) -> some View {
+        if who == .grand {
+            GrandBoardRows(board: board, mine: store.rank.flatMap { rank in
+                board.you?.rank.map { Ladder.SeasonBoard.Row(you: rank, name: store.playerName, place: $0) }
+            })
+        } else {
+            seasonRows(board)
+        }
+    }
+
+    private func seasonRows(_ board: Ladder.SeasonBoard) -> some View {
         LazyVStack(spacing: 8) {
             ForEach(Array(board.top.enumerated()), id: \.element.id) { index, row in
                 SeasonRow(place: index + 1, row: row, isYou: board.you?.rank == index + 1)
@@ -146,10 +182,10 @@ struct SeasonBoardSheet: View {
         friendsProblem = nil
         do {
             let answer: Ladder.SeasonBoard?
-            if who == .everyone {
-                answer = await store.seasonBoard()
-            } else {
-                answer = try await store.friendsSeasonBoard()
+            switch who {
+            case .everyone: answer = await store.seasonBoard()
+            case .friends: answer = try await store.friendsSeasonBoard()
+            case .grand: answer = await store.grandSeasonBoard()
             }
             // A tab left before its answer came back must not have it land on the other one.
             guard !Task.isCancelled else { return }
@@ -194,11 +230,7 @@ private struct SeasonRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Text(verbatim: "\(place)")
-                .font(.system(size: 15, weight: place <= 3 ? .bold : .semibold))
-                .monospacedDigit()
-                .foregroundStyle(place <= 3 ? Palette.goldLight : Palette.onTableSoft)
-                .frame(width: 26)
+            placeMark.frame(width: 26)
             // Wider than the medal: Maestro's rays reach past it, and ran into the name.
             LeagueMedal(league: row.standing.league, size: 30)
                 .frame(width: 44)
@@ -216,16 +248,45 @@ private struct SeasonRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The place, struck on Gran Maestro's plate where it is a Campione's place on this very
+    /// board: the everyone board orders Gran Maestri as their own does, the friends' does not.
+    @ViewBuilder private var placeMark: some View {
+        if row.campione == true, row.place == place {
+            GrandPlace(place: place, isCampione: true)
+        } else {
+            Text(verbatim: "\(place)")
+                .font(.system(size: 15, weight: place <= 3 ? .bold : .semibold))
+                .monospacedDigit()
+                .foregroundStyle(place <= 3 ? Palette.goldLight : Palette.onTableSoft)
+        }
+    }
+
     /// The league, and how far into its division: the bar belongs to the title it follows.
+    /// Gran Maestro has no division to fill, so it is the points, and on a board ordered
+    /// otherwise, its place among Gran Maestri too.
     private var grade: some View {
         HStack(spacing: 7) {
-            Text(verbatim: row.standing.leagueTitle(locale: locale))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Palette.onTableSoft)
-                .lineLimit(1)
-            LeagueBar(metal: .league(row.standing.league), progress: Double(row.standing.progress) / 100,
-                      width: 34)
+            if row.standing.isGrand {
+                Text(verbatim: grandGrade)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .lineLimit(1)
+            } else {
+                Text(verbatim: row.standing.leagueTitle(locale: locale))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Palette.onTableSoft)
+                    .lineLimit(1)
+                LeagueBar(metal: .league(row.standing.league), progress: Double(row.standing.progress) / 100,
+                          width: 34)
+            }
         }
+    }
+
+    private var grandGrade: String {
+        let said = row.standing.titleWithPoints(locale: locale)
+        guard let grand = row.place, grand != place else { return said }
+        let placed = "\(said) · \(GrandWords.place(grand, locale: locale))"
+        return row.campione == true ? "\(placed) · Campione" : placed
     }
 
     /// "70% won" over "28 of 40": a percentage with its word, and the count it comes from.
@@ -249,23 +310,28 @@ private struct SeasonRow: View {
 
 #if DEBUG
 extension Ladder.SeasonBoard {
-    /// A dozen players across every league, the reader eighth, for `-season` and the preview.
+    /// A dozen players across every league, two of them Gran Maestri and one a Campione, the
+    /// reader eighth, for `-season` and the preview.
     static var sample: Self {
         let names = ["Giulia", "Marco", "Élodie", "Salvo", "Nonna Pina", "Luca",
                      "Chiara", "Théo", "Ada", "Renzo", "Bea", "Tommaso"]
-        let ratings = [1_612, 1_488, 1_330, 1_207, 1_180, 955, 910, 745, 702, 610, 388, 140]
+        let ratings = [2_140, 1_920, 1_330, 1_207, 1_180, 955, 910, 745, 702, 610, 388, 140]
         let top = zip(names, ratings).enumerated().map { index, pair in
             let standing = Ranking.standing(for: pair.1)
+            let points = standing.points
             return Row(id: "sample-\(index)", name: pair.0, rating: pair.1, games: 40 - index * 2,
                        wins: 28 - index * 2,
                        standing: .init(league: standing.league.rawValue, division: standing.division,
-                                       progress: standing.progress, step: standing.step, title: standing.title))
+                                       progress: standing.progress, step: standing.step, title: standing.title),
+                       place: points.map { _ in index + 1 },
+                       campione: points.map { Ranking.isCampione(place: index + 1, points: $0) })
         }
         return .init(season: "2026-09", seasonEndsAt: "2026-10-01T00:00:00.000Z", top: top,
                      you: .init(played: 212, rank: 8, percentile: 97))
     }
 
-    /// Four of the same players, the reader third among them, for `-season friends`.
+    /// Four of the same players, the reader third among them, for `-season friends`. The
+    /// first is a Gran Maestro, placed on the whole season's board and not this one.
     static var friendsSample: Self {
         let top = [1, 5, 7, 10].map { sample.top[$0] }
         return .init(season: "2026-09", seasonEndsAt: "2026-10-01T00:00:00.000Z", top: top,

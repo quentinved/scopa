@@ -1,7 +1,7 @@
 /// The hard bot's engine. The other hands are hidden, so it samples ways of dealing the
 /// unseen cards (worlds), plays each to the end of the round with every seat maximising
 /// its own points, and picks the move that averages best. In the last hand of a round for
-/// two there is one world, and the search is exact.
+/// two there is one world, and the search is exact. Face up, only the stock is guessed.
 enum Search {
     /// How much thinking one move gets. Sized for a phone answering inside the bot's pause.
     struct Effort {
@@ -72,8 +72,9 @@ enum Search {
 
     /// How many ways of dealing the unseen cards to try.
     static func worldCount(for view: PlayerView) -> Int {
-        let hidden = view.opponents.count { $0.cardsInHand > 0 }
+        let hidden = view.opponents.count { $0.cardsInHand > 0 && $0.hand == nil }
         // Empty stock and one hidden hand: that hand is the unseen cards, so one world is exact.
+        // Face up there is none, and only the stock's order is ever guessed.
         if view.stockCount == 0, hidden <= 1 { return 1 }
         if view.configuration.handSize > 3 { return 8 }
         return view.configuration.seatCount <= 2 ? 16 : 12
@@ -84,38 +85,51 @@ enum Search {
     static func worlds(for view: PlayerView, using rng: inout some RandomNumberGenerator) -> [GameState] {
         guard let hidden = hiddenCards(in: view) else { return [] }
         return (0..<worldCount(for: view)).map { _ in
-            world(for: view, dealing: hidden.pool.shuffled(using: &rng), handCounts: hidden.handCounts)
+            world(for: view, dealing: hidden.pool.shuffled(using: &rng), handCounts: hidden.handCounts,
+                  shown: hidden.shown)
         }
     }
 
-    /// The cards this seat cannot see and how many each seat holds, or nil when the
-    /// counts do not add up.
-    private static func hiddenCards(in view: PlayerView) -> (pool: [Card], handCounts: [Int])? {
+    /// The cards this seat cannot see, how many each hidden hand holds, and the hands dealt
+    /// face up, or nil when the counts do not add up.
+    private static func hiddenCards(in view: PlayerView) -> (pool: [Card], handCounts: [Int], shown: [Int: [Card]])? {
         let config = view.configuration
         guard view.capturedBySide.count == config.sideCount else { return nil }
 
         var seen = Set(view.hand)
         seen.formUnion(view.table)
         for pile in view.capturedBySide { seen.formUnion(pile) }
+        var shown: [Int: [Card]] = [:]
+        for opponent in view.opponents where opponent.seat < config.seatCount {
+            guard let hand = opponent.hand else { continue }
+            shown[opponent.seat] = hand
+            seen.formUnion(hand)
+        }
         let pool = Deck.standard.filter { !seen.contains($0) }
 
         var handCounts = [Int](repeating: 0, count: config.seatCount)
         handCounts[view.seat] = view.hand.count
-        for opponent in view.opponents where opponent.seat < config.seatCount {
+        for opponent in view.opponents where opponent.seat < config.seatCount && shown[opponent.seat] == nil {
             handCounts[opponent.seat] = opponent.cardsInHand
         }
         let dealt = handCounts.enumerated().reduce(0) { $1.offset == view.seat ? $0 : $0 + $1.element }
         guard pool.count == dealt + view.stockCount else { return nil }
-        return (pool, handCounts)
+        return (pool, handCounts, shown)
     }
 
-    /// One game consistent with the view: `cards` dealt into the other hands, the rest as stock.
-    private static func world(for view: PlayerView, dealing cards: [Card], handCounts: [Int]) -> GameState {
+    /// One game consistent with the view: `cards` dealt into the hidden hands, the rest as
+    /// stock, and any hand already face up as it is.
+    private static func world(for view: PlayerView, dealing cards: [Card], handCounts: [Int],
+                              shown: [Int: [Card]]) -> GameState {
         let config = view.configuration
         var cards = cards
         var hands = [[Card]](repeating: [], count: config.seatCount)
         hands[view.seat] = view.hand
         for seat in 0..<config.seatCount where seat != view.seat {
+            if let hand = shown[seat] {
+                hands[seat] = hand
+                continue
+            }
             hands[seat] = Array(cards.suffix(handCounts[seat]))
             cards.removeLast(handCounts[seat])
         }

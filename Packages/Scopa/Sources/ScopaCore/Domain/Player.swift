@@ -90,14 +90,24 @@ public struct GameConfiguration: Hashable, Codable, Sendable {
     public let ties: TieRule
     /// Regional rules on top of the classic game. Empty is the rulebook.
     public let house: Set<HouseRule>
+    /// The points each side starts the game on, indexed by side, for a comeback to play.
+    /// Empty is a level start, which is every table but the campaign's rimonta.
+    public let headStart: [Int]
+    /// Every hand dealt face up, so each seat's view holds the others' cards too.
+    public let openHands: Bool
 
     public init(players: [Player], teams: Bool = false, targetScore: Int = 11, turnClock: TurnClock = .default,
                 primiera: PrimieraRule = .default, ties: TieRule = .default,
-                house: Set<HouseRule> = []) throws(ConfigurationError) {
+                house: Set<HouseRule> = [], headStart: [Int] = [],
+                openHands: Bool = false) throws(ConfigurationError) {
         guard Self.playerRange.contains(players.count) else { throw .playerCount(players.count) }
         guard !teams || players.count == 4 else { throw .teamsRequireFourPlayers }
         guard !house.contains(.scopone) || teams else { throw .scoponeRequiresTeams }
         guard targetScore > 0 else { throw .invalidTargetScore }
+        // One number per side, and nobody already home before a card is dealt.
+        guard headStart.isEmpty || (headStart.count == (teams ? 2 : players.count)
+                                    && headStart.allSatisfy { (0..<targetScore).contains($0) })
+        else { throw .invalidHeadStart }
         self.players = players
         self.teams = teams
         self.targetScore = targetScore
@@ -105,9 +115,13 @@ public struct GameConfiguration: Hashable, Codable, Sendable {
         self.primiera = primiera
         self.ties = ties
         self.house = house
+        self.headStart = headStart
+        self.openHands = openHands
     }
 
-    private enum CodingKeys: String, CodingKey { case players, teams, targetScore, turnClock, primiera, ties, house }
+    private enum CodingKeys: String, CodingKey {
+        case players, teams, targetScore, turnClock, primiera, ties, house, headStart, openHands
+    }
 
     /// By hand, so a table set up by a build that had no primiera or tie rule still decodes.
     public init(from decoder: any Decoder) throws {
@@ -121,6 +135,8 @@ public struct GameConfiguration: Hashable, Codable, Sendable {
         // A rule this build does not know is dropped rather than failing the whole table.
         let names = try container.decodeIfPresent([String].self, forKey: .house) ?? []
         house = Set(names.compactMap(HouseRule.init(rawValue:)))
+        headStart = try container.decodeIfPresent([Int].self, forKey: .headStart) ?? []
+        openHands = try container.decodeIfPresent(Bool.self, forKey: .openHands) ?? false
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -133,6 +149,9 @@ public struct GameConfiguration: Hashable, Codable, Sendable {
         try container.encode(ties, forKey: .ties)
         // Left out when empty, so a classic table reads exactly as it did before.
         if !house.isEmpty { try container.encode(house.map(\.rawValue).sorted(), forKey: .house) }
+        // Both only on a campaign table, which never leaves the phone. Left out the same way.
+        if !headStart.isEmpty { try container.encode(headStart, forKey: .headStart) }
+        if openHands { try container.encode(openHands, forKey: .openHands) }
     }
 
     /// Cards dealt to each seat at a time: the whole deck at once in scopone.
@@ -162,4 +181,5 @@ public enum ConfigurationError: Error, Equatable, Sendable {
     case teamsRequireFourPlayers
     case scoponeRequiresTeams
     case invalidTargetScore
+    case invalidHeadStart
 }

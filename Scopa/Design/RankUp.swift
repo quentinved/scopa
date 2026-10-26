@@ -2,110 +2,6 @@ import SwiftUI
 import ScopaCore
 import ScopaRewards
 
-/// Which league is owed its ceremony, and whether the ceremony is on screen.
-///
-/// A league is celebrated once, ever: leagues are never lost, so the highest one shown is
-/// all there is to remember. The ranked summary asks as soon as its bar has run, and the
-/// lobby asks whenever it comes back, which catches a result the ladder settled late.
-@Observable
-final class LadderCeremony {
-    struct Showing: Equatable {
-        let league: League
-        /// What the medal turns over from. Nil for Bronze, which arrives on its own.
-        let from: League?
-        /// Leagues below it reached without a ceremony of their own.
-        let skipped: Int
-    }
-
-    private(set) var showing: Showing?
-
-    /// Shows the ceremony for a league reached and not yet celebrated, if there is one.
-    func check() {
-        guard showing == nil, !Self.isQuiet, let owed = LadderPrizes.owed else { return }
-        present(owed)
-    }
-
-    /// Checks once whatever is arriving on screen has settled.
-    func checkSoon() {
-        Task {
-            try? await Task.sleep(for: .seconds(1.2))
-            check()
-        }
-    }
-
-    func present(_ league: League) {
-        let before = LadderPrizes.celebrated
-        LadderPrizes.markCelebrated(league)
-        let skipped = league.rawValue - (before.map { $0.rawValue + 1 } ?? 0)
-        let from = league == .bronze ? nil : League(rawValue: league.rawValue - 1)
-        withAnimation(.easeOut(duration: 0.3)) {
-            showing = Showing(league: league, from: from, skipped: max(skipped, 0))
-        }
-    }
-
-    func close() {
-        withAnimation(.easeIn(duration: 0.25)) { showing = nil }
-    }
-
-    /// Screenshots are taken with `-noGameCenter`, often with `-rank` planting a league, and
-    /// must not be covered by a ceremony nobody asked for. `-rankUp` asks for one.
-    private static var isQuiet: Bool {
-        #if DEBUG
-        DebugLaunch.staysSignedOut && !DebugLaunch.forcesRankUp
-        #else
-        false
-        #endif
-    }
-}
-
-extension View {
-    /// Hangs the new-league ceremony over everything. Applied once, at the root.
-    func ladderCeremony(store: TableStore) -> some View {
-        modifier(LadderCeremonyHost(store: store))
-    }
-}
-
-private struct LadderCeremonyHost: ViewModifier {
-    @Bindable var store: TableStore
-    @State private var ceremony = LadderCeremony()
-    @State private var showsRoad = false
-    @Environment(Toaster.self) private var toaster: Toaster?
-
-    func body(content: Content) -> some View {
-        content
-            .environment(ceremony)
-            .overlay {
-                if let showing = ceremony.showing {
-                    RankUpCeremony(showing: showing, name: store.playerName, livery: store.livery,
-                                   mark: $store.seatMark,
-                                   road: { ceremony.close(); showsRoad = true },
-                                   close: { ceremony.close() })
-                        .transition(.opacity)
-                }
-            }
-            .sheet(isPresented: $showsRoad) { LadderRoadSheet(store: store).coversBanner() }
-            .task { await arrive() }
-            .onChange(of: store.rank) { if store.route == .lobby { ceremony.check() } }
-            .onChange(of: store.route) { _, route in if route == .lobby { ceremony.checkSoon() } }
-            // News held for the end of a ranked result comes after the ceremony, not over it.
-            .onChange(of: ceremony.showing == nil) { _, closed in if closed { toaster?.releaseHeld() } }
-    }
-
-    /// Picks up a league cached by a build older than the prizes, then checks.
-    private func arrive() async {
-        LadderPrizes.remember(store.rank)
-        #if DEBUG
-        if DebugLaunch.forcesRankUp {
-            // After `-rank` has planted its league.
-            try? await Task.sleep(for: .seconds(1))
-            if let league = store.rank.flatMap({ League(rawValue: $0.standing.league) }) { ceremony.present(league) }
-            return
-        }
-        #endif
-        if store.route == .lobby { ceremony.checkSoon() }
-    }
-}
-
 /// A new league, reached in ranked: the old medal turns over and comes back struck in the
 /// new metal, the light and the sparks go off behind it, and what the league gives is laid
 /// out underneath, ready to wear.
@@ -260,7 +156,7 @@ struct RankUpCeremony: View {
                 .foregroundStyle(Palette.onTable)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            Text(showing.from == nil ? "One ranked game, and the ladder has you." : "Yours for good. Seasons end, leagues stay.")
+            Text(promise)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Palette.onTableSoft)
                 .multilineTextAlignment(.center)
@@ -270,6 +166,16 @@ struct RankUpCeremony: View {
         .offset(y: beat >= .named ? 0 : 14)
         .padding(.bottom, isWide ? 12 : 22)
         .accessibilityElement(children: .combine)
+    }
+
+    /// What the league means, under its name. Gran Maestro's is a different kind of place,
+    /// so it says how: points with no top, and a title for the few at the head of them.
+    private var promise: LocalizedStringKey {
+        if showing.from == nil { return "One ranked game, and the ladder has you." }
+        if league == .granMaestro {
+            return "No more divisions: points from here on, with no top. The season's ten best are its Campioni."
+        }
+        return "Yours for good. Seasons end, leagues stay."
     }
 
     // MARK: The prizes
@@ -334,10 +240,15 @@ struct RankUpCeremony: View {
     private var seasonPay: some View {
         HStack(spacing: 8) {
             DenariMark(size: 18)
-            Text("+\(SeasonReward.denari(forLeague: league).coins) for every season you finish here")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Palette.onTableSoft)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("+\(SeasonReward.denari(forLeague: league).coins) for every season you finish here")
+                if league == .granMaestro {
+                    Text("+\(SeasonReward.campioneBonus.coins) more for a season finished as a Campione")
+                }
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Palette.onTableSoft)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -359,7 +270,7 @@ struct RankUpCeremony: View {
 
     private var roadButton: some View {
         Button(action: road) {
-            Text("See the road to Maestro")
+            Text(league == .granMaestro ? "See the road" : "See the road to Maestro")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Palette.onTableSoft)
                 .frame(maxWidth: .infinity, minHeight: 40)
@@ -416,106 +327,16 @@ struct RankUpCeremony: View {
     }
 }
 
-/// One prize: the thing itself, its name, where it shows, and the button that puts it there.
-private struct PrizeTile<Art: View>: View {
-    let title: LocalizedStringKey
-    let detail: LocalizedStringKey
-    let metal: LeagueMetal
-    /// The button's word. Nil hides it.
-    let action: LocalizedStringKey?
-    /// Said in place of the button once it is done.
-    let done: LocalizedStringKey?
-    let perform: () -> Void
-    @ViewBuilder var art: Art
-
-    @Environment(\.tableFelt) private var felt
-
-    var body: some View {
-        VStack(spacing: 8) {
-            art.frame(height: 66)
-            VStack(spacing: 2) {
-                Text(title)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Palette.onTable)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                Text(detail)
-                    .font(.system(size: 11.5, weight: .medium))
-                    .foregroundStyle(Palette.onTableSoft)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-            footer
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(felt.shade(0.45))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(metal.base.opacity(0.5), lineWidth: 1)
-                }
-        }
-    }
-
-    @ViewBuilder private var footer: some View {
-        if let action {
-            Button(action: perform) {
-                Text(action)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Palette.cream)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 7)
-                    .background { Capsule().fill(Palette.terracotta) }
-            }
-            .buttonStyle(.plain)
-        } else if let done {
-            Label { Text(done) } icon: { Image(systemName: "checkmark") }
-                .font(.system(size: 12.5, weight: .bold))
-                .foregroundStyle(metal.light)
-                .padding(.vertical, 7)
-        }
-    }
-}
-
-/// The padlock on a prize not won yet.
-struct LockGlyph: View {
-    var body: some View {
-        Image(systemName: "lock.fill")
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(Palette.cream)
-            .padding(5)
-            .background(Palette.ink.opacity(0.75), in: Circle())
-    }
-}
-
-/// Wedges of light radiating from the centre.
-private struct LightRays: Shape {
-    var count: Int
-
-    func path(in rect: CGRect) -> Path {
-        let centre = CGPoint(x: rect.midX, y: rect.midY)
-        let inner = min(rect.width, rect.height) * 0.16
-        let outer = min(rect.width, rect.height) * 0.5
-        let half = .pi / Double(count) * 0.36
-        var path = Path()
-        for index in 0..<count {
-            let angle = Double(index) / Double(count) * 2 * .pi - .pi / 2
-            path.move(to: CGPoint(x: centre.x + cos(angle - half) * inner, y: centre.y + sin(angle - half) * inner))
-            path.addLine(to: CGPoint(x: centre.x + cos(angle) * outer, y: centre.y + sin(angle) * outer))
-            path.addLine(to: CGPoint(x: centre.x + cos(angle + half) * inner, y: centre.y + sin(angle + half) * inner))
-            path.closeSubpath()
-        }
-        return path
-    }
-}
-
 #Preview("Gold, reached") {
     @Previewable @State var mark = SeatMark.initial
     RankUpCeremony(showing: .init(league: .gold, from: .silver, skipped: 0), name: "Quentin", livery: .tavolo,
                    mark: $mark, road: {}, close: {})
+}
+
+#Preview("Gran Maestro, reached") {
+    @Previewable @State var mark = SeatMark.initial
+    RankUpCeremony(showing: .init(league: .granMaestro, from: .maestro, skipped: 0), name: "Quentin",
+                   livery: .tavolo, mark: $mark, road: {}, close: {})
 }
 
 #Preview("The first ranked game") {

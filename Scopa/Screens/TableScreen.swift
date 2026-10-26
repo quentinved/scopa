@@ -924,7 +924,8 @@ struct TableScreen: View {
         // A rail on an iPad is the same rail, drawn at the size the rest of the cloth is:
         // left at the phone's points it read as a row of specks beside cards half a foot tall.
         return VStack(alignment: alignment, spacing: 5 * lift) {
-            SeatHand(count: opponent.cardsInHand, cards: store.scatouch?.hand(ofSeat: opponent.seat, in: view),
+            SeatHand(count: opponent.cardsInHand,
+                     cards: opponent.hand ?? store.scatouch?.hand(ofSeat: opponent.seat, in: view),
                      width: 20 * lift)
             PlayerBadge(name: opponent.player.name, isBot: store.isBot(opponent.player),
                         tint: seatTint(opponent.seat), size: 24 * lift, mark: SeatMark(opponent.player),
@@ -1172,7 +1173,8 @@ struct TableScreen: View {
         let pet = Companion(opponent.player)
         HStack(alignment: .bottom, spacing: 3) {
             opponentLeague(opponent.player)
-            SeatHand(count: opponent.cardsInHand, cards: store.scatouch?.hand(ofSeat: opponent.seat, in: view),
+            SeatHand(count: opponent.cardsInHand,
+                     cards: opponent.hand ?? store.scatouch?.hand(ofSeat: opponent.seat, in: view),
                      width: width)
             if pet != .nessuno {
                 CompanionView(companion: pet, size: width,
@@ -1188,17 +1190,20 @@ struct TableScreen: View {
     /// in the accessibility label.
     ///
     /// Kept off the name row and away from the pile count: "Hugo II 2" is two numerals in a
-    /// row and neither of them looks like a league.
+    /// row and neither of them looks like a league. Gran Maestro has no numeral: its points
+    /// stand there instead, and its laurel is given room so it does not run into them.
     @ViewBuilder private func opponentLeague(_ player: Player) -> some View {
         if let standing = store.rank(of: player)?.standing {
             HStack(spacing: 3) {
                 LeagueMedal(league: standing.league, size: 15)
-                Text(verbatim: ["I", "II", "III"][safe: standing.division - 1] ?? "")
+                    .padding(.horizontal, standing.isGrand ? 3 : 0)
+                Text(verbatim: standing.chipLabel(locale: locale))
                     .font(.system(size: 10, weight: .bold))
+                    .monospacedDigit()
                     .foregroundStyle(LeagueMetal.league(standing.league).light)
             }
             .accessibilityElement()
-            .accessibilityLabel(Text(verbatim: standing.leagueTitle(locale: locale)))
+            .accessibilityLabel(Text(verbatim: standing.titleWithPoints(locale: locale)))
         }
     }
 
@@ -2018,7 +2023,8 @@ struct TableScreen: View {
                      title: roundHeadline(score, in: view), isFinal: false,
                      totalsTold: $summaryToldIt,
                      review: store.review == nil ? nil : { showsReview = true },
-                     glance: reviewGlance(round: view.roundNumber)) {
+                     glance: reviewGlance(round: view.roundNumber),
+                     showsTarget: view.configuration.targetScore > 1) {
             store.dealNextRound()
         }
     }
@@ -2034,7 +2040,10 @@ struct TableScreen: View {
                      experience: gainedExperience,
                      review: store.review == nil ? nil : { showsReview = true },
                      glance: reviewGlance(),
+                     // A single round's race to one point says nothing the totals do not.
+                     showsTarget: view.configuration.targetScore > 1,
                      footnote: summaryFootnote,
+                     rivalry: RecordBook.shared.standing(after: store.finishedTally?.gameID)?.line(locale: locale),
                      verdict: rankedMove(won: winner == view.mySide),
                      awaitingLadder: store.isAwaitingLadder,
                      again: playAgainIfAllowed,
@@ -2048,6 +2057,7 @@ struct TableScreen: View {
             guard let tally = store.finishedTally else { return }
             // Read before the first await: leaving the table meanwhile clears it.
             let stage = store.campaignStage
+            RecordBook.shared.record(tally, at: store)
             if store.isRanked { store.reportRanked(winnerSeat: winner) }
             var paid = await settle(tally, won: winner == view.mySide, players: view.configuration.seatCount)
             paid += await settleChallenge(tally, won: winner == view.mySide)
@@ -2188,13 +2198,14 @@ struct TableScreen: View {
         return String(localized: "A pack is waiting in the album", locale: locale)
     }
 
-    /// "Silver II · +20", once the ladder has answered a ranked game.
+    /// "Silver II · +20", or "Gran Maestro · 340 pts · +15", once the ladder has answered a
+    /// ranked game.
     private var rankFootnote: String? {
         if store.isRanked, store.isCalledOff {
             return String(localized: "Off the ladder: somebody left early", locale: locale)
         }
         guard store.isRanked, let rank = store.rank else { return nil }
-        let title = rank.standing.leagueTitle(locale: locale)
+        let title = rank.standing.titleWithPoints(locale: locale)
         guard let change = store.rankChange else { return title }
         return "\(title) · \(change >= 0 ? "+" : "−")\(abs(change))"
     }
@@ -2208,7 +2219,8 @@ struct TableScreen: View {
         // so the rating before the game is exactly the rating after it less the change.
         return RankedVerdict.Move(before: rank.rating - change, after: rank.rating, won: won,
                                   streak: rank.streak ?? 0, isHouse: store.ladderTable == .house,
-                                  wasSaved: keptRunFor == store.rankedID.uuidString)
+                                  wasSaved: keptRunFor == store.rankedID.uuidString,
+                                  place: rank.grand?.place, isCampione: rank.isCampione)
     }
 
     // MARK: Keeping a run
@@ -2309,8 +2321,7 @@ struct TableScreen: View {
             let across = facing.compactMap { store.rank(of: $0.player) }.first
             odds = RankedStakes.houseOdds(mine: mine.rating, theirs: across?.rating,
                                           counting: mine.house?.isCounting ?? true, streak: mine.streak ?? 0,
-                                          win: mine.house?.win ?? Ranking.houseWin,
-                                          loss: mine.house?.loss ?? Ranking.houseLoss)
+                                          win: mine.house?.win, loss: mine.house?.loss)
             odds.housePlayed = mine.house?.playedToday
             odds.housePerDay = mine.house?.perDay ?? Ranking.houseGamesPerDay
             odds.theirRecord = facing.count == 1 ? across.flatMap { RankedStakes.Record($0) } : nil
@@ -2358,6 +2369,7 @@ struct TableScreen: View {
 
     /// Today's deal, paid: the deal itself, and the mark on the run if this one reached it.
     private func settleDaily(_ tally: RewardTally) async -> [PayoutLine] {
+        RecordBook.shared.record(tally, at: store)
         let awards = await purse.settle(tally)
         var paid = awards.map { PayoutLine($0, locale: locale) }
         paid += await boosts(on: awards, gameID: tally.gameID)

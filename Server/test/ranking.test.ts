@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { standing, points, change, apply, seasonOf, seasonEnd, resetForSeason, houseChange, streakAfter, streakBonus, HOUSE_WIN, HOUSE_LOSS, HOUSE_GAMES_PER_DAY } from "../src/ranking.ts";
+import { standing, points, change, apply, floorOf, seasonOf, seasonEnd, resetForSeason, houseChange, houseStakes, isCampione, streakAfter, streakBonus, HOUSE_WIN, HOUSE_LOSS, HOUSE_GAMES_PER_DAY, GRAND_FLOOR, GRAND_STEP, GRAND_HOUSE_WIN, GRAND_HOUSE_LOSS } from "../src/ranking.ts";
 
 test("a rating reads as a league and a division", () => {
   assert.equal(standing(0).title, "Bronze III");
@@ -87,4 +87,51 @@ test("a house win pays the run on top, and a house loss ends it", () => {
   assert.equal(houseChange(true, 3), HOUSE_WIN + streakBonus(3));
   assert.equal(houseChange(false, 5), HOUSE_LOSS);
   assert.equal(streakAfter(false, 5), 0);
+});
+
+// MARK: Gran Maestro
+
+test("past Maestro I the points have no top, for a build that knows Gran Maestro", () => {
+  assert.equal(standing(GRAND_FLOOR - 1, true).title, "Maestro I");
+  const gran = standing(GRAND_FLOOR + 340, true);
+  assert.equal(gran.title, "Gran Maestro");
+  assert.equal(gran.league, 6);
+  assert.equal(gran.progress, 340);
+  assert.equal(gran.step, GRAND_STEP);
+  assert.equal(standing(GRAND_FLOOR + 12_000, true).progress, 12_000);
+});
+
+test("a build from before Gran Maestro still reads Maestro I at the top", () => {
+  const old = standing(GRAND_FLOOR + 340);
+  assert.equal(old.title, "Maestro I");
+  assert.equal(old.league, 5);
+  assert.equal(old.progress, 99);
+});
+
+test("the ladder climbs into Gran Maestro and keeps it as a floor", () => {
+  const next = apply(25, GRAND_FLOOR - 10, floorOf(5));
+  assert.equal(next.rating, GRAND_FLOOR + 15);
+  assert.equal(next.floor, GRAND_FLOOR);
+  assert.equal(apply(-50, next.rating, next.floor).rating, GRAND_FLOOR);
+  assert.deepEqual(resetForSeason(GRAND_FLOOR + 900), { rating: GRAND_FLOOR, floor: GRAND_FLOOR });
+});
+
+test("Gran Maestro is one step above Maestro I at a table of people", () => {
+  assert.equal(change(GRAND_FLOOR - 1, [GRAND_FLOOR + 400], true, null), 30);
+  assert.equal(change(GRAND_FLOOR + 400, [GRAND_FLOOR + 10], true, null), 20);
+});
+
+test("the house pays less and costs more in Gran Maestro", () => {
+  assert.deepEqual(houseStakes(GRAND_FLOOR - 1), { win: HOUSE_WIN, loss: HOUSE_LOSS });
+  assert.deepEqual(houseStakes(GRAND_FLOOR), { win: GRAND_HOUSE_WIN, loss: GRAND_HOUSE_LOSS });
+  assert.equal(houseChange(true, 3, GRAND_FLOOR), GRAND_HOUSE_WIN + streakBonus(3));
+  assert.equal(houseChange(false, 0, GRAND_FLOOR + 80), GRAND_HOUSE_LOSS);
+});
+
+test("Campioni are the top ten with three hundred points", () => {
+  assert.ok(isCampione(1, 300));
+  assert.ok(isCampione(10, 1200));
+  assert.ok(!isCampione(11, 1200));
+  assert.ok(!isCampione(1, 299));
+  assert.ok(!isCampione(null, 900));
 });

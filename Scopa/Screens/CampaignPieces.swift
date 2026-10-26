@@ -127,11 +127,12 @@ struct StarRow: View {
 }
 
 /// The cartouche at the head of each region: its numeral, its name, the line under it,
-/// and the stars won there.
+/// and the stars won there. A second-road region shut on its stars says how many it wants.
 struct RegionBanner: View {
     let region: CampaignRegion
     let stars: Int
     let isOpen: Bool
+    var shortOfStars: (needed: Int, held: Int)? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -151,6 +152,7 @@ struct RegionBanner: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 ruleLine
+                gateLine
             }
             Spacer(minLength: 4)
             if isOpen {
@@ -169,16 +171,30 @@ struct RegionBanner: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// What the region plays: the classic game, or the house rule it brings in.
-    @ViewBuilder private var ruleLine: some View {
-        if let rule = region.rule {
-            Text("New rule · \(Text(rule.label))")
+    /// What the region plays: the classic game, or the house rule or mode it brings in.
+    private var ruleLine: some View {
+        Group {
+            if let mode = region.mode {
+                Text("New mode · \(mode.name)")
+            } else if let rule = region.rule {
+                Text("New rule · \(Text(rule.label))")
+            } else {
+                Text("Classic rules")
+            }
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(Palette.goldLight)
+    }
+
+    /// The stars still wanted, so the way on is plain: back down the road for more of them.
+    @ViewBuilder private var gateLine: some View {
+        if let short = shortOfStars {
+            Text("\(short.needed) stars to open \(region.title) · you have \(short.held)")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Palette.goldLight)
-        } else {
-            Text("Classic rules")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Palette.goldLight)
+                .monospacedDigit()
+                .foregroundStyle(Palette.onTable)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
     }
 

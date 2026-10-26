@@ -9,6 +9,48 @@ import Foundation
 // Never mention the passphrases, and leave the rating prompt out.
 
 let releaseNotes: [String: [String: String]] = [
+    "1.5": [
+        "en-US": """
+        Thank you for playing Scopa Bella! A new top to the ladder, a Maestro you can beat, and a campaign almost twice as long.
+
+        • Gran Maestro, after Maestro I: no divisions, only points, with no ceiling. The season's ten best with 300 points or more are its Campioni, on a board of their own. A laurel medal, an app icon and 2,200 denari a season.
+        • Maestro can be beaten: the house no longer counts the cards still to come or plays a perfect last hand.
+        • Twenty-four more campaign tables past Roma. In Toscana you start two points behind, in Puglia one round decides, in Sardegna every hand is face up, and in Lombardia you play three games in a row.
+        • Your record, in Settings: every game you finish, your best ones, and the score against each friend and each bot.
+        • Clearer ranked numbers: one line for the next division and the next prize, and medals that fit their place.
+        """,
+
+        "en-GB": """
+        Thank you for playing Scopa Bella! A new top to the ladder, a Maestro you can beat, and a campaign almost twice as long.
+
+        • Gran Maestro, after Maestro I: no divisions, only points, with no ceiling. The season's ten best with 300 points or more are its Campioni, on a board of their own. A laurel medal, an app icon and 2,200 denari a season.
+        • Maestro can be beaten: the house no longer counts the cards still to come or plays a perfect last hand.
+        • Twenty-four more campaign tables past Roma. In Toscana you start two points behind, in Puglia one round decides, in Sardegna every hand is face up, and in Lombardia you play three games in a row.
+        • Your record, in Settings: every game you finish, your best ones, and the score against each friend and each bot.
+        • Clearer ranked numbers: one line for the next division and the next prize, and medals that fit their place.
+        """,
+
+        "fr-FR": """
+        Merci de jouer à Scopa Bella ! Un nouveau sommet au classement, un Maestro à votre portée, et une campagne presque deux fois plus longue.
+
+        • Gran Maestro, après Maestro I : plus de divisions, seulement des points, sans plafond. Les dix meilleurs de la saison avec 300 points ou plus sont ses Campioni, sur un classement rien qu'à eux. Une médaille de laurier, une icône et 2 200 deniers par saison.
+        • Maestro peut être battu : la maison ne compte plus les cartes qui restent à venir et ne joue plus une dernière main parfaite.
+        • Vingt-quatre tables de campagne de plus après Roma. En Toscana vous partez avec deux points de retard, en Puglia une seule manche décide, en Sardegna toutes les mains sont visibles, et en Lombardia vous jouez trois parties d'affilée.
+        • Votre palmarès, dans les Réglages : chaque partie terminée, vos meilleures, et le score contre chaque ami et chaque bot.
+        • Un classé plus clair : une seule ligne pour la prochaine division et la prochaine récompense, et des médailles à leur juste taille.
+        """,
+
+        "it": """
+        Grazie di giocare a Scopa Bella! Una nuova vetta in classifica, un Maestro battibile, e una campagna lunga quasi il doppio.
+
+        • Gran Maestro, dopo Maestro I: niente divisioni, solo punti, senza tetto. I dieci migliori della stagione con almeno 300 punti sono i suoi Campioni, con una classifica tutta loro. Una medaglia d'alloro, un'icona e 2.200 denari a stagione.
+        • Maestro si può battere: la casa non conta più le carte ancora da uscire e non gioca più un'ultima mano perfetta.
+        • Ventiquattro tavoli di campagna in più dopo Roma. In Toscana parti con due punti di svantaggio, in Puglia decide una sola smazzata, in Sardegna tutte le mani sono scoperte, e in Lombardia giochi tre partite di fila.
+        • Il tuo palmarès, nelle Impostazioni: ogni partita che finisci, le tue migliori, e il punteggio contro ogni amico e ogni bot.
+        • Classificata più chiara: una sola riga per la prossima divisione e il prossimo premio, e medaglie della giusta misura.
+        """,
+    ],
+
     "1.4": [
         "en-US": """
         Thank you for playing Scopa Bella! A real duo in ranked, six new albums, and steadier games with friends.

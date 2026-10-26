@@ -35,7 +35,9 @@ public struct GameState: Hashable, Codable, Sendable {
 
     public init(configuration: GameConfiguration, dealerSeat: Int = 0) {
         self.configuration = configuration
-        self.scores = Array(repeating: 0, count: configuration.sideCount)
+        // A head start the sides do not add up to, off the wire, is a level start instead.
+        let start = configuration.headStart
+        self.scores = start.count == configuration.sideCount ? start : Array(repeating: 0, count: configuration.sideCount)
         self.roundNumber = 0
         self.dealerSeat = dealerSeat
         self.round = nil

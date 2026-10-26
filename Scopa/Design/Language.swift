@@ -345,15 +345,12 @@ extension Verdict {
 }
 
 extension Ladder.RankAnswer.Standing {
-    /// "Silver II", in the interface's language.
+    /// "Silver II", or "Gran Maestro" with no numeral, in the interface's language. A league
+    /// this build does not know reads as Bronze, as the ladder's own fallback always has.
     func leagueTitle(locale: Locale) -> String {
-        let names: [String] = [
-            String(localized: "Bronze", locale: locale), String(localized: "Silver", locale: locale),
-            String(localized: "Gold", locale: locale), String(localized: "Platinum", locale: locale),
-            String(localized: "Diamond", locale: locale), String(localized: "Maestro", locale: locale),
-        ]
-        let name = names[safe: league] ?? names[0]
-        return "\(name) \(["I", "II", "III"][safe: division - 1] ?? "")"
+        let named = League(rawValue: league) ?? .bronze
+        guard named.hasDivisions else { return named.title(locale: locale) }
+        return "\(named.title(locale: locale)) \(["I", "II", "III"][safe: division - 1] ?? "")"
     }
 }
 

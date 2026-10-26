@@ -32,6 +32,10 @@ struct ContentView: View {
                 #if DEBUG
                 KeepRunRehearsal(run: run)
                 #endif
+            } else if DebugLaunch.showsRecordLine {
+                #if DEBUG
+                RecordLineRehearsal()
+                #endif
             } else if DebugLaunch.showsCardSheet {
                 CardSheetView()
             } else if let draft = DebugLaunch.deckDraft {

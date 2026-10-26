@@ -485,7 +485,8 @@ struct RankedHero: View {
     }
 
     /// The grade in the house voice with the win rate across from it, then the division's
-    /// bar and what the next one costs.
+    /// bar and what the next one costs. In Gran Maestro the bar runs to the next stop and the
+    /// line under it is the points and the place.
     private func standing(_ rank: Ladder.RankAnswer) -> some View {
         VStack(alignment: .leading, spacing: 6 * lift) {
             HStack(alignment: .firstTextBaseline, spacing: 8 * lift) {
@@ -501,7 +502,7 @@ struct RankedHero: View {
             }
             DivisionRoad(rating: rank.rating, metal: LeagueMetal.league(rank.standing.league))
             HStack(spacing: 8 * lift) {
-                Text(verbatim: Ranking.climb(from: rank.rating, locale: locale))
+                Text(verbatim: climb(rank))
                     .font(.system(size: 11.5 * lift, weight: .semibold))
                     .foregroundStyle(Palette.goldLight.opacity(0.9))
                     .lineLimit(1)
@@ -510,6 +511,13 @@ struct RankedHero: View {
                 NextStop(rating: rank.rating)
             }
         }
+    }
+
+    /// What the next game is for: the next division, or in Gran Maestro the points and the
+    /// place, and the title where it has been won.
+    private func climb(_ rank: Ladder.RankAnswer) -> String {
+        guard let line = rank.grandLine(locale: locale) else { return Ranking.climb(from: rank.rating, locale: locale) }
+        return rank.isCampione ? "\(line) · Campione" : line
     }
 
     private var unranked: some View {

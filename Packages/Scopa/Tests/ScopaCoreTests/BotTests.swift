@@ -393,16 +393,15 @@ private func duplicate(_ a: BotLevel, _ b: BotLevel, deals: Int) -> (a: Int, b: 
     /// The top of it is not perfect and is not meant to be. The house seat exists because
     /// nobody real turned up; an opponent that never misses is a wall with a rosette over it.
     @Test func theTopOfTheLadderStillMissesThings() {
-        let maestro = BotStrength.house(atStep: BotStrength.topStep)
-        #expect(maestro.searches)
-        #expect(!maestro.isExact)
-        #expect(maestro.follows < BotLevel.hard.strength.follows)
+        let top = BotStrength.house(atStep: BotStrength.topStep)
+        #expect(!top.isExact)
+        #expect(top.follows < BotLevel.normal.strength.follows)
     }
 
     /// Diamond is where players were losing round after round; it now plays about the way
     /// Platinum did, and still harder than anything below it.
     @Test func diamondPlaysTheWayPlatinumUsedTo() {
-        let diamondOne = BotStrength.house(atStep: BotStrength.houseSearchesFrom - 1)
+        let diamondOne = BotStrength.house(atStep: BotStrength.houseBendsUntil)
         #expect(!diamondOne.searches)
         #expect(abs(diamondOne.follows - 0.80) < 0.001)
         #expect(BotStrength.house(atStep: 5) == BotStrength(searches: false, follows: 0.5 + 0.45 * 5 / 17))
@@ -453,19 +452,23 @@ private func duplicate(_ a: BotLevel, _ b: BotLevel, deals: Int) -> (a: Int, b: 
     @Test func theTopOfTheLadderOutplaysTheBottomOnTheSameCards() {
         let points = duplicate(BotStrength.house(atStep: BotStrength.topStep),
                                BotStrength.house(atStep: 0), deals: 12)
-        #expect(points.a >= points.b + 10, "Maestro \(points.a) – \(points.b) Bronze over 24 rounds")
+        #expect(points.a >= points.b + 10, "Gran Maestro \(points.a) – \(points.b) Bronze over 24 rounds")
     }
 
-    /// The changeover is the one place a ramp can dip, and it did: handed the search early,
-    /// while the house still slipped one move in five, it played worse than the plain
-    /// weighing it replaced: a search that finds the right line and then plays a different
-    /// card is work thrown away. Measured against a fixed opponent over sixteen duplicated
-    /// deals, the two come out level around nine follows in ten, so that is where it is
-    /// handed over. This is that finding, kept where breaking it is noticed.
-    @Test func theSearchIsHandedOverOnlyOnceItPaysForItself() {
-        let handover = BotStrength.house(atStep: BotStrength.houseSearchesFrom)
-        #expect(handover.searches)
-        #expect(handover.follows >= 0.88, "the search arrived at \(handover.follows) follows")
-        #expect(!BotStrength.house(atStep: BotStrength.houseSearchesFrom - 1).searches)
+    /// The house never counts the deck. It used to from Maestro III, and a search that solves
+    /// the last hand outright read at the table as a house dealt the cards it needed: a Maestro
+    /// I could not win a game. Gran Maestro too, so its points measure play against an opponent
+    /// that can be beaten.
+    @Test func theHouseNeverSearches() {
+        for step in steps { #expect(!BotStrength.house(atStep: step).searches, "step \(step) searches") }
+    }
+
+    /// Gran Maestro is a step past Maestro I and plays a little harder, never in a jump.
+    @Test func granMaestroIsOneMoreStep() {
+        let maestroOne = BotStrength.house(atStep: Ranking.grandStep - 1)
+        let gran = BotStrength.house(in: .granMaestro)
+        #expect(gran == BotStrength.house(atStep: BotStrength.topStep))
+        #expect(gran.follows > maestroOne.follows)
+        #expect(gran.follows - maestroOne.follows <= 0.05)
     }
 }

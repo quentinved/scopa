@@ -3,28 +3,28 @@ import ScopaCore
 
 /// A house rule taught the way the rules book teaches the game: a page each, drawn with
 /// real cards. The campaign opens it the first time a table brings a rule in, before the
-/// cards are dealt; the stage card and the table's ? open it again whenever asked.
+/// cards are dealt; the stage card and the table's ? open it again whenever asked. The
+/// second road's modes are taught on the same pages, after the rules.
 struct HouseRuleLesson: View {
-    let rules: [HouseRule]
+    let pages: [LessonPage]
     /// Deals the table from the last page. Nil when the lesson is only being read again.
     var onFinish: (() -> Void)?
     /// Sits down at a rule's practice table once the lesson is gone. Nil where there is none.
     var practise: ((HouseRule) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
-    @State private var page: HouseRule?
+    @State private var page: LessonPage?
 
     /// No navigation stack: inside one, the sheet's banner inset never reached the footer.
     var body: some View {
         VStack(spacing: 0) {
             topBar
             TabView(selection: $page) {
-                ForEach(rules, id: \.self) { rule in
+                ForEach(pages, id: \.self) { page in
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            Caption(text: onFinish == nil ? "House rule" : "New rule at this table")
-                            HouseRulePage(rule: rule)
-                            if practise != nil { tryButton(rule) }
+                            Caption(text: caption(for: page))
+                            content(page)
                         }
                         .padding(.horizontal, 24)
                         .padding(.top, 8)
@@ -32,14 +32,14 @@ struct HouseRuleLesson: View {
                     }
                     .scrollIndicators(.hidden)
                     .scrollBounceBehavior(.basedOnSize)
-                    .tag(Optional(rule))
+                    .tag(Optional(page))
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             footer
         }
         .background { TableGround() }
-        .onAppear { page = page ?? rules.first }
+        .onAppear { page = page ?? pages.first }
         .sensoryFeedback(.selection, trigger: page)
         .sound(.tap, trigger: page)
     }
@@ -57,12 +57,12 @@ struct HouseRuleLesson: View {
 
     private var footer: some View {
         VStack(spacing: 16) {
-            if rules.count > 1 {
+            if pages.count > 1 {
                 HStack(spacing: 7) {
-                    ForEach(rules, id: \.self) { rule in
+                    ForEach(pages, id: \.self) { item in
                         Capsule()
-                            .fill(rule == page ? Palette.goldLight : Palette.onTableSoft.opacity(0.35))
-                            .frame(width: rule == page ? 22 : 7, height: 7)
+                            .fill(item == page ? Palette.goldLight : Palette.onTableSoft.opacity(0.35))
+                            .frame(width: item == page ? 22 : 7, height: 7)
                     }
                 }
                 .animation(.spring(duration: 0.35, bounce: 0.2), value: page)
@@ -75,7 +75,25 @@ struct HouseRuleLesson: View {
         .padding(.bottom, 16)
     }
 
-    private var closing: Bool { page == rules.last }
+    private var closing: Bool { page == pages.last }
+
+    private func caption(for page: LessonPage) -> LocalizedStringKey {
+        switch page {
+        case .rule: onFinish == nil ? "House rule" : "New rule at this table"
+        case .mode: onFinish == nil ? "Table mode" : "New at this table"
+        }
+    }
+
+    /// The page itself, and under a rule the way to its practice table.
+    @ViewBuilder private func content(_ page: LessonPage) -> some View {
+        switch page {
+        case .rule(let rule):
+            HouseRulePage(rule: rule)
+            if practise != nil { tryButton(rule) }
+        case .mode(let mode):
+            CampaignModePage(mode: mode)
+        }
+    }
 
     /// The last thing on a rule's page: a hand of it, laid out to show it all.
     private func tryButton(_ rule: HouseRule) -> some View {
@@ -92,13 +110,13 @@ struct HouseRuleLesson: View {
     private var finishTitle: LocalizedStringKey { onFinish == nil ? "Got it" : "Deal the cards" }
 
     private func advance() {
-        guard let page, let index = rules.firstIndex(of: page), index + 1 < rules.count else {
+        guard let page, let index = pages.firstIndex(of: page), index + 1 < pages.count else {
             // Called before dismiss: the caller deals once the sheet is gone.
             onFinish?()
             dismiss()
             return
         }
-        withAnimation(.easeInOut(duration: 0.3)) { self.page = rules[index + 1] }
+        withAnimation(.easeInOut(duration: 0.3)) { self.page = pages[index + 1] }
     }
 }
 

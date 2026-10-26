@@ -16,8 +16,9 @@ struct IconArtwork: View {
 
     /// The metal the icon is struck in. `classic` is the one on the App Store; the others
     /// are won on the ranked ladder, one per league from Silver up. Each keeps what the one
-    /// below it has: a second line in the frame from Platinum, glints from Diamond, and a
-    /// terracotta line and stronger light at Maestro.
+    /// below it has: a second line in the frame from Platinum, glints from Diamond, a
+    /// terracotta line and stronger light at Maestro, and at Gran Maestro a laurel round the
+    /// fan, on the house's own emerald taken nearly to black. See `IconLaurel`.
     ///
     /// `patron` is off the ladder: the no-ads purchase gives it. Lapis and gold leaf, with the
     /// patron's crest on the coin, Ravenna's stars and tesserae where the others have light,
@@ -26,7 +27,7 @@ struct IconArtwork: View {
     /// `visconti` is the album's: the Tarocchi volume gives it. The same picture laid on a
     /// tarot card's gold leaf, punched and ruled like the Visconti deck's, the name on
     /// ultramarine, and engraved like the patron's. See `ViscontiLeaf`.
-    enum Finish: String, CaseIterable { case classic, silver, gold, platinum, diamond, maestro, patron, visconti }
+    enum Finish: String, CaseIterable { case classic, silver, gold, platinum, diamond, maestro, granMaestro, patron, visconti }
 
     /// Everything is expressed against this, so 1024 and 180 draw the same picture.
     var size: CGFloat
@@ -76,6 +77,10 @@ struct IconArtwork: View {
             Tones(groundLight: rgb(0.212, 0.196, 0.176), ground: rgb(0.106, 0.094, 0.082),
                   groundDeep: rgb(0.035, 0.031, 0.027), night: rgb(0.012, 0.012, 0.012),
                   metalLight: rgb(1.000, 0.886, 0.541), metal: Self.gold, metalDeep: Self.goldDeep, rays: 0.72)
+        case .granMaestro:
+            Tones(groundLight: rgb(0.086, 0.208, 0.149), ground: rgb(0.031, 0.110, 0.075),
+                  groundDeep: rgb(0.008, 0.043, 0.027), night: rgb(0.004, 0.016, 0.010),
+                  metalLight: rgb(1.000, 0.886, 0.541), metal: Self.gold, metalDeep: Self.goldDeep, rays: 0.78)
         case .patron:
             Tones(groundLight: rgb(0.212, 0.318, 0.624), ground: rgb(0.106, 0.176, 0.427),
                   groundDeep: rgb(0.039, 0.063, 0.204), night: rgb(0.016, 0.024, 0.075),
@@ -123,6 +128,7 @@ struct IconArtwork: View {
             ground
             if isPatron { PatronVault(unit: unit, tones: vaultTones) }
             if isVisconti { ViscontiLeaf(unit: unit) }
+            if finishRank >= 6 { IconLaurel(unit: unit, light: tones.metalLight, metal: tones.metal, deep: tones.metalDeep) }
             // Scaled and lifted as one group, so the plaque sits under the picture and the
             // fan keeps its proportions.
             ZStack {

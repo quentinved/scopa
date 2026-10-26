@@ -2,9 +2,9 @@ import SwiftUI
 import ScopaCore
 import ScopaRewards
 
-/// The whole ladder as a road: the six leagues in order, where you stand on it, and what
-/// each league gives. Ranked's prizes are won nowhere else, so this is also where ranked
-/// explains how it is climbed.
+/// The whole ladder as a road: the six leagues in order and Gran Maestro past them, where
+/// you stand on it, and what each league gives. Ranked's prizes are won nowhere else, so this
+/// is also where ranked explains how it is climbed, and what Gran Maestro's points are for.
 struct LadderRoadSheet: View {
     @Bindable var store: TableStore
     @Environment(\.dismiss) private var dismiss
@@ -26,11 +26,17 @@ struct LadderRoadSheet: View {
     }
 
     var body: some View {
-        SheetScaffold(title: "The road", subtitle: "Six leagues, and what each one gives. Only ranked climbs it.",
+        ScrollViewReader { reader in sheet(reader) }
+    }
+
+    private func sheet(_ reader: ScrollViewProxy) -> some View {
+        SheetScaffold(title: "The road", subtitle: "Six leagues, Gran Maestro past them, and what each one gives. Only ranked climbs it.",
                       close: { dismiss() }) {
             VStack(alignment: .leading, spacing: 26) {
                 if here == nil { startNote }
                 road
+                // Under the road, so its last stop is explained where it is seen.
+                granMaestro
                 climbing
                 seasons
                 if icon != nil, LadderIcon.isSupported { classicIcon }
@@ -42,6 +48,8 @@ struct LadderRoadSheet: View {
         .task {
             try? await Task.sleep(for: .milliseconds(250))
             drawn = true
+            // `-road grand` opens on Gran Maestro, for a screenshot of the end of the road.
+            if DebugLaunch.roadOpensAtGrand { reader.scrollTo(League.granMaestro, anchor: .top) }
         }
         .presentationDetents([.large])
     }
@@ -56,6 +64,7 @@ struct LadderRoadSheet: View {
                          pin: state(of: league) == .here ? AnyView(pin) : nil) {
                     prizes(for: league)
                 }
+                .id(league)
             }
         }
     }
@@ -66,7 +75,8 @@ struct LadderRoadSheet: View {
         return league == here ? .here : .ahead
     }
 
-    /// How far along its own three divisions the road runs past this league.
+    /// How far along its own three divisions the road runs past this league. Gran Maestro
+    /// has none, so its stretch is the way to the next Reliquia on its road.
     private func fill(of league: League) -> Double {
         switch state(of: league) {
         case .passed: return 1
@@ -74,20 +84,28 @@ struct LadderRoadSheet: View {
         case .here:
             guard let rating else { return 0 }
             let into = rating - Ranking.floor(of: league)
+            if !league.hasDivisions {
+                let stretch = GrandGifts.stride * GrandGifts.packEvery
+                return Double(into % stretch) / Double(stretch)
+            }
             return min(max(Double(into) / Double(Ranking.pointsPerDivision * Ranking.divisionsPerLeague), 0), 1)
         }
     }
 
-    /// Under the name: how far the next division is from here, what it takes to get here
-    /// from below, or where everyone starts.
+    /// Under the name: how far the next division is from here, the division it follows and
+    /// how far that is, or where everyone starts. Never the rating itself: "From 1,800
+    /// points" sat under a bar that counts to a hundred.
     private func line(for league: League) -> String {
-        if state(of: league) == .here, let rating { return Ranking.climb(from: rating, locale: locale) }
+        if state(of: league) == .here, let rating {
+            return store.rank?.grandLine(locale: locale) ?? Ranking.climb(from: rating, locale: locale)
+        }
         if league == .bronze { return String(localized: "Where everyone starts", locale: locale) }
         let floor = Ranking.floor(of: league)
+        let after = Ranking.standing(for: floor - 1).leagueTitle(locale: locale)
         if let rating, rating < floor {
-            return String(localized: "From \(floor) points · \(floor - rating) to go", locale: locale)
+            return String(localized: "After \(after) · \(floor - rating) to go", locale: locale)
         }
-        return String(localized: "From \(floor) points", locale: locale)
+        return String(localized: "After \(after)", locale: locale)
     }
 
     /// You, on the road: your own seat badge, pinned where your rating stands.
@@ -144,6 +162,9 @@ struct LadderRoadSheet: View {
                     .font(.system(size: 14, weight: .heavy))
                     .monospacedDigit()
                     .foregroundStyle(Palette.goldLight)
+                    // Gran Maestro's pay is the first with five figures' worth of width.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
             .frame(height: 40)
             Text("each season")
@@ -168,22 +189,47 @@ struct LadderRoadSheet: View {
             .glassPanel()
     }
 
+    /// The house quoted at the price it is to this player: Gran Maestro's is its own.
     private var climbing: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let house = Ranking.houseStakes(for: rating ?? 0)
+        return VStack(alignment: .leading, spacing: 12) {
             Caption(text: "How you climb")
             VStack(alignment: .leading, spacing: 14) {
                 rule(signed(Ranking.points(won: true, opponentAbove: 0, in: .gold)),
                      "A win against someone of your level. More against a higher league, less against a lower one.")
-                rule(signed(Ranking.houseWin),
+                rule(signed(house.win),
                      "A win against the house, for the first \(Ranking.houseGamesPerDay) games of the day.")
                 rule(signed(Ranking.streakStep),
                      "For each win in a row before it, the house included, up to \(signed(Ranking.streakCap)).")
                 rule(signed(Ranking.points(won: false, opponentAbove: 0, in: .gold)),
-                     "A loss against someone of your level. Half that in Bronze and Silver, and \(signed(Ranking.houseLoss)) against the house.")
+                     "A loss against someone of your level. Half that in Bronze and Silver, and \(signed(house.loss)) against the house.")
                 rule("\(Ranking.pointsPerDivision)",
                      "Points make a division, three divisions a league. A league once reached is never lost.")
                 rule("+1",
                      "Pack in the album for each division climbed, once a season.")
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassPanel()
+        }
+    }
+
+    /// Past Maestro I: what the points are, what the house is worth there, what the road
+    /// pays, and who the Campioni are.
+    private var granMaestro: some View {
+        let house = Ranking.houseStakes(for: Ranking.grandFloor)
+        return VStack(alignment: .leading, spacing: 12) {
+            Caption(verbatim: "Gran Maestro")
+            VStack(alignment: .leading, spacing: 14) {
+                rule("0", "Where its points start each season. They have no top, and Gran Maestro itself is never lost.")
+                rule(signed(house.win),
+                     "A win against the house there, and \(signed(house.loss)) for a loss: up here the points say how often you beat it.")
+                rule("+\(GrandGifts.denari.coins)",
+                     "Denari for every \(GrandGifts.stride) points, and a Reliquia pack every \(GrandGifts.stride * GrandGifts.packEvery), once a season.")
+                rule("\(Ranking.campioni)",
+                     "The season's \(Ranking.campioni) best Gran Maestri with \(Ranking.campionePoints) points or more are its Campioni.")
+                rule("+\(SeasonReward.campioneBonus.coins)",
+                     "On top of the season's pay, for finishing it as a Campione.")
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -250,154 +296,5 @@ struct LadderRoadSheet: View {
     /// "+20", "−12": a real minus, which a hyphen only pretends to be.
     private func signed(_ value: Int) -> String {
         value < 0 ? "−\(abs(value))" : "+\(value)"
-    }
-}
-
-private enum RoadPlace { case passed, here, ahead }
-
-/// One league on the road: its medal on the rail, the stretch of rail down to the next,
-/// its name and where it starts, and what it gives.
-private struct RoadStop<Prizes: View>: View {
-    let league: League
-    let state: RoadPlace
-    /// How much of the rail below this league is run, 0 to 1.
-    let fill: Double
-    let drawn: Bool
-    let title: String
-    let line: String
-    /// Drawn on the rail where the fill stops.
-    let pin: AnyView?
-    @ViewBuilder var prizes: Prizes
-
-    private var metal: LeagueMetal { .league(league.rawValue) }
-    private var nextMetal: LeagueMetal { .league(league.next?.rawValue ?? league.rawValue) }
-    private var shownFill: Double { drawn ? fill : 0 }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            rail.frame(width: 50)
-            VStack(alignment: .leading, spacing: 10) {
-                header
-                prizes
-            }
-            .padding(.top, 6)
-            .padding(.bottom, league.next == nil ? 6 : 30)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(verbatim: title)
-                    .font(.display(26))
-                    .foregroundStyle(state == .ahead ? Palette.onTableSoft : Palette.onTable)
-                Spacer(minLength: 4)
-                tag
-            }
-            Text(verbatim: line)
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(Palette.onTableSoft)
-        }
-    }
-
-    @ViewBuilder private var tag: some View {
-        switch state {
-        case .passed:
-            Label { Text("Reached") } icon: { Image(systemName: "checkmark") }
-                .textCase(.uppercase)
-                .font(.system(size: 11, weight: .heavy))
-                .tracking(1.2)
-                .foregroundStyle(metal.light)
-        case .here:
-            Text("You are here")
-                .textCase(.uppercase)
-                .font(.system(size: 11, weight: .heavy))
-                .tracking(1.2)
-                .foregroundStyle(metal.light)
-        case .ahead:
-            EmptyView()
-        }
-    }
-
-    // MARK: The rail
-
-    private var rail: some View {
-        VStack(spacing: 0) {
-            node
-            GeometryReader { geometry in
-                let height = geometry.size.height
-                ZStack(alignment: .top) {
-                    Capsule().fill(Palette.onTableSoft.opacity(0.18)).frame(width: 4)
-                    Capsule()
-                        .fill(LinearGradient(colors: [metal.light, nextMetal.base], startPoint: .top, endPoint: .bottom))
-                        .frame(width: 4, height: height * shownFill)
-                        .shadow(color: metal.light.opacity(0.7), radius: 4)
-                    if let pin { pin.offset(y: height * shownFill - 13) }
-                }
-                .frame(maxWidth: .infinity)
-                .animation(.easeOut(duration: 0.55).delay(0.15 + Double(league.rawValue) * 0.14), value: drawn)
-            }
-            .padding(.vertical, 5)
-        }
-    }
-
-    private var node: some View {
-        LeagueMedal(league: league.rawValue, size: 42)
-            .saturation(state == .ahead ? 0 : 1)
-            .opacity(state == .ahead ? 0.5 : 1)
-            .frame(width: 50, height: 50)
-            .background {
-                if state == .here {
-                    Circle()
-                        .fill(metal.base.opacity(0.25))
-                        .overlay { Circle().strokeBorder(metal.light.opacity(0.7), lineWidth: 1.5) }
-                        .frame(width: 60, height: 60)
-                }
-            }
-    }
-}
-
-/// A prize on the road: the thing itself and one word under it. Tapped, it is worn or
-/// put on the home screen, or refused while it is still ahead.
-private struct RoadPrize<Art: View>: View {
-    let label: LocalizedStringKey
-    let isEarned: Bool
-    let isChosen: Bool
-    let metal: LeagueMetal
-    let action: () -> Void
-    @ViewBuilder var art: Art
-
-    @Environment(\.tableFelt) private var felt
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                art
-                    .saturation(isEarned ? 1 : 0)
-                    .opacity(isEarned ? 1 : 0.45)
-                    .overlay(alignment: .bottomTrailing) { if !isEarned { LockGlyph().offset(x: 4, y: 4) } }
-                    .frame(height: 40)
-                Text(label)
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(isChosen ? metal.light : Palette.onTableSoft)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-            .padding(8)
-            .frame(width: 80)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(felt.shade(0.4))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isChosen ? metal.light : Palette.onTableSoft.opacity(0.15),
-                                          lineWidth: isChosen ? 1.5 : 1)
-                    }
-            }
-        }
-        .buttonStyle(.plain)
     }
 }

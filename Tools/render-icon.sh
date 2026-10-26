@@ -13,6 +13,7 @@ swiftc -O -swift-version 5 \
     -target arm64-apple-macos14.0 \
     -o "$build/render-icon" \
     "$root/Scopa/Design/IconArtwork.swift" \
+    "$root/Scopa/Design/IconLaurel.swift" \
     "$root/Scopa/Design/PatronCrest.swift" \
     "$root/Scopa/Design/IconVisconti.swift" \
     "$root/Tools/IconRenderer/main.swift"
@@ -20,7 +21,7 @@ icons="$root/Scopa/Assets.xcassets/AppIcon.appiconset"
 "$build/render-icon" 1024 "$icons/AppIcon.png" light
 "$build/render-icon" 1024 "$icons/AppIcon-Dark.png" dark
 "$build/render-icon" 1024 "$icons/AppIcon-Tinted.png" tinted
-for finish in silver gold platinum diamond maestro patron visconti; do
+for finish in silver gold platinum diamond maestro granMaestro patron visconti; do
     name="AppIcon-$(printf %s "$finish" | cut -c1 | tr a-z A-Z)$(printf %s "$finish" | cut -c2-)"
     set="$root/Scopa/Assets.xcassets/$name.appiconset"
     mkdir -p "$set"

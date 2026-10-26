@@ -78,7 +78,8 @@ struct CampaignMap: View {
             road
             ForEach(CampaignRegion.allCases) { region in
                 RegionBanner(region: region, stars: book.stars(in: region),
-                             isOpen: book.isUnlocked(region.stages[0]) && moment.unlocking != region.stages[0])
+                             isOpen: book.isUnlocked(region.stages[0]) && moment.unlocking != region.stages[0],
+                             shortOfStars: book.shortOfStars(for: region))
                     .frame(width: width - 32)
                     .position(x: width / 2, y: layout.top(of: region) + CampaignLayout.bannerHeight / 2)
             }
@@ -109,7 +110,8 @@ struct CampaignMap: View {
         ZStack(alignment: .top) {
             ForEach(CampaignRegion.allCases) { region in
                 RegionGround(region: region)
-                    .frame(height: CampaignLayout.regionHeight + (region == .roma ? CampaignLayout.footHeight : 0))
+                    .frame(height: CampaignLayout.regionHeight
+                           + (region == CampaignRegion.allCases.last ? CampaignLayout.footHeight : 0))
                     .offset(y: layout.top(of: region))
             }
         }

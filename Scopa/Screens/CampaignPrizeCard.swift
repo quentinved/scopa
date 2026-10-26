@@ -12,7 +12,7 @@ struct CampaignPrizeCard: View {
     var body: some View {
         VStack(spacing: 16) {
             Caption(verbatim: "\(region.numeral) · \(region.title)")
-            Text(region == .roma ? "The road is yours" : "Region complete")
+            Text(headline)
                 .font(.display(32))
                 .foregroundStyle(Palette.ink)
             HStack(alignment: .bottom, spacing: 22) {
@@ -32,6 +32,15 @@ struct CampaignPrizeCard: View {
         .background(Palette.stock, in: .rect(cornerRadius: 26))
         .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(Palette.gold.opacity(0.6), lineWidth: 1.5).padding(5) }
         .shadow(color: Palette.ink.opacity(0.5), radius: 24, y: 10)
+    }
+
+    /// Roma ends the first road and Lombardia the whole of it; every other region is a stop.
+    private var headline: LocalizedStringKey {
+        switch region {
+        case .roma: "The first road is yours"
+        case .lombardia: "The road is yours"
+        default: "Region complete"
+        }
     }
 
     @ViewBuilder private var prizeArt: some View {

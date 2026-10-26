@@ -5,7 +5,7 @@
 
 // Types are imported as types, so node can run this file for the tests as well as wrangler.
 import { type Identity, IdentityError, verifyIdentity, type VerifyOptions } from "./gamecenter.ts";
-import { apply, change, houseChange, HOUSE_GAMES_PER_DAY, HOUSE_LOSS, HOUSE_WIN, KEEPABLE_RUN, resetForSeason, seasonEnd, seasonOf, standing as leagueStanding, streakAfter, streakBonus } from "./ranking.ts";
+import { apply, change, houseChange, houseStakes, HOUSE_GAMES_PER_DAY, KEEPABLE_RUN, resetForSeason, seasonEnd, seasonOf, standing as leagueStanding, streakAfter, streakBonus } from "./ranking.ts";
 import { privacyPage } from "./privacy.ts";
 import { supportPage } from "./support.ts";
 import { invitePage, siteAssociation } from "./invite.ts";
@@ -18,6 +18,7 @@ import { deviceOf, normaliseCoupon, redeemCoupon } from "./coupons.ts";
 import { cardGiftOf, collectGifts, type Gift, invalidGift, invalidTaken, PER_DAY, sendGift } from "./gifts.ts";
 import { campaignBoard, friendsCampaignBoard, invalidLookup, invalidProgress, progressOf, recordProgress, roadOf, rowsForRoad, stageFaces, stagesForRoad } from "./campaign.ts";
 import { wheelStrip } from "./wheel.ts";
+import { finishedGrand, grandBoard, grandPlaces, grandRow, knowsGrand, liveGrand } from "./granmaestro.ts";
 
 export { RankedQueue, Room };
 
@@ -69,9 +70,9 @@ const routes: Route[] = [
   { method: "POST", path: /^\/v1\/ranked\/queue\/leave$/, handle: ({ request, env }) => rankedQueue(request, "leave", env) },
   { method: "POST", path: /^\/v1\/ranked\/queue\/follow$/, handle: ({ request, env }) => rankedQueue(request, "follow", env) },
   { method: "POST", path: /^\/v1\/ranked$/, handle: ({ request, env }) => postRanked(request, env) },
-  { method: "GET", path: /^\/v1\/ranked\/board$/, handle: ({ url, env }) => getRankedBoard(url.searchParams.get("player"), env) },
+  { method: "GET", path: /^\/v1\/ranked\/board$/, handle: ({ request, url, env }) => getRankedBoard(url.searchParams.get("player"), url.searchParams.get("tier"), knowsGrand(request), env) },
   { method: "POST", path: /^\/v1\/ranked\/board\/friends$/, handle: ({ request, env }) => postFriendsBoard(request, env) },
-  { method: "GET", path: /^\/v1\/players\/([^/]+)\/rank$/, handle: async ({ env, params: [id] }) => json(await rankOf(decodeURIComponent(id), env)) },
+  { method: "GET", path: /^\/v1\/players\/([^/]+)\/rank$/, handle: async ({ request, env, params: [id] }) => json(await rankOf(decodeURIComponent(id), env, knowsGrand(request))) },
   { method: "POST", path: /^\/v1\/profile\/read$/, handle: ({ request, env }) => readProfile(request, env) },
   { method: "POST", path: /^\/v1\/profile\/write$/, handle: ({ request, env }) => writeProfile(request, env) },
   { method: "GET", path: /^\/v1\/online$/, handle: ({ env }) => getOnline(env) },
@@ -601,7 +602,7 @@ async function postRanked(request: Request, env: Env): Promise<Response> {
     ).bind(body.gameID, reporter, JSON.stringify(players), winners, now),
   ]);
   await settleGame(body.gameID, env);
-  return json(await rankOf(reporter, env));
+  return json(await rankOf(reporter, env, knowsGrand(request)));
 }
 
 // MARK: The house
@@ -612,9 +613,9 @@ interface HousePost {
   identity: Identity;
 }
 
-/// A ranked game against the house, reported by one phone and taken on trust: HOUSE_WIN
-/// and the run for a win, HOUSE_LOSS for a loss, and only the first HOUSE_GAMES_PER_DAY of
-/// a day count.
+/// A ranked game against the house, reported by one phone and taken on trust: the house's
+/// win and the run for a win, its loss for a loss, both priced by houseStakes for the
+/// player's rating, and only the first HOUSE_GAMES_PER_DAY of a day count.
 async function postHouseGame(request: Request, env: Env): Promise<Response> {
   const body = (await request.json()) as HousePost;
   if (!GAME_ID.test(body.gameID ?? "")) return json({ error: "bad game id" }, 400);
@@ -627,7 +628,7 @@ async function postHouseGame(request: Request, env: Env): Promise<Response> {
   if (!(await houseGameApplied(body.gameID, playerID, env))) {
     await applyHouseGame(body, playerID, now, env);
   }
-  return json(await rankOf(playerID, env));
+  return json(await rankOf(playerID, env, knowsGrand(request)));
 }
 
 /// Checked per player, not per game: both friends in a duo report one game id and each
@@ -646,7 +647,7 @@ async function applyHouseGame(body: HousePost, playerID: string, now: Date, env:
   const { rating, floor, streak } = await currentRating(playerID, env);
   // Past the day's allowance the game still counts as played but moves nothing, the run included.
   const spent = counted >= HOUSE_GAMES_PER_DAY;
-  const delta = spent ? 0 : houseChange(body.won, streak);
+  const delta = spent ? 0 : houseChange(body.won, streak, rating);
   const next = apply(delta, rating, floor);
   await env.DB.batch([
     upsertRating(env, playerID, next, body.won, stamp, seasonOf(now), spent ? streak : streakAfter(body.won, streak), body.gameID),
@@ -689,7 +690,7 @@ async function postKeepRun(request: Request, env: Env): Promise<Response> {
     `UPDATE ratings SET streak = broken_run, run_kept = 1, broken_run = 0, broken_game = NULL
      WHERE player_id = ?1 AND broken_game = ?2 AND broken_run > 0 AND streak = 0`,
   ).bind(playerID, body.gameID).run();
-  return json(await rankOf(playerID, env));
+  return json(await rankOf(playerID, env, knowsGrand(request)));
 }
 
 // MARK: Settling
@@ -761,7 +762,9 @@ async function applyStory(gameID: string, story: Story, env: Env): Promise<void>
 
 // MARK: Where a player stands
 
-async function rankOf(playerID: string, env: Env) {
+/// `grand` is a build that knows Gran Maestro: see knowsGrand. Every other build is told the
+/// ladder as it was, capped at Maestro I.
+async function rankOf(playerID: string, env: Env, grand = false) {
   await rollover(playerID, env);
   await settlePending(playerID, env);
 
@@ -777,7 +780,9 @@ async function rankOf(playerID: string, env: Env) {
     rating,
     games: row?.games ?? 0,
     wins: row?.wins ?? 0,
-    standing: leagueStanding(rating),
+    standing: leagueStanding(rating, grand),
+    // Past Maestro I: the points, and the place among this season's Gran Maestri.
+    ...(grand ? { grand: await liveGrand(env.DB, season, playerID, rating) } : {}),
     // The run standing now, and what the next win would add for it.
     streak,
     streakBonus: streakBonus(streak),
@@ -786,10 +791,10 @@ async function rankOf(playerID: string, env: Env) {
     lastChange: last.change,
     // Which game the change came from, so a phone can tell this answer from the last one.
     lastGameID: last.gameID,
-    house: { playedToday: await houseGamesOn(today, playerID, env), perDay: HOUSE_GAMES_PER_DAY, win: HOUSE_WIN, loss: HOUSE_LOSS },
+    house: { playedToday: await houseGamesOn(today, playerID, env), perDay: HOUSE_GAMES_PER_DAY, ...houseStakes(rating) },
     season,
     seasonEndsAt: seasonEnd(season),
-    finish: await owedFinish(playerID, env),
+    finish: await owedFinish(playerID, env, grand),
   };
 }
 
@@ -811,12 +816,14 @@ async function lastChange(playerID: string, env: Env): Promise<{ change: number 
 }
 
 /** The most recent unpaid season finish, one at a time however many were missed. */
-async function owedFinish(playerID: string, env: Env) {
+async function owedFinish(playerID: string, env: Env, grand = false) {
   const owed = await env.DB.prepare(
     `SELECT season, rating, games, wins FROM season_finishes WHERE player_id = ?1 AND claimed = 0 ORDER BY season DESC LIMIT 1`,
   ).bind(playerID).first<{ season: string; rating: number; games: number; wins: number }>();
   if (!owed) return null;
-  return { season: owed.season, rating: owed.rating, games: owed.games, wins: owed.wins, standing: leagueStanding(owed.rating) };
+  const finish = { season: owed.season, rating: owed.rating, games: owed.games, wins: owed.wins, standing: leagueStanding(owed.rating, grand) };
+  // The place it was finished in, for a Campione's season to be paid as one.
+  return grand ? { ...finish, grand: await finishedGrand(env.DB, playerID, owed) } : finish;
 }
 
 /// Moves a player into the current season: the finish is stored and the rating drops to
@@ -851,16 +858,18 @@ async function claimSeason(request: Request, env: Env): Promise<Response> {
   await verifyIdentity(body.identity, verifyOptions(env));
   await env.DB.prepare(`UPDATE season_finishes SET claimed = 1 WHERE player_id = ?1 AND season = ?2`)
     .bind(body.identity.gamePlayerID, body.season).run();
-  return json(await rankOf(body.identity.gamePlayerID, env));
+  return json(await rankOf(body.identity.gamePlayerID, env, knowsGrand(request)));
 }
 
 // MARK: The season's board
 
 /// Everyone who has played ranked this season, highest rating first. A row still carrying
 /// last season is left off rather than rolled over here: its owner has not played since the
-/// reset, and the reset leaves them on no games anyway.
-async function getRankedBoard(playerID: string | null, env: Env): Promise<Response> {
+/// reset, and the reset leaves them on no games anyway. `tier=grand` is Gran Maestro's own
+/// board instead: see granmaestro.ts.
+async function getRankedBoard(playerID: string | null, tier: string | null, grand: boolean, env: Env): Promise<Response> {
   const season = seasonOf(new Date());
+  if (tier === "grand") return json({ season, seasonEndsAt: seasonEnd(season), ...(await grandBoard(env.DB, season, playerID)) });
   const top = await env.DB.prepare(
     `SELECT r.player_id AS id, p.name, r.rating, r.games, r.wins
      FROM ratings r JOIN players p ON p.id = r.player_id
@@ -868,7 +877,8 @@ async function getRankedBoard(playerID: string | null, env: Env): Promise<Respon
      ORDER BY r.rating DESC, r.wins DESC, r.updated_at ASC
      LIMIT ${LEADERBOARD_SIZE}`,
   ).bind(season).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
-  const rows = top.results.map((row) => ({ ...row, standing: leagueStanding(row.rating) }));
+  // Gran Maestri head this board in their own order, so their place on it is theirs there too.
+  const rows = top.results.map((row, index) => grand ? grandRow(row, index + 1) : { ...row, standing: leagueStanding(row.rating) });
   const you = playerID ? await seasonStanding(season, playerID, env) : null;
   return json({ season, seasonEndsAt: seasonEnd(season), top: rows, you });
 }
@@ -907,7 +917,9 @@ async function postFriendsBoard(request: Request, env: Env): Promise<Response> {
      WHERE r.season = ?1 AND r.games > 0 AND r.player_id IN (SELECT value FROM json_each(?2))
      ORDER BY r.rating DESC, r.wins DESC, r.updated_at ASC`,
   ).bind(season, JSON.stringify(ids)).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
-  const rows = top.results.map((row) => ({ ...row, standing: leagueStanding(row.rating) }));
+  // A friend's place in Gran Maestro is the whole season's, not their place among friends.
+  const places = knowsGrand(request) ? await grandPlaces(env.DB, season, ids) : null;
+  const rows = top.results.map((row) => places ? grandRow(row, places.get(row.id) ?? null) : { ...row, standing: leagueStanding(row.rating) });
   const at = rows.findIndex((row) => row.id === player);
   const you = player ? { season, played: rows.length, rank: at >= 0 ? at + 1 : null } : null;
   return json({ season, seasonEndsAt: seasonEnd(season), top: rows, you });

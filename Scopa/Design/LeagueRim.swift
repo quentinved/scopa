@@ -9,19 +9,20 @@ import SwiftUI
 ///
 /// The steps are `LeagueRank`'s and each keeps what the one below earned: a struck line,
 /// then a milled outer, a ring set inside it, beading on the ring, a halo, and, at the top,
-/// light turning behind the whole edge.
+/// light turning behind the whole edge. Gran Maestro's laurel is the medal's alone: on an
+/// edge, leaves read as a pattern on the glass rather than as something earned.
 struct LeagueRim<S: InsettableShape>: View {
     /// The shape the rim goes round. The same one the glass under it was cut to, or the
     /// two edges will not sit concentric.
     let shape: S
-    /// Bronze is 0 and Maestro 5, as the ladder counts. Anything outside that is struck.
+    /// Bronze is 0 and Gran Maestro 6, as the ladder counts. Anything outside that is struck.
     let league: Int
     /// Scales every line with the thing the rim goes round. 1 suits a chip on a phone.
     var weight: CGFloat = 1
 
     private var metal: LeagueMetal { .league(league) }
     private var rank: LeagueRank { .league(league) }
-    /// Diamond and Maestro turn their light rather than standing still.
+    /// The leagues with a stone in the medal turn their light rather than standing still.
     private var turns: Bool { rank >= .set }
 
     var body: some View {
@@ -98,10 +99,10 @@ struct LeagueRim<S: InsettableShape>: View {
                                        dash: [0.01, 11 * weight]))
     }
 
-    /// Light thrown past the edge, at the two leagues whose medal has a stone in it.
+    /// Light thrown past the edge, at the leagues whose medal has a stone in it.
     private var halo: Color {
         switch rank {
-        case .crowned: (metal.halo ?? metal.light).opacity(0.5)
+        case .crowned, .wreathed: (metal.halo ?? metal.light).opacity(0.5)
         case .set: metal.stone.opacity(0.45)
         default: .clear
         }
@@ -110,10 +111,10 @@ struct LeagueRim<S: InsettableShape>: View {
 
 #Preview("Every grade of edge") {
     VStack(spacing: 18) {
-        ForEach(0..<6, id: \.self) { league in
+        ForEach(LeagueMetal.ladder.indices, id: \.self) { league in
             HStack(spacing: 14) {
                 LeagueMedal(league: league, size: 30)
-                Text(verbatim: ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Maestro"][league])
+                Text(verbatim: ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Maestro", "Gran Maestro"][league])
                     .font(.system(size: 14, weight: .bold))
                     .textCase(.uppercase)
                     .tracking(1.4)

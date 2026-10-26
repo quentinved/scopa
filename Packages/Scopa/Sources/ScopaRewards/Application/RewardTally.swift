@@ -22,6 +22,9 @@ public struct RewardTally: Hashable, Codable, Sendable {
     private(set) public var scope = 0
     private(set) public var settebelli = 0
     private(set) public var cappotti = 0
+    /// Rounds whose primiera this side took outright, for the record. Nil on a tally saved
+    /// before it was counted, whose earlier rounds nobody can now go back and look at.
+    private(set) public var primiere: Int? = 0
     private(set) public var outcome: Outcome?
 
     public init(gameID: UUID = UUID(), side: Int, configuration: GameConfiguration, mode: TableMode) {
@@ -46,6 +49,7 @@ public struct RewardTally: Hashable, Codable, Sendable {
             // the other side is not one. What it pays out stays what the rulebook pays for.
             let mine = ScoreCategory.classic.filter { (score.categoryWinners[$0] ?? nil) == side }
             if mine.contains(.settebello) { settebelli += 1 }
+            if mine.contains(.primiera), let counted = primiere { primiere = counted + 1 }
             if mine.count == ScoreCategory.classic.count { cappotti += 1 }
             // A daily deal is one round, so its end is the game's end. More points than the
             // bot wins it; level is a loss, which is the same rule the ladder ranks by.

@@ -58,10 +58,13 @@ enum ReminderCopy {
     }
 
     /// "Silver II", said as `Ladder.RankAnswer.Standing.leagueTitle` says it on screen.
+    /// Gran Maestro has no divisions, so no numeral.
     private static func leagueTitle(_ league: Int, _ division: Int, _ say: Voice) -> String {
-        let names = [say("Bronze"), say("Silver"), say("Gold"), say("Platinum"), say("Diamond"), say("Maestro")]
-        let numeral = ["I", "II", "III"][safe: division - 1] ?? ""
-        return "\(names[safe: league] ?? names[0]) \(numeral)"
+        let names = [say("Bronze"), say("Silver"), say("Gold"), say("Platinum"), say("Diamond"), say("Maestro"),
+                     say("Gran Maestro")]
+        let name = names[safe: league] ?? names[0]
+        guard league < names.count - 1 else { return name }
+        return "\(name) \(["I", "II", "III"][safe: division - 1] ?? "")"
     }
 
     private static func streak(_ days: Int, variant: Int, _ say: Voice) -> Words {

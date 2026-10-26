@@ -1,15 +1,17 @@
 import SwiftUI
 
 /// How much work the one medal carries at each league: a bare struck disc, then a milled
-/// edge, a set ring, studs, a cut stone with a halo, and light behind it at the top.
+/// edge, a set ring, studs, a cut stone with a halo, light behind it, and past Maestro a
+/// laurel round the whole medal.
 ///
 /// Each tier keeps everything the tier below earned, like `Prestige`.
 enum LeagueRank: Int, Comparable, CaseIterable {
-    case struck, milled, ringed, studded, set, crowned
+    case struck, milled, ringed, studded, set, crowned, wreathed
 
     static func < (a: LeagueRank, b: LeagueRank) -> Bool { a.rawValue < b.rawValue }
 
-    /// Bronze, Silver, Gold, Platinum, Diamond, Maestro, in the order the ladder counts.
+    /// Bronze, Silver, Gold, Platinum, Diamond, Maestro, Gran Maestro, in the order the
+    /// ladder counts.
     static func league(_ index: Int) -> LeagueRank { LeagueRank(rawValue: index) ?? .struck }
 }
 
@@ -47,14 +49,18 @@ struct LeagueMetal: Hashable {
     /// The same stone in gold, with terracotta set round it.
     static let maestro = LeagueMetal(dark: Palette.goldDeep, base: Palette.gold, light: Palette.goldLight,
                                      halo: Palette.terracotta)
+    /// Maestro's gold and its terracotta, with an emerald for the stone: the house's own
+    /// colours, the icon's, for the league past every other.
+    static let granMaestro = LeagueMetal(dark: Palette.goldDeep, base: Palette.gold, light: Palette.goldLight,
+                                         stone: Color(red: 0.22, green: 0.72, blue: 0.47), halo: Palette.terracotta)
 
-    static let ladder = [bronze, silver, gold, platinum, diamond, maestro]
+    static let ladder = [bronze, silver, gold, platinum, diamond, maestro, granMaestro]
 
     static func league(_ index: Int) -> LeagueMetal { ladder[safe: index] ?? bronze }
 }
 
 /// The medal for a league, at any size. Everything inside is measured against `size`.
-/// The glow and the rays reach past the frame without changing the layout.
+/// The glow, the rays and the laurel reach past the frame without changing the layout.
 struct LeagueMedal: View {
     let league: Int
     var size: CGFloat = 20
@@ -64,12 +70,30 @@ struct LeagueMedal: View {
 
     private var metal: LeagueMetal { .league(league) }
     private var rank: LeagueRank { .league(league) }
+
+    /// How far the glow, rays and laurel are drawn past the frame, as a multiple of `size`.
+    /// A layout with no room around the medal makes this room.
+    static func reach(league: Int) -> CGFloat {
+        let rank = LeagueRank.league(league)
+        return rank >= .wreathed ? MedalLaurel.reach : rank >= .crowned ? raysReach : rank >= .set ? 1.24 : 1
+    }
+    private static let raysReach: CGFloat = 1.4
     private var isSet: Bool { rank >= .set }
 
     var body: some View {
         ZStack {
             if rank >= .crowned { rays }
             if isSet { glow }
+            piece
+            if rank >= .wreathed { MedalLaurel(size: size, metal: metal) }
+        }
+        .frame(width: size, height: size)
+        .shadow(color: felt.shade(0.5), radius: size * 0.06, y: size * 0.03)
+    }
+
+    /// The medal proper, held at `size`: left to the stack, the disc grew to the rays.
+    private var piece: some View {
+        ZStack {
             disc
             if rank >= .ringed { ring }
             if rank >= .studded { studs }
@@ -78,7 +102,6 @@ struct LeagueMedal: View {
             if isSet { glints }
         }
         .frame(width: size, height: size)
-        .shadow(color: felt.shade(0.5), radius: size * 0.06, y: size * 0.03)
     }
 
     // MARK: The metal
@@ -199,8 +222,8 @@ struct LeagueMedal: View {
     private var rays: some View {
         Sunburst(count: 12)
             .fill(RadialGradient(colors: [metal.light, metal.light.opacity(0.85), metal.base.opacity(0)],
-                                 center: .center, startRadius: size * 0.60, endRadius: size * 0.95))
-            .frame(width: size * 1.85, height: size * 1.85)
+                                 center: .center, startRadius: size * 0.5, endRadius: size * 0.73))
+            .frame(width: size * Self.raysReach, height: size * Self.raysReach)
     }
 }
 
@@ -294,11 +317,12 @@ private struct Sunburst: Shape {
     ZStack {
         TableGround()
         VStack(spacing: 26) {
-            ForEach(0..<6, id: \.self) { league in
+            ForEach(LeagueMetal.ladder.indices, id: \.self) { league in
                 HStack(spacing: 18) {
                     LeagueMedal(league: league, size: 22)
                     LeagueMedal(league: league, size: 46)
-                    Text(verbatim: ["BRONZE III", "SILVER I", "GOLD III", "PLATINUM II", "DIAMOND I", "MAESTRO"][league])
+                    Text(verbatim: ["BRONZE III", "SILVER I", "GOLD III", "PLATINUM II", "DIAMOND I", "MAESTRO I",
+                                    "GRAN MAESTRO"][league])
                         .font(.system(size: 12.5, weight: .semibold))
                         .tracking(1.1)
                         .foregroundStyle(Palette.onTable)

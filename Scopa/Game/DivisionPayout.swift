@@ -10,9 +10,18 @@ import ScopaRewards
 /// as one toast shown three times.
 @MainActor
 enum DivisionPayout {
-    /// Pays every stop climbed and not yet in the ledger. Nil when nothing new was paid.
+    /// Pays every stop climbed and not yet in the ledger, the divisions' and then Gran
+    /// Maestro's. Nil when nothing new was paid. One answer that crosses both, which only the
+    /// first after a long time away can, is told by the division's toast; both are paid.
     static func settle(_ rank: Ladder.RankAnswer, store: TableStore, purse: PurseStore,
                        locale: Locale) async -> Toast? {
+        let divisions = await settleDivisions(rank, store: store, purse: purse, locale: locale)
+        let grand = await settleGrand(rank, store: store, purse: purse, locale: locale)
+        return divisions ?? grand
+    }
+
+    private static func settleDivisions(_ rank: Ladder.RankAnswer, store: TableStore, purse: PurseStore,
+                                        locale: Locale) async -> Toast? {
         guard let season = rank.season else { return nil }
         var paid: [Int] = []
         for stop in DivisionGifts.climbed(in: rank) {
@@ -50,7 +59,7 @@ enum DivisionPayout {
                      detail: packDetail(packs.map(\.tier), coins: coins, locale: locale))
     }
 
-    private static func packDetail(_ tiers: [PackTier], coins: Int, locale: Locale) -> String {
+    static func packDetail(_ tiers: [PackTier], coins: Int, locale: Locale) -> String {
         guard tiers.count == 1, let tier = tiers.first else {
             return String(localized: "\(tiers.count) packs are waiting in the album, and \(coins) denari are in your purse.",
                           locale: locale)

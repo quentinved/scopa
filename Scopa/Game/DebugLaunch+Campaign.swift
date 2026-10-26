@@ -13,6 +13,14 @@ import ScopaCore
 ///
 /// `-campaignFaces` opens the map with sample players at its tables. `-campaignBoard` does
 /// that and opens the board's sheet; `-campaignBoard friends` opens it on the friends' tab.
+///
+/// The second road. `-campaignStage 37` plants the first road won with exactly the 72 stars
+/// Toscana wants; `-campaignStars 64` with it brings the stars down to 64, so the map stops at
+/// Toscana's banner saying so. `-campaignTorneo 1` plants every torneo one game in, memory
+/// only, so `-campaignCard 56` shows Como's second game. Each mode at the table: `-campaignPlay
+/// 37` a rimonta, `43` una mano, `49` carte scoperte, `56` a torneo's first game (`-campaignTorneo
+/// 2` first for its last). `-houseLesson rimonta,torneo` opens the modes' lesson pages, and
+/// takes house rules and modes mixed.
 extension DebugLaunch {
     static var showsCampaign: Bool {
         #if DEBUG
@@ -36,12 +44,18 @@ extension DebugLaunch {
         #endif
     }
     static var campaignPlay: Int? { number(after: "-campaignPlay") }
-    /// `-houseLesson napola,scopone` opens the house rule lesson over the campaign map.
-    static var houseLesson: [HouseRule] {
+    static var campaignStars: Int? { number(after: "-campaignStars") }
+    static var campaignTorneo: Int? { number(after: "-campaignTorneo") }
+    /// `-houseLesson napola,rimonta` opens the lesson over the campaign map, a page for each
+    /// house rule or mode named.
+    static var lessonPages: [LessonPage] {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "-houseLesson") else { return [] }
-        return (arguments[safe: index + 1] ?? "").split(separator: ",").compactMap { HouseRule(rawValue: String($0)) }
+        return (arguments[safe: index + 1] ?? "").split(separator: ",").compactMap { name in
+            HouseRule(rawValue: String(name)).map(LessonPage.rule)
+                ?? CampaignMode(rawValue: String(name)).map(LessonPage.mode)
+        }
         #else
         []
         #endif
@@ -92,6 +106,8 @@ extension DebugLaunch {
         #if DEBUG
         let book = store.campaignBook
         if let number = campaignStage { book.pretend(reached: number) }
+        if let total = campaignStars { book.pretend(stars: total) }
+        if let won = campaignTorneo { book.pretendRun(won: won) }
         if let number = campaignOld { book.pretendBeforePiemonte(reached: number) }
         if let number = campaignReturn { book.pretendReturn(from: number, stars: campaignReturnStars) }
         if showsCampaign || showsCampaignFaces { book.showsMap = true }

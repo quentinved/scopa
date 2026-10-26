@@ -434,6 +434,8 @@ private struct PartnerPicker: View {
 
 /// Your league, as a medal struck in its own metal, a name and how far along the bar you
 /// are. The same metal as the chip under the lobby's wordmark, at the size a sheet allows.
+/// In Gran Maestro the bar is the way to the next stop, and the points and the place are
+/// said under it, with the laurel for a Campione.
 private struct LeaguePanel: View {
     let store: TableStore
     @Environment(\.locale) private var locale
@@ -452,6 +454,8 @@ private struct LeaguePanel: View {
                      ?? String(localized: "Bronze", locale: locale) + " III")
                     .font(.display(34))
                     .foregroundStyle(Palette.onTable)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 progressBar
                 record
                 houseLeft
@@ -462,14 +466,18 @@ private struct LeaguePanel: View {
         .overlay { RoundedRectangle(cornerRadius: GlassRadius.panel).strokeBorder(metal.base.opacity(0.25), lineWidth: 1) }
     }
 
-    /// The division with its road: the coins on the way and the pack at the end, then the
-    /// points in it and to the next one, then what the next stop pays.
+    /// The division with its road: the coins on the way and the pack at the end, then how far
+    /// the next division is and what the next stop pays.
     private var progressBar: some View {
         VStack(alignment: .leading, spacing: 4) {
             DivisionRoad(rating: store.rank?.rating ?? 0, metal: metal)
             if let rank = store.rank {
-                DivisionPoints(rating: rank.rating)
-                NextStop(rating: rank.rating)
+                if let grand = GrandPoints(rank) {
+                    grand
+                    NextStop(rating: rank.rating)
+                } else {
+                    DivisionPoints(rating: rank.rating)
+                }
             }
         }
     }

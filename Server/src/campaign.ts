@@ -10,32 +10,38 @@
 
 import { invalidFriends } from "./presence.ts";
 
-/** Thirty-six tables, three stars each. Mirrors Campaign.swift; 012 renumbered the board for it. */
-export const STAGES = 36;
+/** Sixty tables, three stars each: Piemonte in, and the second road after Roma. Mirrors
+ *  Campaign.swift. 012 renumbered the board for Piemonte; 015 only widened it, as the second
+ *  road is added at the end and every table keeps its number. */
+export const STAGES = 60;
 export const MAX_STARS = STAGES * 3;
 /** Faces sent per table; the map shows these and a count of the rest. */
 export const FACES_PER_STAGE = 3;
 export const BOARD_SIZE = 50;
 /** Tables on the road before 012. Apps that do not send `road` still count this way. */
 export const OLD_STAGES = 30;
-/** Liguria's tables, numbered alike on both roads; Piemonte's six follow them on the new one. */
+/** Tables on the road from 012 to 015: Piemonte in, the second road not yet. */
+export const PIEMONTE_STAGES = 36;
+/** Liguria's tables, numbered alike on every road; Piemonte's six follow them from 36 on. */
 const LIGURIA = 6;
 const PIEMONTE = 6;
 
-/** Which road a request counts in: 36 when the app says so, else the old thirty. */
+/** Which road a request counts in: sixty or thirty-six when the app says so, else the old thirty. */
 export function roadOf(value: unknown): number {
-  return value === STAGES ? STAGES : OLD_STAGES;
+  if (value === STAGES) return STAGES;
+  return value === PIEMONTE_STAGES ? PIEMONTE_STAGES : OLD_STAGES;
 }
 
-/** A table on the old road, as numbered on the new one. */
+/** A table on a reader's road, as the board numbers it. Only the old thirty leave Piemonte out. */
 export function fromRoad(stage: number, road: number): number {
-  return road === STAGES || stage <= LIGURIA ? stage : stage + PIEMONTE;
+  return road !== OLD_STAGES || stage <= LIGURIA ? stage : stage + PIEMONTE;
 }
 
-/** A table on the new road, as an old app numbers it. Piemonte reads as Napoli's first. */
+/** A table on the board, as a shorter road numbers it: Piemonte reads as Napoli's first on the
+ *  old thirty, and a table past the end of a road as its last. */
 export function toRoad(stage: number, road: number): number {
-  if (road === STAGES || stage <= LIGURIA) return stage;
-  return Math.max(stage - PIEMONTE, LIGURIA + 1);
+  const counted = road !== OLD_STAGES || stage <= LIGURIA ? stage : Math.max(stage - PIEMONTE, LIGURIA + 1);
+  return Math.min(counted, road);
 }
 
 /** "medalGold", "iride", "onde": a raw value of one of the app's cosmetic enums. */
@@ -216,7 +222,8 @@ export async function stageFaces(db: D1Database, playerID: string | null, friend
   }));
 }
 
-/** Tables numbered for the reader's road; Piemonte's six fold into one on the old road. */
+/** Tables numbered for the reader's road: Piemonte's six fold into one on the old thirty, and
+ *  the second road into a shorter road's last table. */
 export function stagesForRoad(stages: StageFaces[], road: number): StageFaces[] {
   if (road === STAGES) return stages;
   const folded = new Map<number, StageFaces>();

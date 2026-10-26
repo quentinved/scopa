@@ -10,6 +10,9 @@ import ScopaRewards
 /// pay once. Only climbs this phone has seen pay: the first answer it reads sets where the
 /// counting starts, so a player already high on the ladder the day this arrived is not
 /// handed every stop below at once.
+///
+/// The road ends at Maestro I's top, whose pack is the one for reaching Gran Maestro. Past
+/// it there are no divisions, and `GrandGifts` keeps a road of its own.
 enum DivisionGifts {
     /// Points from one stop to the next: three of denari inside a division, then its pack.
     static let stride = 25
@@ -33,21 +36,23 @@ enum DivisionGifts {
     }
 
     /// The denari at a stop inside the division `step`, more the higher the league. A stop
-    /// is a win and a bit, so it is worth about one game's own pay.
+    /// is a win and a bit, so it is worth about one game's own pay. Gran Maestro has no stops
+    /// inside a division; its road is `GrandGifts`.
     static func denari(inDivision step: Int) -> Denari {
         switch league(of: step) {
         case .bronze, .silver: 30
         case .gold, .platinum: 50
-        case .diamond, .maestro: 80
+        case .diamond, .maestro, .granMaestro: 80
         }
     }
 
-    /// The pack a division pays, better the higher the league.
+    /// The pack for reaching the division `step`, better the higher the league. Gran Maestro's
+    /// is the one at the top of Maestro I.
     static func tier(for step: Int) -> PackTier {
         switch league(of: step) {
         case .bronze, .silver: .bottega
         case .gold, .platinum: .velluto
-        case .diamond, .maestro: .reliquia
+        case .diamond, .maestro, .granMaestro: .reliquia
         }
     }
 
@@ -55,8 +60,8 @@ enum DivisionGifts {
         League(rawValue: step / Ranking.divisionsPerLeague) ?? .maestro
     }
 
-    /// The stop a rating has reached.
-    static func stop(for rating: Int) -> Int { min(max(rating, 0), Ranking.top) / stride }
+    /// The stop a rating has reached, counted no further than Gran Maestro's floor.
+    static func stop(for rating: Int) -> Int { min(max(rating, 0), Ranking.grandFloor) / stride }
 
     /// The stops this answer climbs past the mark, lowest first, and moves the mark up to
     /// it. Empty for an answer without a season, or for someone who has not played.

@@ -40,10 +40,11 @@ enum CampaignStandings {
 
     /// The table reached and the stars won, from what is written down for good rather than
     /// anything a debug flag planted. Clamped to what the Worker accepts. The furthest table,
-    /// not the first gap, so a region put in behind the player never walks them back.
+    /// not the first gap, so a region put in behind the player never walks them back; and
+    /// short of a region's stars, the table before it, where the map has them waiting.
     static func reach(_ book: CampaignBook) -> (stage: Int, stars: Int) {
-        let stage = Campaign.frontier { book.keptStars(of: $0) > 0 }
         let stars = Campaign.stages.reduce(0) { $0 + book.keptStars(of: $1) }
+        let stage = Campaign.frontier(won: { book.keptStars(of: $0) > 0 }, stars: stars)
         return (stage.number, min(stars, stage.number * 3))
     }
 

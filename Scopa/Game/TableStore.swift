@@ -2255,13 +2255,15 @@ final class TableStore {
             // Part of the day spent, which is the state worth looking at: both ends of it read
             // the same when the count is missing. `-houseSpent` stands the other end up.
             house: .init(playedToday: housePlayed, perDay: Ranking.houseGamesPerDay,
-                         win: Ranking.houseWin, loss: Ranking.houseLoss),
+                         win: Ranking.houseStakes(for: rating).win, loss: Ranking.houseStakes(for: rating).loss),
             finish: finished.map { rating in
                 let standing = Ranking.standing(for: rating)
                 return .init(season: "2026-08", rating: rating, games: 58, wins: 32,
                              standing: .init(league: standing.league.rawValue, division: standing.division,
-                                             progress: standing.progress, step: standing.step, title: standing.title))
-            }
+                                             progress: standing.progress, step: standing.step, title: standing.title),
+                             grand: .pretend(rating: rating))
+            },
+            grand: .pretend(rating: rating)
         )
         rankChange = change
     }
@@ -2380,6 +2382,21 @@ final class TableStore {
             return try await Ladder.friendsSeasonBoard(friends: friends, gamePlayerID: gameCenterPlayerID)
         } catch {
             Log.table.error("The friends' season board could not be read: \(String(describing: error), privacy: .public)")
+            return nil
+        }
+    }
+
+    /// Gran Maestro's own board: its players only, best first. Nil when the ladder does not
+    /// answer, as for the season's.
+    func grandSeasonBoard() async -> Ladder.SeasonBoard? {
+        #if DEBUG
+        if DebugLaunch.showsSeasonBoard { return .grandSample }
+        #endif
+        guard Ladder.isOn else { return nil }
+        do {
+            return try await Ladder.seasonBoard(gamePlayerID: gameCenterPlayerID, grand: true)
+        } catch {
+            Log.table.error("Gran Maestro's board could not be read: \(String(describing: error), privacy: .public)")
             return nil
         }
     }
@@ -2660,11 +2677,12 @@ final class TableStore {
     /// One phone, with every seat either a person taking it in turn or a bot playing itself.
     /// `strength` overrides how hard the bots think, for a table that is not the player's to
     /// set: the coached first game and a ranked table both pass one. `deal` replaces the
-    /// shuffled first deal, for a practice table laid out in advance.
+    /// shuffled first deal, for a practice table laid out in advance. `headStart` and
+    /// `openHands` are the campaign's rimonta and carte scoperte.
     func playOnThisDevice(seats: [LocalSeat], teams: Bool, turnClock: TurnClock = .default, targetScore: Int = 11,
                           primiera: PrimieraRule = .default, ties: TieRule = .default,
-                          house: Set<HouseRule> = [], strength: BotStrength? = nil,
-                          deal: ((HotSeatTable) async -> Void)? = nil) {
+                          house: Set<HouseRule> = [], headStart: [Int] = [], openHands: Bool = false,
+                          strength: BotStrength? = nil, deal: ((HotSeatTable) async -> Void)? = nil) {
         reset()
         isHost = true
         let (players, bots) = LocalSeat.table(seats)
@@ -2673,7 +2691,8 @@ final class TableStore {
         let config: GameConfiguration
         do {
             config = try GameConfiguration(players: players, teams: teams, targetScore: targetScore,
-                                           turnClock: turnClock, primiera: primiera, ties: ties, house: house)
+                                           turnClock: turnClock, primiera: primiera, ties: ties, house: house,
+                                           headStart: headStart, openHands: openHands)
         } catch {
             notice = .rejected(message(for: error))
             return
@@ -2703,12 +2722,15 @@ final class TableStore {
         scatouch = ScatouchTable(table: table, bots: botSeats, homeSeat: deviceSeat)
     }
 
-    /// A table on the campaign's road, dealt as the stage says whatever the settings do.
-    /// Not saved for later: walking out is a game not played, and the map is one tap away.
+    /// A table on the campaign's road, dealt as the stage says whatever the settings do: at a
+    /// torneo, the game its run has reached. Not saved for later: walking out is a game not
+    /// played, and the map is one tap away.
     func playCampaign(_ stage: CampaignStage) {
-        playOnThisDevice(seats: stage.seats(you: playerName), teams: stage.teams, turnClock: stage.clock,
-                         targetScore: stage.target, primiera: stage.primiera, house: stage.house,
-                         strength: stage.strength)
+        let game = campaignBook.run(at: stage).game
+        playOnThisDevice(seats: stage.seats(you: playerName, game: game), teams: stage.teams,
+                         turnClock: stage.clock, targetScore: stage.target, primiera: stage.primiera,
+                         house: stage.house, headStart: stage.headStart, openHands: stage.openHands,
+                         strength: stage.strength(game: game))
         if route == .table { campaignStage = stage }
     }
 
@@ -3446,7 +3468,7 @@ final class TableStore {
         case .playerCount: "A table seats two to four players"
         case .teamsRequireFourPlayers: "Teams need four players"
         case .scoponeRequiresTeams: "Scopone is played four, in two teams"
-        case .invalidTargetScore: "Pick a score to play to"
+        case .invalidTargetScore, .invalidHeadStart: "Pick a score to play to"
         }
     }
 

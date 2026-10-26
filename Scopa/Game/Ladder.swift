@@ -14,6 +14,17 @@ enum Ladder {
 
     static var isOn: Bool { baseURL != nil }
 
+    /// Which ladder this build reads, sent with every call. The Worker tells a build that does
+    /// not send it, 1.4 and earlier, the ladder as it was: six leagues, capped at Maestro I.
+    static let ladderVersion = "2"
+
+    /// Every call to the Worker starts here, so none goes out without the ladder it reads.
+    static func request(_ url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.setValue(ladderVersion, forHTTPHeaderField: "X-Scopa-Ladder")
+        return request
+    }
+
     /// Where a player stands on a day, as the Worker tells it.
     struct Standing: Codable, Hashable {
         let day: String
@@ -134,6 +145,14 @@ enum Ladder {
             var isCounting: Bool { playedToday < perDay }
         }
 
+        /// Past Maestro I: the points, which have no top, and the place among the season's
+        /// Gran Maestri. No place before a first game of the season.
+        struct Grand: Codable, Hashable {
+            let points: Int
+            let place: Int?
+            let campione: Bool
+        }
+
         /// A season this player finished and has not been paid for yet.
         struct Finish: Codable, Hashable {
             let season: String
@@ -141,6 +160,8 @@ enum Ladder {
             let games: Int
             let wins: Int
             let standing: Standing
+            /// Where it was finished in Gran Maestro, for a Campione's season to be paid as one.
+            var grand: Grand? = nil
         }
 
         let rating: Int
@@ -172,6 +193,8 @@ enum Ladder {
         /// The run the latest game broke, while a video can still carry it on. Nil once it is
         /// kept, once another game is played, and from a Worker deployed before keeping.
         var keepableRun: KeepableRun? = nil
+        /// Gran Maestro's points and place. Nil below it, and from a Worker before it.
+        var grand: Grand? = nil
 
         struct KeepableRun: Codable, Hashable {
             let gameID: String
@@ -289,6 +312,10 @@ enum Ladder {
             let games: Int
             let wins: Int
             let standing: RankAnswer.Standing
+            /// A Gran Maestro's place among the season's Gran Maestri, and whether it is a
+            /// Campione's. Nil below Gran Maestro.
+            var place: Int? = nil
+            var campione: Bool? = nil
         }
 
         /// Where the reader stands. No rank until they have played a ranked game this season.
@@ -315,9 +342,11 @@ enum Ladder {
         }
     }
 
-    static func seasonBoard(gamePlayerID: String?) async throws -> SeasonBoard? {
+    /// `grand` asks for Gran Maestro's own board: its players only, a hundred of them.
+    static func seasonBoard(gamePlayerID: String?, grand: Bool = false) async throws -> SeasonBoard? {
         guard let baseURL else { return nil }
         var url = baseURL.appending(path: "v1/ranked/board")
+        if grand { url.append(queryItems: [URLQueryItem(name: "tier", value: "grand")]) }
         if let gamePlayerID {
             url.append(queryItems: [URLQueryItem(name: "player", value: gamePlayerID)])
         }
@@ -376,7 +405,7 @@ enum Ladder {
     /// Who won a day and by how much. Nil when nobody played it.
     static func best(day: String) async throws -> Best? {
         guard let baseURL else { return nil }
-        let (data, _) = try await URLSession.shared.data(from: baseURL.appending(path: "v1/daily/\(day)"))
+        let (data, _) = try await URLSession.shared.data(for: request(baseURL.appending(path: "v1/daily/\(day)")))
         struct Row: Decodable { let name: String; let margin: Int }
         struct Answer: Decodable { let top: [Row] }
         guard let first = try JSONDecoder().decode(Answer.self, from: data).top.first else { return nil }
@@ -388,7 +417,7 @@ enum Ladder {
         guard let baseURL else { return nil }
         var url = baseURL.appending(path: "v1/daily/\(day)")
         url.append(queryItems: [URLQueryItem(name: "player", value: gamePlayerID)])
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, _) = try await URLSession.shared.data(for: request(url))
         struct Answer: Decodable { let you: Standing? }
         return try JSONDecoder().decode(Answer.self, from: data).you
     }
@@ -402,7 +431,7 @@ enum Ladder {
     ) async throws -> Answer? {
         guard let baseURL, GameCenter.isSignedIn else { return nil }
         let identity = try await GameCenter.identity()
-        var request = URLRequest(url: baseURL.appending(path: path))
+        var request = Self.request(baseURL.appending(path: path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONEncoder().encode(body(identity))
@@ -413,7 +442,7 @@ enum Ladder {
 
     /// GETs and decodes, throwing on anything but a 2xx.
     static func get<Answer: Decodable>(_ url: URL) async throws -> Answer {
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await URLSession.shared.data(for: request(url))
         try check(response)
         return try JSONDecoder().decode(Answer.self, from: data)
     }
@@ -510,7 +539,7 @@ extension Ladder {
     ) async throws -> URLRequest? {
         guard let baseURL, GameCenter.isSignedIn else { return nil }
         let identity = try await GameCenter.identity()
-        var request = URLRequest(url: baseURL.appending(path: path))
+        var request = Self.request(baseURL.appending(path: path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try accountEncoder.encode(body(identity))
@@ -569,7 +598,7 @@ extension Ladder {
     /// POSTs a body that carries its own signature, or needs none.
     static func unsignedPost<Body: Encodable, Answer: Decodable>(_ path: String, body: Body) async throws -> Answer? {
         guard let baseURL else { return nil }
-        var request = URLRequest(url: baseURL.appending(path: path))
+        var request = Self.request(baseURL.appending(path: path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.httpBody = try JSONEncoder().encode(body)

@@ -229,11 +229,14 @@ extension RankedStakes {
     ///
     /// `win` and `loss` are the Worker's own price where it has told us one: it is the
     /// Worker that settles the game, and a phone quoting its own copy of the rule promised
-    /// +25 while a Worker still on the old price paid +5.
+    /// +25 while a Worker still on the old price paid +5. Without one, the price is this
+    /// rating's: Gran Maestro's house pays less and costs more.
     static func houseOdds(mine: Int, theirs: Int?, counting: Bool, streak: Int = 0,
-                          win: Int = Ranking.houseWin, loss: Int = Ranking.houseLoss) -> Odds {
+                          win: Int? = nil, loss: Int? = nil) -> Odds {
         let standing = Ranking.standing(for: mine)
         let across = theirs.map { Ranking.standing(for: $0) }
+        let stakes = Ranking.houseStakes(for: mine)
+        let win = win ?? stakes.win, loss = loss ?? stakes.loss
         guard counting else {
             return Odds(mine: standing, theirs: across, win: 0, loss: 0, streak: streak, isHouse: true)
         }
@@ -314,6 +317,7 @@ struct RunFlames: View {
                 RankedStakes(odds: RankedStakes.odds(mine: 455, theirs: [720]))
                 RankedStakes(odds: RankedStakes.odds(mine: 455, theirs: [455], streak: 4))
                 RankedStakes(odds: RankedStakes.houseOdds(mine: 600, theirs: 640, counting: true, streak: 3))
+                RankedStakes(odds: RankedStakes.houseOdds(mine: 2_140, theirs: 1_830, counting: true, streak: 2))
                 RankedStakes(odds: RankedStakes.odds(mine: 455, theirs: []))
             }
         }

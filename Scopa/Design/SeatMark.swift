@@ -12,7 +12,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
     // All forty: the album's own prize, one piece of metal above the suits.
     case settebello
     // One per league, reached in ranked and nowhere else: the ladder's own medal, worn.
-    case medalBronze, medalSilver, medalGold, medalPlatinum, medalDiamond, medalMaestro
+    case medalBronze, medalSilver, medalGold, medalPlatinum, medalDiamond, medalMaestro, medalGranMaestro
     case sail, wine, dice, espresso
 
     /// The marks that are bought rather than played for.
@@ -50,6 +50,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
             case .league(.platinum): "Platinum, in ranked"
             case .league(.diamond): "Diamond, in ranked"
             case .league(.maestro): "Maestro, in ranked"
+            case .league(.granMaestro): "Gran Maestro, in ranked"
             }
         }
 
@@ -84,7 +85,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
         case .swords: .suit(.swords)
         case .clubs: .suit(.clubs)
         case .settebello: .deck
-        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro:
+        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro, .medalGranMaestro:
             league.map(Requirement.league)
         // Bought, so there is nothing to meet.
         case .sail, .wine, .dice, .espresso: nil
@@ -118,7 +119,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
         case .broom: .royal
         case .crown: .sovereign
         // The medal is its own metal, so the seat wears nothing more round it.
-        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro: .none
+        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro, .medalGranMaestro: .none
         // The lowest metal there is: a bought mark must not look hard-won.
         case .sail, .wine, .dice, .espresso: .ring
         }
@@ -145,6 +146,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
         case .medalPlatinum: .platinum
         case .medalDiamond: .diamond
         case .medalMaestro: .maestro
+        case .medalGranMaestro: .granMaestro
         default: nil
         }
     }
@@ -163,7 +165,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
     var symbol: String? {
         switch self {
         case .initial, .broom, .coins, .cups, .swords, .clubs, .settebello: nil
-        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro: nil
+        case .medalBronze, .medalSilver, .medalGold, .medalPlatinum, .medalDiamond, .medalMaestro, .medalGranMaestro: nil
         case .star: "star.fill"
         case .crown: "crown.fill"
         case .moon: "moon.fill"
@@ -194,6 +196,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
         case .medalPlatinum: "Platinum medal"
         case .medalDiamond: "Diamond medal"
         case .medalMaestro: "Maestro medal"
+        case .medalGranMaestro: "Gran Maestro medal"
         case .star: "Star"
         case .crown: "Crown"
         case .moon: "Moon"
@@ -225,6 +228,7 @@ enum SeatMark: String, CaseIterable, Identifiable {
         case .medalPlatinum: String(localized: "Platinum medal")
         case .medalDiamond: String(localized: "Diamond medal")
         case .medalMaestro: String(localized: "Maestro medal")
+        case .medalGranMaestro: String(localized: "Gran Maestro medal")
         case .star: String(localized: "Star")
         case .crown: String(localized: "Crown")
         case .moon: String(localized: "Moon")
@@ -262,6 +266,6 @@ struct MarkProgress: Hashable {
     var wins: Int
     var scope: Int
     var streak: Int
-    /// The highest league reached in ranked, for the six medals only the ladder gives.
+    /// The highest league reached in ranked, for the seven medals only the ladder gives.
     var league: League? = nil
 }

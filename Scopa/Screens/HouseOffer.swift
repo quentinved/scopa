@@ -41,8 +41,7 @@ struct HouseOffer: View {
     private var odds: RankedStakes.Odds? {
         guard let rank = store.rank else { return nil }
         return RankedStakes.houseOdds(mine: rank.rating, theirs: nil, counting: rank.house?.isCounting ?? true,
-                                      win: rank.house?.win ?? Ranking.houseWin,
-                                      loss: rank.house?.loss ?? Ranking.houseLoss)
+                                      win: rank.house?.win, loss: rank.house?.loss)
     }
 
     @ViewBuilder private var pays: some View {

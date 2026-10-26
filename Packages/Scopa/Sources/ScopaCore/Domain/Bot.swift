@@ -108,26 +108,31 @@ public struct Bot: Hashable, Sendable {
     }
 
     /// What the table left behind is worth to whoever plays next: every rank they could
-    /// hold is tried against it, the best pile priced, and the total averaged.
+    /// hold is tried against it, the best pile priced, and the total averaged. Face up,
+    /// their hand is known, and what it can take is the threat itself.
     static func exposure(of table: [Card], in view: PlayerView) -> Int {
         // Nothing is left to answer with once the last card of the round is down.
         guard !table.isEmpty, !view.isOnLastCard else { return 0 }
-        let sweepScores = !(view.stockCount == 0 && view.cardsInPlay <= 2)
-
-        let total = Rank.allCases.reduce(0) { total, rank in
-            let answer = Card(rank, of: .cups)
-            let house = view.configuration.house
-            let best = Rules.captureOptions(for: answer, on: table, house: house).map { option -> Int in
-                var value = option.count * Weight.card
-                value += option.count { $0.suit == .coins } * Weight.coin
-                if option.contains(.settebello) { value += Weight.settebello }
-                value += houseValue(of: option, in: view)
-                if sweepScores, option.count == table.count, house.sweepScores(playing: answer) { value += Weight.scopa }
-                return value
-            }
-            return total + (best.max() ?? 0)
+        if let hand = view.nextHand {
+            return hand.map { answer(with: $0, to: table, in: view) }.max() ?? 0
         }
+        let total = Rank.allCases.reduce(0) { $0 + answer(with: Card($1, of: .cups), to: table, in: view) }
         return total / Weight.unseenHand
+    }
+
+    /// The best pile `card` could take off `table`, priced. Nought when it takes nothing.
+    private static func answer(with card: Card, to table: [Card], in view: PlayerView) -> Int {
+        let sweepScores = !(view.stockCount == 0 && view.cardsInPlay <= 2)
+        let house = view.configuration.house
+        let best = Rules.captureOptions(for: card, on: table, house: house).map { option -> Int in
+            var value = option.count * Weight.card
+            value += option.count { $0.suit == .coins } * Weight.coin
+            if option.contains(.settebello) { value += Weight.settebello }
+            value += houseValue(of: option, in: view)
+            if sweepScores, option.count == table.count, house.sweepScores(playing: card) { value += Weight.scopa }
+            return value
+        }
+        return best.max() ?? 0
     }
 
     /// What the table's house rules add to a pile: the re bello is priced like the

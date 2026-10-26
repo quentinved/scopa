@@ -694,8 +694,7 @@ struct LobbyView: View {
         guard !isCollectingSeason else { return }
         isCollectingSeason = true
         Task {
-            let league = League(rawValue: finish.standing.league) ?? .bronze
-            await purse.awardSeason(SeasonReward.denari(forLeague: league), season: finish.season)
+            await purse.awardSeason(SeasonReward.denari(for: finish), season: finish.season)
             Audio.shared.play(.purchase)
             withAnimation(.spring(duration: 0.4, bounce: 0.2)) { finishedSeason = nil }
             isCollectingSeason = false

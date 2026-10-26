@@ -171,7 +171,7 @@ enum DebugLaunch {
     /// `-settings` opens the settings sheet.
     static var showsSettings: Bool {
         #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-settings") || showsIcons
+        ProcessInfo.processInfo.arguments.contains("-settings") || showsIcons || showsRecord
         #else
         false
         #endif

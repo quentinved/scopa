@@ -175,3 +175,59 @@ test("012 leaves a board already counted in thirty-six alone", async () => {
   await migrate(db, "migrations/012-campaign-piemonte.sql");
   assert.deepEqual(await stagesOf(db), { "G:anna": 13 });
 });
+
+const row = (stage: number) => ({ id: `G:${stage}`, name: "x", stage, stars: 0, mark: null, livery: null, cornice: null });
+const face = (id: string) => ({ id, name: id, mark: null, livery: null, cornice: null, friend: false });
+
+test("an app on the second road posts and reads in sixty, every table as it is", () => {
+  assert.equal(invalidProgress({ road: 60, stage: 60, stars: 180 }), null);
+  assert.equal(invalidProgress({ road: 60, stage: 61, stars: 0 }), "bad stage");
+  assert.equal(invalidProgress({ road: 60, stage: 60, stars: 181 }), "bad stars");
+  assert.equal(invalidProgress({ road: 60, stage: 40, stars: 121 }), "more stars than tables");
+  assert.equal(progressOf({ road: 60, stage: 45, stars: 120 }).stage, 45);
+  assert.deepEqual(rowsForRoad([row(9), row(45), row(60)], 60).map((r) => r.stage), [9, 45, 60]);
+  const tables = [{ stage: 40, count: 2, faces: [face("a"), face("b")] }];
+  assert.deepEqual(stagesForRoad(tables, 60), tables);
+});
+
+test("an app counting thirty-six is unchanged, and reads the second road as Trevi", () => {
+  assert.equal(invalidProgress({ road: 36, stage: 36, stars: 108 }), null);
+  assert.equal(invalidProgress({ road: 36, stage: 37, stars: 0 }), "bad stage");
+  assert.equal(invalidProgress({ road: 36, stage: 36, stars: 109 }), "bad stars");
+  assert.equal(progressOf({ road: 36, stage: 36, stars: 108 }).stage, 36);
+  assert.deepEqual(rowsForRoad([row(9), row(36), row(45), row(60)], 36).map((r) => r.stage), [9, 36, 36, 36]);
+  const folded = stagesForRoad([
+    { stage: 35, count: 1, faces: [face("a")] },
+    { stage: 40, count: 2, faces: [face("b"), face("c")] },
+    { stage: 52, count: 4, faces: [face("d"), face("e"), face("f")] },
+  ], 36);
+  assert.deepEqual(folded.map((t) => [t.stage, t.count, t.faces.length]), [[35, 1, 1], [36, 6, FACES_PER_STAGE]]);
+});
+
+test("an app without a road reads the second road as its own last table", () => {
+  assert.deepEqual(rowsForRoad([row(36), row(45), row(60)], 30).map((r) => r.stage), [30, 30, 30]);
+  assert.equal(invalidProgress({ stage: 31, stars: 0 }), "bad stage");
+});
+
+test("a fresh board takes the whole road and no further", async () => {
+  const db = await database("anna");
+  await recordProgress(db, "G:anna", progress(60, 180), DAY);
+  assert.deepEqual([(await campaignBoard(db, null)).top[0].stage, (await campaignBoard(db, null)).top[0].stars], [60, 180]);
+  await assert.rejects(recordProgress(db, "G:anna", progress(61, 180), later(1)));
+});
+
+test("015 widens a board counted in thirty-six to sixty, every table where it was", async () => {
+  const db = await database("anna", "bruno");
+  // The board as 012 left it, checks of thirty-six and all.
+  await migrate(db, "migrations/012-campaign-piemonte.sql");
+  await recordProgress(db, "G:anna", progress(13, 30), DAY);
+  await recordProgress(db, "G:bruno", progress(36, 108, "crown"), DAY);
+  await assert.rejects(recordProgress(db, "G:bruno", progress(37, 109), later(1)));
+  await migrate(db, "migrations/015-campaign-second-road.sql");
+  await migrate(db, "migrations/015-campaign-second-road.sql");
+  assert.deepEqual(await stagesOf(db), { "G:anna": 13, "G:bruno": 36 });
+  assert.equal((await campaignBoard(db, null)).top[0].mark, "crown");
+  await recordProgress(db, "G:bruno", progress(52, 150), later(2));
+  const { top } = await campaignBoard(db, null);
+  assert.deepEqual([top[0].name, top[0].stage, top[0].stars], ["bruno", 52, 150]);
+});

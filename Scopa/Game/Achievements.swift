@@ -52,13 +52,19 @@ enum Achievements {
     struct Record: Hashable {
         var wins: Int
         var losses: Int
+        /// What was swept up along the way, for the record's page to start from.
+        var scope = 0
+        var settebelli = 0
+        var cappotti = 0
 
         var hasPlayed: Bool { wins + losses > 0 }
     }
 
     static var record: Record {
         let defaults = UserDefaults.standard
-        return Record(wins: defaults.integer(forKey: Key.wins), losses: defaults.integer(forKey: Key.losses))
+        return Record(wins: defaults.integer(forKey: Key.wins), losses: defaults.integer(forKey: Key.losses),
+                      scope: defaults.integer(forKey: Key.scope), settebelli: defaults.integer(forKey: Key.settebelli),
+                      cappotti: defaults.integer(forKey: Key.cappotti))
     }
 
     /// The counters as they stand, for the seat marks that are earned rather than bought.

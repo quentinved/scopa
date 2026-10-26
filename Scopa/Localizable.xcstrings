@@ -30172,6 +30172,1758 @@
           }
         }
       }
+    },
+    "Sixty tables across Italy. Win one to open the road to the next." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soixante tables à travers l'Italie. Gagnez-en une pour ouvrir la route de la suivante."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessanta tavoli in giro per l'Italia. Vincine uno per aprire la strada al prossimo."
+          }
+        }
+      }
+    },
+    "Where every road meets" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Là où se croisent tous les chemins"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dove si incontrano tutte le strade"
+          }
+        }
+      }
+    },
+    "Cypresses, Chianti and long lunches" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cyprès, chianti et déjeuners qui s'éternisent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cipressi, Chianti e pranzi senza fine"
+          }
+        }
+      }
+    },
+    "Trulli, olive groves and a slow sea" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trulli, oliveraies et une mer qui prend son temps"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trulli, uliveti e un mare che se la prende comoda"
+          }
+        }
+      }
+    },
+    "Granite, myrtle and water too clear" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Granit, myrte et une eau presque trop claire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Granito, mirto e un'acqua fin troppo limpida"
+          }
+        }
+      }
+    },
+    "Fog, risotto and a train to catch" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brouillard, risotto et un train à attraper"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nebbia, risotto e un treno da prendere al volo"
+          }
+        }
+      }
+    },
+    "New mode · %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau mode · %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova modalità · %@"
+          }
+        }
+      }
+    },
+    "%lld stars to open %@ · you have %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld étoiles pour ouvrir %2$@ · vous en avez %3$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld stelle per aprire %2$@ · ne hai %3$lld"
+          }
+        }
+      }
+    },
+    "Game %lld of %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partie %1$lld sur %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partita %1$lld di %2$lld"
+          }
+        }
+      }
+    },
+    "One round" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une seule manche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una sola smazzata"
+          }
+        }
+      }
+    },
+    "Otherwise classic Scopa" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour le reste, Scopa classique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per il resto, Scopa classica"
+          }
+        }
+      }
+    },
+    "Win all %lld games" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagner les %lld parties"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinci tutte e %lld le partite"
+          }
+        }
+      }
+    },
+    "Win the last by %lld points or more" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagner la dernière d'au moins %lld points"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinci l'ultima con almeno %lld punti di scarto"
+          }
+        }
+      }
+    },
+    "Sweep %lld scope or more in the last" : {
+      "localizations" : {
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Faire au moins %lld scopa dans la dernière"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Faire au moins %lld scopas dans la dernière"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fai almeno %lld scopa nell'ultima"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fai almeno %lld scope nell'ultima"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "You start %lld points behind. Catch up before they reach %lld." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous partez avec %1$lld points de retard. Rattrapez-les avant qu'ils n'arrivent à %2$lld."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parti con %1$lld punti di svantaggio. Riprendili prima che arrivino a %2$lld."
+          }
+        }
+      }
+    },
+    "One round, and whoever leads at the end of it wins. Level, and another round is dealt." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une seule manche, et celui qui mène à la fin l'emporte. En cas d'égalité, on redistribue."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una sola smazzata, e vince chi è avanti alla fine. Se siete pari, si dà di nuovo."
+          }
+        }
+      }
+    },
+    "Every hand is dealt face up: you see theirs, they see yours. Only the deck stays hidden." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les mains sont jouées face visible : vous voyez la leur, ils voient la vôtre. Seule la pioche reste cachée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le mani sono scoperte: tu vedi le loro, loro vedono la tua. Solo il mazzo resta coperto."
+          }
+        }
+      }
+    },
+    "%lld games in a row, against %@. Lose one and the torneo starts again from the first." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld parties d'affilée, contre %2$@. Perdez-en une et le torneo reprend depuis la première."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld partite di fila, contro %2$@. Perdine una e il torneo riparte dalla prima."
+          }
+        }
+      }
+    },
+    "Table mode" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode de table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modalità del tavolo"
+          }
+        }
+      }
+    },
+    "New at this table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau à cette table"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novità a questo tavolo"
+          }
+        }
+      }
+    },
+    "Rimonta" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimonta"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimonta"
+          }
+        }
+      }
+    },
+    "A comeback: the game starts with the others already ahead." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une remontée : la partie commence avec les autres déjà devant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una rimonta: la partita comincia con gli altri già in vantaggio."
+          }
+        }
+      }
+    },
+    "Their points are on the board before a card is dealt. Every round is counted the classic way, and the first to the target with the lead still wins." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leurs points sont au tableau avant même la première carte. Chaque manche se compte comme d'habitude, et le premier à atteindre l'objectif en tête l'emporte toujours."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I loro punti sono già segnati prima che si dia una carta. Ogni smazzata si conta come sempre, e vince comunque chi arriva per primo al traguardo in vantaggio."
+          }
+        }
+      }
+    },
+    "Win by two and the second star is yours: on a comeback, two is plenty." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagnez de deux points et la deuxième étoile est à vous : pour une remontée, c'est bien assez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinci di due punti e la seconda stella è tua: in una rimonta, due bastano e avanzano."
+          }
+        }
+      }
+    },
+    "Una mano" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una mano"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una mano"
+          }
+        }
+      }
+    },
+    "One round decides the game." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une seule manche décide de la partie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una sola smazzata decide la partita."
+          }
+        }
+      }
+    },
+    "When the cards run out, whoever has more points wins. End level and another round is dealt, the totals carried on." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand il n'y a plus de cartes, celui qui a le plus de points gagne. En cas d'égalité, on redistribue, et les totaux continuent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando finiscono le carte, vince chi ha più punti. Se finite pari si dà un'altra smazzata, e i punti si sommano."
+          }
+        }
+      }
+    },
+    "Nothing can be saved for later, so every card you take counts now." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien ne se garde pour plus tard : chaque carte prise compte tout de suite."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niente si può tenere da parte: ogni carta che prendi conta subito."
+          }
+        }
+      }
+    },
+    "Carte scoperte" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte scoperte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carte scoperte"
+          }
+        }
+      }
+    },
+    "Every hand is dealt face up." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les mains sont distribuées face visible."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le mani si giocano a carte scoperte."
+          }
+        }
+      }
+    },
+    "Their hand" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leur main"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La loro mano"
+          }
+        }
+      }
+    },
+    "You see what they hold, and they see what you hold. Only the deck stays hidden." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous voyez ce qu'ils ont en main, et ils voient ce que vous avez. Seule la pioche reste cachée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu vedi cosa hanno in mano, e loro vedono cosa hai tu. Solo il mazzo resta coperto."
+          }
+        }
+      }
+    },
+    "So the deal is the only luck: count what is left, and leave them nothing their cards can take." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La donne est donc la seule part de chance : comptez ce qui reste, et ne leur laissez rien que leurs cartes puissent prendre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Così l'unica fortuna è la smazzata: conta cosa resta, e non lasciare niente che le loro carte possano prendere."
+          }
+        }
+      }
+    },
+    "Torneo" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torneo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torneo"
+          }
+        }
+      }
+    },
+    "Three games in a row, each against somebody new." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trois parties d'affilée, chacune contre un nouvel adversaire."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tre partite di fila, ognuna contro qualcuno di nuovo."
+          }
+        }
+      }
+    },
+    "Win and the next player sits down. Lose and the torneo starts again from the first, whoever beat you." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagnez, et le joueur suivant s'installe. Perdez, et le torneo reprend depuis le premier, quel que soit celui qui vous a battu."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinci e si siede il prossimo. Perdi e il torneo riparte dal primo, chiunque ti abbia battuto."
+          }
+        }
+      }
+    },
+    "How far you have got is kept between games, so you can stop for a coffee. The stars are counted in the last game." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre progression est gardée entre les parties : vous pouvez faire une pause café. Les étoiles se comptent sur la dernière partie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I progressi restano tra una partita e l'altra, così puoi fermarti per un caffè. Le stelle si contano nell'ultima partita."
+          }
+        }
+      }
+    },
+    "The first road is yours" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La première route est à vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prima strada è tua"
+          }
+        }
+      }
+    },
+    "You lead %@ %lld–%lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous menez %2$lld–%3$lld face à %1$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei avanti con %1$@, %2$lld–%3$lld"
+          }
+        }
+      }
+    },
+    "%@ leads you %lld–%lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ mène %2$lld–%3$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ è avanti, %2$lld–%3$lld"
+          }
+        }
+      }
+    },
+    "All square with %@, %lld–%lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Égalité avec %1$@, %2$lld–%3$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pari con %1$@, %2$lld–%3$lld"
+          }
+        }
+      }
+    },
+    "Daily deal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donne du jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smazzata del giorno"
+          }
+        }
+      }
+    },
+    "Table by code" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Table par code"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tavolo con codice"
+          }
+        }
+      }
+    },
+    "With people" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avec d'autres joueurs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con altri giocatori"
+          }
+        }
+      }
+    },
+    "Against bots" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contre les bots"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contro i bot"
+          }
+        }
+      }
+    },
+    "Against %@, %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contre %1$@, le %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contro %1$@, il %2$@"
+          }
+        }
+      }
+    },
+    "On your side ^[%lld time](inflect: true)" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À vos côtés ^[%lld fois](inflect: true)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dalla tua parte ^[%lld volta](inflect: true)"
+          }
+        }
+      }
+    },
+    "You took the last one, %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dernière est pour vous, %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'ultima l'hai vinta tu, %@"
+          }
+        }
+      }
+    },
+    "%@ took the last one, %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La dernière est pour %1$@, %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'ultima l'ha vinta %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "Game lost" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partie perdue"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partita persa"
+          }
+        }
+      }
+    },
+    "Your record" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre palmarès"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo palmarès"
+          }
+        }
+      }
+    },
+    "Nothing in the book yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien dans le carnet pour l'instant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il taccuino è ancora vuoto"
+          }
+        }
+      }
+    },
+    "Every game you finish from now on is written down here: who sat across from you, how it ended, and who is ahead." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désormais, chaque partie que vous terminez est notée ici : qui était en face, comment elle a fini, et qui mène."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da adesso ogni partita che finisci viene annotata qui: chi ti stava di fronte, com'è finita e chi è avanti."
+          }
+        }
+      }
+    },
+    "All told" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au total"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In tutto"
+          }
+        }
+      }
+    },
+    "Games" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parties"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partite"
+          }
+        }
+      }
+    },
+    "Won" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gagnées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinte"
+          }
+        }
+      }
+    },
+    "Win rate" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réussite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Percentuale"
+          }
+        }
+      }
+    },
+    "Games from before this release were never written down, so only the totals know them: %lld won, %lld lost, counted in above." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les parties d'avant cette version n'ont jamais été notées : seuls les totaux les connaissent, %1$lld gagnées et %2$lld perdues, déjà comptées ci-dessus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le partite di prima di questa versione non sono mai state annotate: le conoscono solo i totali, %1$lld vinte e %2$lld perse, già contate qui sopra."
+          }
+        }
+      }
+    },
+    "Keepsakes" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Souvenirs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricordi"
+          }
+        }
+      }
+    },
+    "Biggest win" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus large victoire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vittoria più netta"
+          }
+        }
+      }
+    },
+    "Most scope in one game" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le plus de scopas en une partie"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più scope in una partita"
+          }
+        }
+      }
+    },
+    "Longest run of wins" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus longue série de victoires"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serie di vittorie più lunga"
+          }
+        }
+      }
+    },
+    "Settebelli taken" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settebellos remportés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settebelli presi"
+          }
+        }
+      }
+    },
+    "Rounds you came home with the seven of coins" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les manches finies avec le sept de deniers en poche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smazzate chiuse con il sette di denari in tasca"
+          }
+        }
+      }
+    },
+    "Clean sweeps" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grands chelems"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cappotti"
+          }
+        }
+      }
+    },
+    "Rounds with every point to you" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des manches où tous les points étaient pour vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smazzate con tutti i punti a te"
+          }
+        }
+      }
+    },
+    "Still going" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toujours en cours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora in corso"
+          }
+        }
+      }
+    },
+    "Set on %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Établie le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stabilita il %@"
+          }
+        }
+      }
+    },
+    "In the book since %@." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans le carnet depuis le %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nel taccuino dal %@."
+          }
+        }
+      }
+    },
+    "Across the table" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En face"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di fronte"
+          }
+        }
+      }
+    },
+    "The people you have played most, and how it stands between you." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les personnes avec qui vous avez le plus joué, et où vous en êtes entre vous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le persone con cui hai giocato di più, e come siete messi tra voi."
+          }
+        }
+      }
+    },
+    "At the table with the bots" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À table avec les bots"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al tavolo con i bot"
+          }
+        }
+      }
+    },
+    "They do not keep score. You do." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eux ne comptent pas les points. Vous, si."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loro non tengono il conto. Tu sì."
+          }
+        }
+      }
+    },
+    "Last games" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dernières parties"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultime partite"
+          }
+        }
+      }
+    },
+    "The last %lld games are kept here in full. The totals count every one." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les %lld dernières parties sont gardées ici en entier. Les totaux les comptent toutes."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qui restano per intero le ultime %lld partite. I totali le contano tutte."
+          }
+        }
+      }
+    },
+    "Show all %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout afficher (%lld)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra tutte (%lld)"
+          }
+        }
+      }
+    },
+    "^[%lld game](inflect: true)" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld partie](inflect: true)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld partita](inflect: true)"
+          }
+        }
+      }
+    },
+    "Nothing yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien pour l'instant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora niente"
+          }
+        }
+      }
+    },
+    "Gran Maestro" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro"
+          }
+        }
+      }
+    },
+    "Gran Maestro, in ranked" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro, en classé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro, in classificata"
+          }
+        }
+      }
+    },
+    "Gran Maestro medal" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médaille Gran Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medaglia Gran Maestro"
+          }
+        }
+      }
+    },
+    "Gran Maestro icon" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icône Gran Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icona Gran Maestro"
+          }
+        }
+      }
+    },
+    "%lld pts" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pts"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld punti"
+          }
+        }
+      }
+    },
+    "%@ in Gran Maestro" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ en Gran Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in Gran Maestro"
+          }
+        }
+      }
+    },
+    "%lld points in Gran Maestro" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld points en Gran Maestro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld punti in Gran Maestro"
+          }
+        }
+      }
+    },
+    "%lld more for Campione" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encore %lld pour être Campione"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ancora %lld per essere Campione"
+          }
+        }
+      }
+    },
+    "%lld of it for finishing a Campione" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dont %lld pour l'avoir finie Campione"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "di cui %lld per averla chiusa da Campione"
+          }
+        }
+      }
+    },
+    "Gran Maestro is yours to keep. Its points start again from nought, and so does everybody else's." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro vous reste. Ses points repartent de zéro, comme pour tout le monde."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gran Maestro resta tuo. I suoi punti ripartono da zero, come per tutti gli altri."
+          }
+        }
+      }
+    },
+    "No more divisions: points from here on, with no top. The season's ten best are its Campioni." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fini les divisions : des points désormais, sans plafond. Les dix meilleurs de la saison en sont les Campioni."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niente più divisioni: da qui in poi solo punti, senza tetto. I dieci migliori della stagione sono i suoi Campioni."
+          }
+        }
+      }
+    },
+    "+%lld more for a season finished as a Campione" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld de plus pour une saison finie Campione"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld in più per una stagione chiusa da Campione"
+          }
+        }
+      }
+    },
+    "See the road" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir la route"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedi la strada"
+          }
+        }
+      }
+    },
+    "Six leagues, Gran Maestro past them, and what each one gives. Only ranked climbs it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Six ligues, Gran Maestro au-delà, et ce que chacune donne. Seul le classé y fait monter."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sei leghe, Gran Maestro oltre, e cosa dà ognuna. Si sale solo in classificata."
+          }
+        }
+      }
+    },
+    "Where its points start each season. They have no top, and Gran Maestro itself is never lost." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Là où ses points repartent à chaque saison. Ils n'ont pas de plafond, et Gran Maestro ne se perd jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Da dove ripartono i suoi punti a ogni stagione. Non hanno tetto, e Gran Maestro non si perde mai."
+          }
+        }
+      }
+    },
+    "A win against the house there, and %@ for a loss: up here the points say how often you beat it." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une victoire contre la maison, et %@ pour une défaite : ici, les points disent combien de fois vous la battez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una vittoria contro il banco, e %@ per una sconfitta: quassù i punti dicono quanto spesso lo batti."
+          }
+        }
+      }
+    },
+    "Denari for every %lld points, and a Reliquia pack every %lld, once a season." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des deniers tous les %1$lld points, et un paquet Reliquia tous les %2$lld, une fois par saison."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denari ogni %1$lld punti, e un pacchetto Reliquia ogni %2$lld, una volta a stagione."
+          }
+        }
+      }
+    },
+    "The season's %lld best Gran Maestri with %lld points or more are its Campioni." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les %1$lld meilleurs Gran Maestri de la saison, à partir de %2$lld points, en sont les Campioni."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I %1$lld migliori Gran Maestri della stagione, con almeno %2$lld punti, sono i suoi Campioni."
+          }
+        }
+      }
+    },
+    "On top of the season's pay, for finishing it as a Campione." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En plus de la paie de la saison, pour l'avoir finie Campione."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oltre alla paga della stagione, per averla chiusa da Campione."
+          }
+        }
+      }
+    },
+    "Nobody has reached Gran Maestro this season yet" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne n'a encore atteint Gran Maestro cette saison"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuno ha ancora raggiunto Gran Maestro questa stagione"
+          }
+        }
+      }
+    },
+    "Past Maestro I the ladder counts points, and the season's ten best are its Campioni." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après Maestro I, le classement compte des points, et les dix meilleurs de la saison en sont les Campioni."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oltre Maestro I la classifica conta i punti, e i dieci migliori della stagione sono i suoi Campioni."
+          }
+        }
+      }
+    },
+    "Past Maestro I, a ranked game this season puts you here." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après Maestro I, une partie classée cette saison vous place ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oltre Maestro I, una partita classificata in questa stagione ti porta qui."
+          }
+        }
+      }
+    },
+    "After Maestro I comes Gran Maestro. No divisions there, only points, with no ceiling: a win against the house is worth 15, a loss costs 10. Hold 300 points and a place in the top ten and you are a Campione, on the Gran Maestro tab of the season's ladder." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après Maestro I vient Gran Maestro. Plus de divisions, seulement des points, sans plafond : une victoire contre la maison en rapporte 15, une défaite en coûte 10. Gardez 300 points et une place parmi les dix premiers, et vous voilà Campione, dans l'onglet Gran Maestro du classement de la saison."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo Maestro I viene Gran Maestro. Niente divisioni, solo punti, senza tetto: una vittoria contro la casa ne vale 15, una sconfitta ne costa 10. Tieni 300 punti e un posto tra i primi dieci e sei un Campione, nella scheda Gran Maestro della classifica della stagione."
+          }
+        }
+      }
+    },
+    "A Maestro you can beat" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un Maestro à votre portée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un Maestro battibile"
+          }
+        }
+      }
+    },
+    "The house no longer counts the cards still to come or plays a perfect last hand, in any league. Maestro is still the hardest table on the ladder, and now it can be beaten." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La maison ne compte plus les cartes qui restent à venir et ne joue plus une dernière main parfaite, dans aucune ligue. Maestro reste la table la plus dure du classement, et maintenant on peut la battre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La casa non conta più le carte ancora da uscire e non gioca più un'ultima mano perfetta, in nessuna lega. Maestro resta il tavolo più duro della classifica, e ora si può battere."
+          }
+        }
+      }
+    },
+    "Twenty-four more tables" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vingt-quatre tables de plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventiquattro tavoli in più"
+          }
+        }
+      }
+    },
+    "The campaign goes on past Roma. In Toscana you start two points behind, in Puglia one round decides, in Sardegna every hand is face up, and in Lombardia you play three games in a row. Each new region opens with the stars won on the road behind you." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La campagne continue après Roma. En Toscana vous partez avec deux points de retard, en Puglia une seule manche décide, en Sardegna toutes les mains sont visibles, et en Lombardia vous jouez trois parties d'affilée. Chaque nouvelle région s'ouvre avec les étoiles gagnées sur la route derrière vous."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La campagna continua dopo Roma. In Toscana parti con due punti di svantaggio, in Puglia decide una sola smazzata, in Sardegna tutte le mani sono scoperte, e in Lombardia giochi tre partite di fila. Ogni nuova regione si apre con le stelle vinte sulla strada alle tue spalle."
+          }
+        }
+      }
+    },
+    "Settings now keeps your record: every game you finish, your best ones, and the score against each friend and each bot. After a game with friends, the summary says who leads." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les Réglages gardent maintenant votre palmarès : chaque partie terminée, vos meilleures, et le score contre chaque ami et chaque bot. Après une partie entre amis, le résumé dit qui mène."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le Impostazioni ora tengono il tuo palmarès: ogni partita che finisci, le tue migliori, e il punteggio contro ogni amico e ogni bot. Dopo una partita con gli amici, il riepilogo dice chi è in vantaggio."
+          }
+        }
+      }
+    },
+    "After %@" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo %@"
+          }
+        }
+      }
+    },
+    "After %@ · %lld to go" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Après %1$@ · encore %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopo %1$@ · ne mancano %2$lld"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

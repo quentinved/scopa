@@ -45,8 +45,9 @@ extension Ladder {
         var more: Int { max(count - faces.count, 0) }
     }
 
-    /// Tells the Worker this app counts the road in thirty-six, Piemonte included.
-    private static let road = 36
+    /// Tells the Worker this app counts the road in sixty: Piemonte in, and the second road
+    /// after Roma. A Worker from before 015 reads sixty as the old thirty, so it goes first.
+    private static let road = 60
 
     private struct CampaignPost: Encodable {
         let road = Ladder.road

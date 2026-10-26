@@ -2,8 +2,11 @@
 ///
 /// A rating is a plain integer: 100 points per division, 3 divisions per league. The
 /// player only ever sees "Silver II" and a bar. A league once reached is a floor for the season.
+///
+/// Gran Maestro, past Maestro I, has no divisions and no top: its points are shown as they
+/// are, and its best players are placed on the season's board rather than in a league.
 public enum League: Int, CaseIterable, Codable, Sendable, Hashable, Comparable {
-    case bronze, silver, gold, platinum, diamond, maestro
+    case bronze, silver, gold, platinum, diamond, maestro, granMaestro
 
     public static func < (a: League, b: League) -> Bool { a.rawValue < b.rawValue }
 
@@ -15,19 +18,23 @@ public enum League: Int, CaseIterable, Codable, Sendable, Hashable, Comparable {
         case .platinum: "Platinum"
         case .diamond: "Diamond"
         case .maestro: "Maestro"
+        case .granMaestro: "Gran Maestro"
         }
     }
 
     /// Losses cost half in the lower leagues.
     public var isForgiving: Bool { self <= .silver }
+
+    /// Every league but the last is climbed in three divisions of a hundred points.
+    public var hasDivisions: Bool { self != .granMaestro }
 }
 
 /// Where a rating puts you, in the words the player sees.
 public struct Standing: Hashable, Codable, Sendable {
     public let league: League
-    /// 3 is the bottom of the league, 1 the top.
+    /// 3 is the bottom of the league, 1 the top. Gran Maestro is all one division, 1.
     public let division: Int
-    /// Points into the division, 0 to 99.
+    /// Points into the division, 0 to 99. In Gran Maestro, points past its floor, with no top.
     public let progress: Int
 
     public init(league: League, division: Int, progress: Int) {
@@ -36,23 +43,53 @@ public struct Standing: Hashable, Codable, Sendable {
         self.progress = progress
     }
 
-    /// "Silver II".
-    public var title: String { "\(league.name) \(["I", "II", "III"][division - 1])" }
+    /// "Silver II", or "Gran Maestro".
+    public var title: String {
+        league.hasDivisions ? "\(league.name) \(["I", "II", "III"][division - 1])" : league.name
+    }
 
-    /// Divisions climbed from Bronze III.
-    public var step: Int { league.rawValue * Ranking.divisionsPerLeague + (Ranking.divisionsPerLeague - division) }
+    /// Divisions climbed from Bronze III. Gran Maestro is one step past Maestro I, however
+    /// many points it holds.
+    public var step: Int {
+        guard league.hasDivisions else { return Ranking.grandStep }
+        return league.rawValue * Ranking.divisionsPerLeague + (Ranking.divisionsPerLeague - division)
+    }
+
+    /// Gran Maestro's points, nil in a league with divisions.
+    public var points: Int? { league.hasDivisions ? nil : progress }
 }
 
 public enum Ranking {
     public static let pointsPerDivision = 100
     public static let divisionsPerLeague = 3
-    public static let top = League.allCases.count * divisionsPerLeague * pointsPerDivision - 1
+    /// Where Gran Maestro starts: the rating past Maestro I's last point.
+    public static let grandFloor = League.granMaestro.rawValue * divisionsPerLeague * pointsPerDivision
+    /// Gran Maestro's one step, past Maestro I's seventeen.
+    public static let grandStep = grandFloor / pointsPerDivision
+    /// Gran Maestro has no top. This is only a number to clamp at.
+    public static let top = grandFloor + 999_999
 
     public static func standing(for rating: Int) -> Standing {
         let clamped = min(max(rating, 0), top)
+        guard clamped < grandFloor else { return Standing(league: .granMaestro, division: 1, progress: clamped - grandFloor) }
         let step = clamped / pointsPerDivision
         let league = League(rawValue: step / divisionsPerLeague) ?? .maestro
         return Standing(league: league, division: divisionsPerLeague - step % divisionsPerLeague, progress: clamped % pointsPerDivision)
+    }
+
+    // MARK: Gran Maestro's board
+
+    /// The Gran Maestri placed this high on the season's board are its Campioni, the way the
+    /// last tier of a ladder is the few at the top of it rather than a number to reach.
+    public static let campioni = 10
+    /// And only once they hold this many points, so an empty top tier early in a season does
+    /// not hand the title to whoever arrived first.
+    public static let campionePoints = 300
+
+    /// Whether a place on Gran Maestro's board, with these points, is a Campione's.
+    public static func isCampione(place: Int?, points: Int) -> Bool {
+        guard let place else { return false }
+        return place <= campioni && points >= campionePoints
     }
 
     /// The rating a league starts at.
@@ -128,6 +165,17 @@ public enum Ranking {
     public static let houseWin = 25
     public static let houseLoss = -5
 
+    /// In Gran Maestro the house is a measure rather than a climb: a win pays less and a loss
+    /// costs more, so its points say how often a player beats the house and not only how
+    /// often they sat down with it. Even odds still gain, a little, and the run on top.
+    public static let grandHouseWin = 15
+    public static let grandHouseLoss = -10
+
+    /// What a house game is worth to a player at this rating, won and lost.
+    public static func houseStakes(for rating: Int) -> (win: Int, loss: Int) {
+        rating >= grandFloor ? (grandHouseWin, grandHouseLoss) : (houseWin, houseLoss)
+    }
+
     /// House games per day the ladder counts. Past this they move nothing, the run included,
     /// which is the only brake on the house: fifteen wins is +495 with the run.
     public static let houseGamesPerDay = 15
@@ -136,20 +184,21 @@ public enum Ranking {
     /// cannot meet an easier house by letting the weaker friend lead. Bronze III when nobody
     /// at the table has a rank.
     public static func houseStep(among steps: [Int]) -> Int {
-        min(max(steps.max() ?? 0, 0), top / pointsPerDivision)
+        min(max(steps.max() ?? 0, 0), grandStep)
     }
 
     /// A rating for a house chair to wear: `jitter` points into the division it plays at, so
     /// two house chairs read as two players and both read as the league they play at.
     public static func houseRating(atStep step: Int, jitter: Int) -> Int {
-        let step = min(max(step, 0), top / pointsPerDivision)
+        let step = min(max(step, 0), grandStep)
         return step * pointsPerDivision + (jitter % pointsPerDivision + pointsPerDivision) % pointsPerDivision
     }
 
     /// What one house game does to a rating, before the floor is applied. `streak` is the run
     /// standing before it, as for `change`.
-    public static func houseChange(won: Bool, streak: Int = 0) -> Int {
-        won ? houseWin + streakBonus(after: streak) : houseLoss
+    public static func houseChange(won: Bool, streak: Int = 0, rating: Int = 0) -> Int {
+        let stakes = houseStakes(for: rating)
+        return won ? stakes.win + streakBonus(after: streak) : stakes.loss
     }
 
     /// A rating after a change, clamped to the season floor and the top. The floor rises

@@ -330,7 +330,7 @@ private func playGame(seats: Int, seed: UInt64, choose: (GameState) -> Move) asy
         #expect(Ranking.standing(for: 250).title == "Bronze I")
         #expect(Ranking.standing(for: 300).title == "Silver III")
         #expect(Ranking.standing(for: 1799).title == "Maestro I")
-        #expect(Ranking.standing(for: 5000).title == "Maestro I")
+        #expect(Ranking.standing(for: 5000).title == "Gran Maestro")
         #expect(Ranking.standing(for: 420).progress == 20)
     }
 
